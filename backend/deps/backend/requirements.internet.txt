@@ -1,0 +1,35 @@
+# 
+# +==== BEGIN AsperBackend =================+
+# LOGO: 
+# ..........####...####..........
+# ......###.....#.#########......
+# ....##........#.###########....
+# ...#..........#.############...
+# ...#..........#.#####.######...
+# ..#.....##....#.###..#...####..
+# .#.....#.##...#.##..##########.
+# #.....##########....##...######
+# #.....#...##..#.##..####.######
+# .#...##....##.#.##..###..#####.
+# ..#.##......#.#.####...######..
+# ..#...........#.#############..
+# ..#...........#.#############..
+# ...##.........#.############...
+# ......#.......#.#########......
+# .......#......#.########.......
+# .........#####...#####.........
+# /STOP
+# PROJECT: AsperBackend
+# FILE: requirements.internet.txt
+# CREATION DATE: 11-10-2025
+# LAST Modified: 16:29:32 11-10-2025
+# DESCRIPTION: 
+# This is the backend server in charge of making the actual website work.
+# /STOP
+# COPYRIGHT: (c) Asperguide
+# PURPOSE: The dependencies required in order to fetch content from the internet from within the server.
+# // AR
+# +==== END AsperBackend =================+
+# 
+# Fetch packages online
+requests ==2.32.5

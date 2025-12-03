@@ -1,0 +1,229 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: server_shutdown.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:28:37 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The steps followed when a server shutdown is called.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml server_shutdown
+!theme plain
+
+participant "Signal Handler\n(SIGTERM/SIGINT)" as Signal
+participant "Server" as Server
+participant "ServerManagement" as SM
+participant "BackgroundTasks" as BG
+participant "Crons" as Cron
+participant "RuntimeControl" as RC
+participant "SQL" as SQL
+participant "Uvicorn" as Uvicorn
+participant "FastAPI" as FastAPI
+
+' ================== PHASE 1: Shutdown Trigger ==================
+Signal -> Server: Destructor called (__del__)
+activate Server
+
+Server -> Server: log_info("The server is shutting down.")
+
+note right of Server
+    Destructor triggered by:
+    - Process termination signal
+    - Server instance cleanup
+    - Application exit
+end note
+
+Server -> Server: stop_server()
+activate Server
+
+Server -> Server: log_info("Stopping server")
+
+' ================== PHASE 2: Service Cleanup ==================
+Server -> Server: Check if server_management_initialised exists
+activate Server
+
+alt server_management_initialised exists
+    Server -> SM: __del__() via deletion
+    activate SM
+    
+    SM -> SM: log_info("Server sub processes shutting down")
+    
+    ' Check if server is alive
+    SM -> RC: is_server_alive()
+    activate RC
+    RC --> SM: continue_running == True
+    deactivate RC
+    
+    alt Server is alive
+        ' Close database connections
+        SM -> SQL: __del__() via deletion
+        activate SQL
+        SQL -> SQL: Close all connections
+        SQL -> SQL: Commit pending transactions
+        SQL -> SQL: Release connection pool
+        SQL --> SM: Database cleanup complete
+        deactivate SQL
+        
+        note right of SQL
+            Database cleanup:
+            - Close connections
+            - Commit transactions
+            - Release resources
+        end note
+        
+        ' Stop server flag
+        SM -> RC: continue_running = False
+        activate RC
+        RC -> RC: Set shutdown flag
+        RC --> SM: Flag set
+        deactivate RC
+        
+        ' Check if server instance exists
+        SM -> RC: Check if server is not None
+        activate RC
+        RC --> SM: server instance exists
+        deactivate RC
+        
+        alt Server instance exists
+            ' Graceful shutdown
+            SM -> RC: graceful_shutdown()
+            activate RC
+            
+            RC -> Uvicorn: Initiate graceful shutdown
+            activate Uvicorn
+            
+            note right of Uvicorn
+                Graceful shutdown process:
+                1. Stop accepting new requests
+                2. Wait for active requests to complete
+                3. Close keep-alive connections
+                4. Shutdown worker threads
+            end note
+            
+            Uvicorn -> FastAPI: Finish active requests
+            activate FastAPI
+            
+            FastAPI -> FastAPI: Complete in-flight requests
+            FastAPI -> FastAPI: Run shutdown event handlers
+            FastAPI -> FastAPI: Close SSE/WebSocket connections
+            
+            FastAPI --> Uvicorn: All requests completed
+            deactivate FastAPI
+            
+            Uvicorn -> Uvicorn: Close server socket
+            Uvicorn -> Uvicorn: Stop worker processes
+            Uvicorn -> Uvicorn: Release bound port
+            
+            Uvicorn --> RC: Shutdown complete
+            deactivate Uvicorn
+            
+            RC -> RC: server = None
+            RC --> SM: Server cleaned up
+            deactivate RC
+        end
+    end
+    
+    ' Cleanup background tasks
+    SM -> BG: Check if background_tasks_initialised is not None
+    activate BG
+    
+    alt Background tasks exist
+        SM -> BG: __del__() via deletion
+        
+        BG -> BG: Stop accepting new tasks
+        BG -> BG: Signal worker threads to stop
+        
+        ' Stop cron scheduler
+        BG -> Cron: Stop scheduler
+        activate Cron
+        
+        Cron -> Cron: Cancel all scheduled jobs
+        Cron -> Cron: Wait for running jobs to complete
+        Cron -> Cron: Shutdown scheduler thread pool
+        
+        note right of Cron
+            Cron shutdown:
+            - Cancel pending jobs
+            - Complete running jobs
+            - Release scheduler resources
+        end note
+        
+        Cron --> BG: Scheduler stopped
+        deactivate Cron
+        
+        ' Wait for worker completion
+        BG -> BG: Wait for workers to finish current tasks
+        BG -> BG: Join all worker threads
+        BG -> BG: Clear task queue
+        BG -> BG: Release thread pool resources
+        
+        BG --> SM: Background tasks stopped
+        
+        SM -> SM: background_tasks_initialised = None
+    end
+    deactivate BG
+    
+    SM --> Server: ServerManagement cleanup complete
+    deactivate SM
+end
+deactivate Server
+
+' ================== PHASE 3: Crons Cleanup ==================
+Server -> Server: Check if crons_initialised exists
+activate Server
+
+alt crons_initialised exists
+    Server -> Cron: __del__() via deletion
+    activate Cron
+    
+    Cron -> Cron: Shutdown remaining cron jobs
+    Cron -> Cron: Release cron resources
+    
+    Cron --> Server: Crons cleanup complete
+    deactivate Cron
+end
+deactivate Server
+
+' ================== PHASE 4: Final Cleanup ==================
+Server -> Server: log_info("Server stopped")
+
+Server --> Signal: Shutdown complete
+deactivate Server
+deactivate Server
+
+note over Server, SQL
+    Cleanup order guarantees:
+    1. Stop accepting new work
+    2. Complete active requests
+    3. Stop background tasks
+    4. Close database connections
+    5. Release all resources
+    
+    Result: Clean shutdown with no orphaned processes
+end note
+
+@enduml

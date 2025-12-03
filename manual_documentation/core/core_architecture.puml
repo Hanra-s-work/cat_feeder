@@ -1,0 +1,94 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: core_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 15:26:18 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The overview of the classes in the core module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml core_architecture
+!theme plain
+
+package "Core Layer" {
+    class RuntimeManager {
+        {static} -_instances: Dict[str, Any]
+        {static} -_classes: Dict[str, Type]
+        {static} -_thread_locks: Dict[str, Lock]
+        --
+        {static} +set(service, *args, **kwargs): None
+        {static} +get(service, *args, **kwargs): T
+        {static} +exists(service): bool
+        {static} +get_all_instances(): List[Any]
+        {static} +clear(): None
+    }
+
+    class FinalSingleton {
+        {static} -_instances: Dict[type, Self]
+        {static} -_lock: RLock
+        --
+        +__new__(cls, *args, **kwargs): Self
+        +async_init(): None
+        +{abstract} shutdown(): None
+    }
+
+    class FinalClass {
+        <<metaclass>>
+        --
+        +__new__(mcs, name, bases, dct): type
+    }
+
+    class RuntimeControl {
+        {static} -_shutdown_event: Event
+        {static} -_lock: Lock
+        --
+        {static} +signal_shutdown(): None
+        {static} +is_shutting_down(): bool
+        {static} +wait_for_shutdown(timeout): bool
+    }
+
+    RuntimeManager ..> FinalSingleton : manages
+    FinalSingleton --> RuntimeControl : uses
+    FinalClass ..> FinalSingleton : prevents inheritance
+}
+
+note right of RuntimeManager
+    Service Locator Pattern:
+    - Lazy initialization
+    - Thread-safe caching
+    - Named registration
+    - Constructor arg forwarding
+end note
+
+note right of FinalSingleton
+    Protected Construction Pattern:
+    - Prevents direct instantiation
+    - Enforces RuntimeManager usage
+    - Thread-safe singleton creation
+end note
+
+@enduml

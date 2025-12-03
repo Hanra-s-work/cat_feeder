@@ -1,0 +1,426 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: startup_sequence.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 13:42:15 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The overview of the class in charge of starting the server up.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml startup_sequence
+!theme plain
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+
+title Asperguide Backend - Complete Startup Sequence
+
+participant "server_main.py\nEntry Point" as MAIN
+participant "Server\nOrchestrator" as SERVER
+participant "RuntimeManager\nService Locator" as RTMGR
+participant "Core Services\n(RuntimeControl, Headers)" as CORE
+participant "SQL\nDatabase" as SQL
+participant "Redis\nCache" as REDIS
+participant "Bucket\nS3 Storage" as BUCKET
+participant "PathManager\nRoute Registry" as PATHMANAGER
+participant "EndpointManager\nBusiness Logic" as ENDPOINT
+participant "DocumentationHandler\nAPI Docs" as DOCS
+participant "BackgroundTasks\nScheduler" as BGTASKS
+participant "Crons\nMaintenance" as CRONS
+participant "MailManagement\nEmail Service" as MAIL
+participant "OAuthAuthentication\nToken Service" as OAUTH
+participant "FastAPI\nWeb Framework" as FASTAPI
+participant "Uvicorn\nASGI Server" as UVICORN
+
+== Phase 0: Environment Loading ==
+
+MAIN -> MAIN : load_environment()
+note right
+  Loads:
+  • .env file
+  • config.toml
+  • Command-line args
+end note
+
+MAIN -> MAIN : parse_arguments()
+note right
+  Arguments:
+  • --host
+  • --port
+  • --debug
+  • --workers
+end note
+
+== Phase 1: Server Initialization ==
+
+MAIN -> SERVER : **new**(host, port, debug)
+activate SERVER
+
+SERVER -> SERVER : self.app = FastAPI()
+SERVER -> SERVER : self.config = load_config()
+
+note right of SERVER
+  Server created but
+  not yet started.
+  FastAPI app initialized
+  with basic config.
+end note
+
+== Phase 2: Core Services Registration ==
+
+SERVER -> RTMGR : set(RuntimeControl)
+activate RTMGR
+RTMGR -> CORE : **new** RuntimeControl()
+activate CORE
+CORE --> RTMGR : instance
+RTMGR --> SERVER : registered
+deactivate RTMGR
+
+SERVER -> RTMGR : set(ServerHeaders)
+activate RTMGR
+RTMGR -> CORE : **new** ServerHeaders()
+CORE --> RTMGR : instance
+RTMGR --> SERVER : registered
+deactivate RTMGR
+deactivate CORE
+
+note right of RTMGR
+  Core services registered
+  but not yet initialized.
+  Lazy initialization pattern.
+end note
+
+== Phase 3: Data Layer Initialization ==
+
+SERVER -> RTMGR : get(SQL)
+activate RTMGR
+RTMGR -> SQL : **new**()
+activate SQL
+
+SQL -> SQL : __init__()
+note right: Load DB config
+
+alt async_init exists
+    RTMGR -> SQL : async_init()
+    SQL -> SQL : create_engine()
+    SQL -> SQL : test_connection()
+    
+    alt Connection Success
+        SQL --> RTMGR : instance (connected)
+    else Connection Failed
+        SQL --> RTMGR : RuntimeError
+        RTMGR --> SERVER : RuntimeError
+        SERVER -> SERVER : log_error()
+        SERVER --> MAIN : Exit(84)
+        MAIN -> MAIN : sys.exit(84)
+        note right: **FATAL: Cannot start\nwithout database**
+    end
+end
+
+RTMGR --> SERVER : SQL instance
+deactivate RTMGR
+deactivate SQL
+
+SERVER -> RTMGR : get(Redis)
+activate RTMGR
+RTMGR -> REDIS : **new**()
+activate REDIS
+
+REDIS -> REDIS : __init__()
+note right: Load Redis config
+
+alt async_init exists
+    RTMGR -> REDIS : async_init()
+    REDIS -> REDIS : connect()
+    REDIS -> REDIS : ping()
+    
+    alt Connection Success
+        REDIS --> RTMGR : instance (connected)
+    else Connection Failed
+        REDIS --> RTMGR : RuntimeError
+        RTMGR --> SERVER : RuntimeError
+        SERVER -> SERVER : log_warning()
+        note right: Non-fatal,\ncontinue without cache
+    end
+end
+
+RTMGR --> SERVER : Redis instance
+deactivate RTMGR
+deactivate REDIS
+
+SERVER -> RTMGR : get(Bucket)
+activate RTMGR
+RTMGR -> BUCKET : **new**()
+activate BUCKET
+
+BUCKET -> BUCKET : __init__()
+note right: Load S3 config
+
+alt async_init exists
+    RTMGR -> BUCKET : async_init()
+    BUCKET -> BUCKET : connect_s3()
+    BUCKET -> BUCKET : verify_buckets()
+    
+    alt Connection Success
+        BUCKET --> RTMGR : instance (connected)
+    else Connection Failed
+        BUCKET --> RTMGR : RuntimeError
+        RTMGR --> SERVER : RuntimeError
+        SERVER -> SERVER : log_warning()
+        note right: Non-fatal,\nfile upload disabled
+    end
+end
+
+RTMGR --> SERVER : Bucket instance
+deactivate RTMGR
+deactivate BUCKET
+
+note right of SERVER
+  **Data Layer Ready:**
+  • SQL: Connected (required)
+  • Redis: Optional cache
+  • Bucket: Optional storage
+end note
+
+== Phase 4: Application Layer Initialization ==
+
+SERVER -> RTMGR : get(PathManager)
+activate RTMGR
+RTMGR -> PATHMANAGER : **new**()
+activate PATHMANAGER
+PATHMANAGER -> PATHMANAGER : __init__()
+PATHMANAGER --> RTMGR : instance
+RTMGR --> SERVER : PathManager instance
+deactivate RTMGR
+
+note right of PATHMANAGER
+  PathManager created but
+  routes not yet registered.
+end note
+
+SERVER -> RTMGR : get(EndpointManager)
+activate RTMGR
+RTMGR -> ENDPOINT : **new**()
+activate ENDPOINT
+
+ENDPOINT -> ENDPOINT : __init__()
+ENDPOINT -> RTMGR : get(PathManager)
+RTMGR --> ENDPOINT : PathManager instance
+ENDPOINT -> RTMGR : get(OAuthAuthentication)
+RTMGR --> ENDPOINT : OAuth instance
+
+ENDPOINT -> ENDPOINT : register_routes()
+
+loop for each endpoint
+    ENDPOINT -> PATHMANAGER : add_path(route, handler, methods)
+    activate PATHMANAGER
+    PATHMANAGER -> PATHMANAGER : store route config
+    PATHMANAGER --> ENDPOINT : registered
+    deactivate PATHMANAGER
+end
+
+ENDPOINT --> RTMGR : instance
+RTMGR --> SERVER : EndpointManager instance
+deactivate RTMGR
+deactivate ENDPOINT
+
+note right of PATHMANAGER
+  **Routes Registered:**
+  • /api/users/*
+  • /api/auth/*
+  • /api/resources/*
+  • etc.
+  (not yet injected into FastAPI)
+end note
+
+SERVER -> RTMGR : get(DocumentationHandler)
+activate RTMGR
+RTMGR -> DOCS : **new**()
+activate DOCS
+
+DOCS -> DOCS : __init__()
+DOCS -> RTMGR : get(PathManager)
+RTMGR --> DOCS : PathManager instance
+
+DOCS -> DOCS : register_doc_providers()
+
+loop for each doc provider (Swagger, ReDoc, RapiDoc)
+    DOCS -> PATHMANAGER : add_path(doc_route, handler, ["GET"])
+    activate PATHMANAGER
+    PATHMANAGER -> PATHMANAGER : store doc route
+    PATHMANAGER --> DOCS : registered
+    deactivate PATHMANAGER
+end
+
+DOCS --> RTMGR : instance
+RTMGR --> SERVER : DocumentationHandler instance
+deactivate RTMGR
+deactivate DOCS
+
+note right of PATHMANAGER
+  **Documentation Routes:**
+  • /docs (Swagger UI)
+  • /redoc (ReDoc)
+  • /rapidoc (RapiDoc)
+end note
+
+== Phase 5: Service Layer Initialization ==
+
+SERVER -> RTMGR : get(BackgroundTasks)
+activate RTMGR
+RTMGR -> BGTASKS : **new**()
+activate BGTASKS
+BGTASKS -> BGTASKS : __init__()
+BGTASKS -> BGTASKS : initialize_scheduler()
+BGTASKS --> RTMGR : instance
+RTMGR --> SERVER : BackgroundTasks instance
+deactivate RTMGR
+deactivate BGTASKS
+
+SERVER -> RTMGR : get(Crons)
+activate RTMGR
+RTMGR -> CRONS : **new**()
+activate CRONS
+CRONS -> CRONS : __init__()
+CRONS -> RTMGR : get(BackgroundTasks)
+RTMGR --> CRONS : BackgroundTasks instance
+CRONS -> BGTASKS : schedule_jobs()
+activate BGTASKS
+BGTASKS -> BGTASKS : add_job(cleanup, "0 2 * * *")
+BGTASKS -> BGTASKS : add_job(health_check, "*/5 * * * *")
+BGTASKS --> CRONS : scheduled
+deactivate BGTASKS
+CRONS --> RTMGR : instance
+RTMGR --> SERVER : Crons instance
+deactivate RTMGR
+deactivate CRONS
+
+SERVER -> RTMGR : get(MailManagement)
+activate RTMGR
+RTMGR -> MAIL : **new**()
+activate MAIL
+MAIL -> MAIL : __init__()
+MAIL -> MAIL : configure_smtp()
+MAIL --> RTMGR : instance
+RTMGR --> SERVER : MailManagement instance
+deactivate RTMGR
+deactivate MAIL
+
+SERVER -> RTMGR : get(OAuthAuthentication)
+activate RTMGR
+RTMGR -> OAUTH : **new**()
+activate OAUTH
+OAUTH -> OAUTH : __init__()
+OAUTH -> OAUTH : load_jwt_keys()
+OAUTH --> RTMGR : instance
+RTMGR --> SERVER : OAuthAuthentication instance
+deactivate RTMGR
+deactivate OAUTH
+
+note right of SERVER
+  **All Services Initialized:**
+  • Background scheduler running
+  • Cron jobs scheduled
+  • Email service ready
+  • OAuth configured
+end note
+
+== Phase 6: Route Injection ==
+
+SERVER -> PATHMANAGER : inject_into_fastapi(app)
+activate PATHMANAGER
+
+loop for each registered route
+    PATHMANAGER -> FASTAPI : app.add_api_route(path, handler, methods)
+    activate FASTAPI
+    FASTAPI -> FASTAPI : register route internally
+    FASTAPI --> PATHMANAGER : registered
+    deactivate FASTAPI
+end
+
+PATHMANAGER --> SERVER : all routes injected
+deactivate PATHMANAGER
+
+note right of FASTAPI
+  **FastAPI Routes Active:**
+  • Business endpoints
+  • Documentation endpoints
+  • Health check endpoints
+  • All ready to serve
+end note
+
+== Phase 7: Server Startup ==
+
+deactivate SERVER
+
+MAIN -> SERVER : run()
+activate SERVER
+
+SERVER -> CORE : apply_middleware()
+activate CORE
+CORE -> FASTAPI : add_middleware(CORSMiddleware)
+CORE -> FASTAPI : add_middleware(SecurityHeaders)
+CORE --> SERVER : middleware applied
+deactivate CORE
+
+SERVER -> BGTASKS : start()
+activate BGTASKS
+BGTASKS -> BGTASKS : scheduler.start()
+BGTASKS --> SERVER : scheduler running
+deactivate BGTASKS
+
+SERVER -> UVICORN : uvicorn.run(app, host, port)
+activate UVICORN
+
+UVICORN -> FASTAPI : startup_event()
+activate FASTAPI
+FASTAPI --> UVICORN : ready
+deactivate FASTAPI
+
+UVICORN -> UVICORN : bind_socket()
+UVICORN -> UVICORN : start_workers()
+
+UVICORN --> SERVER : server running
+note right of UVICORN
+  **Server Running:**
+  Listening on {host}:{port}
+  Workers: {worker_count}
+  Debug: {debug_mode}
+end note
+
+deactivate UVICORN
+deactivate SERVER
+
+MAIN -> MAIN : log("Server started successfully")
+
+note right of MAIN
+  **Startup Complete!**
+  System is now accepting
+  HTTP requests.
+end note
+
+@enduml

@@ -1,0 +1,75 @@
+/* 
+* +==== BEGIN AsperBackend =================+
+* LOGO: 
+* ..........####...####..........
+* ......###.....#.#########......
+* ....##........#.###########....
+* ...#..........#.############...
+* ...#..........#.#####.######...
+* ..#.....##....#.###..#...####..
+* .#.....#.##...#.##..##########.
+* #.....##########....##...######
+* #.....#...##..#.##..####.######
+* .#...##....##.#.##..###..#####.
+* ..#.##......#.#.####...######..
+* ..#...........#.#############..
+* ..#...........#.#############..
+* ...##.........#.############...
+* ......#.......#.#########......
+* .......#......#.########.......
+* .........#####...#####.........
+* /STOP
+* PROJECT: AsperBackend
+* FILE: backend-server.code-workspace
+* CREATION DATE: 22-11-2025
+* LAST Modified: 20:16:55 22-11-2025
+* DESCRIPTION: 
+* This is the backend server in charge of making the actual website work.
+* /STOP
+* COPYRIGHT: (c) Asperguide
+* PURPOSE: 
+* // AR
+* +==== END AsperBackend =================+
+*/
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"asperheader.enableDebug": false,
+		"asperheader.extensionIgnore": [
+			"*.code-workspace",
+			"python.version",
+			"settings.json"
+		],
+		"asperheader.promptToCreateIfMissing": true,
+		"asperheader.useWorkspaceNameWhenAvailable": false,
+		"asperheader.projectDescription": "This is the backend server in charge of making the actual website work.",
+		"asperheader.extensionName": "AsperBackend",
+		"files.associations": {
+			"*.cnf": "nginx" // This is for linting purposes, the comments in both file types are the same.
+		}
+	},
+	"extensions": {
+		"recommendations": [
+			"henryletellier.asperheader",
+			"njpwerner.autodocstring",
+			"ms-python.autopep8",
+			"shakram02.bash-beautify",
+			"mikestead.dotenv",
+			"tamasfe.even-better-toml",
+			"ms-python.isort",
+			"william-voyek.vscode-nginx",
+			"ahmadalli.vscode-nginx-conf",
+			"christian-kohler.path-intellisense",
+			"ms-python.vscode-pylance",
+			"ms-python.pylint",
+			"ms-python.python",
+			"ms-python.debugpy",
+			"ms-python.vscode-python-envs",
+			"mimarec.swagger-doc-viewer"
+		]
+	}
+}

@@ -1,0 +1,38 @@
+# 
+# +==== BEGIN AsperBackend =================+
+# LOGO: 
+# ..........####...####..........
+# ......###.....#.#########......
+# ....##........#.###########....
+# ...#..........#.############...
+# ...#..........#.#####.######...
+# ..#.....##....#.###..#...####..
+# .#.....#.##...#.##..##########.
+# #.....##########....##...######
+# #.....#...##..#.##..####.######
+# .#...##....##.#.##..###..#####.
+# ..#.##......#.#.####...######..
+# ..#...........#.#############..
+# ..#...........#.#############..
+# ...##.........#.############...
+# ......#.......#.#########......
+# .......#......#.########.......
+# .........#####...#####.........
+# /STOP
+# PROJECT: AsperBackend
+# FILE: requirements.testing.txt
+# CREATION DATE: 11-10-2025
+# LAST Modified: 16:22:48 11-10-2025
+# DESCRIPTION: 
+# This is the backend server in charge of making the actual website work.
+# /STOP
+# COPYRIGHT: (c) Asperguide
+# PURPOSE: The dependencies required to be able to run tests on the server.
+# // AR
+# +==== END AsperBackend =================+
+# 
+# Libraries for testing
+-r test/requirements.testing.txt
+
+# Libraries for coverage
+-r test/requirements.coverage.txt

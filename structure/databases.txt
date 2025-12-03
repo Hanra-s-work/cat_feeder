@@ -1,0 +1,64 @@
+USERS
+    id
+    email
+    password
+    firstname
+    lastname
+    age
+    avatar_url
+    role
+    created_at
+
+SUBSCRIPTIONS
+    id
+    user_id
+    plan_id
+    status
+    start_date
+    end_date
+
+PLANS
+    id
+    name
+    price
+    description
+    features
+
+CONTENTS
+    id
+    title
+    type
+    category
+    description
+    url
+    age_min
+    rewaards_points
+    created_at
+
+USER_PROGRESS
+    id
+    user_id
+    content_id
+    status
+    completed_at
+    points_earned
+
+GUIDE
+    id
+    title
+    description
+    steps
+    created_at
+
+REWARDS
+    id
+    title
+    description
+    image_url
+    points_required
+
+USER_REWARDS
+    id
+    user_id
+    reward_id
+    earned_at

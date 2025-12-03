@@ -1,0 +1,38 @@
+# 
+# +==== BEGIN AsperBackend =================+
+# LOGO: 
+# ..........####...####..........
+# ......###.....#.#########......
+# ....##........#.###########....
+# ...#..........#.############...
+# ...#..........#.#####.######...
+# ..#.....##....#.###..#...####..
+# .#.....#.##...#.##..##########.
+# #.....##########....##...######
+# #.....#...##..#.##..####.######
+# .#...##....##.#.##..###..#####.
+# ..#.##......#.#.####...######..
+# ..#...........#.#############..
+# ..#...........#.#############..
+# ...##.........#.############...
+# ......#.......#.#########......
+# .......#......#.########.......
+# .........#####...#####.........
+# /STOP
+# PROJECT: AsperBackend
+# FILE: requirements.database.txt
+# CREATION DATE: 11-10-2025
+# LAST Modified: 17:18:56 11-10-2025
+# DESCRIPTION: 
+# This is the backend server in charge of making the actual website work.
+# /STOP
+# COPYRIGHT: (c) Asperguide
+# PURPOSE: The dependencies required to handle connections to a database.
+# // AR
+# +==== END AsperBackend =================+
+# 
+# database management
+mysql-connector-python ==9.5.0
+
+# The redis dependencies
+-r ./requirements.redis.txt

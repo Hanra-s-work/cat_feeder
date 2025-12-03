@@ -1,0 +1,38 @@
+# 
+# +==== BEGIN AsperBackend =================+
+# LOGO: 
+# ..........####...####..........
+# ......###.....#.#########......
+# ....##........#.###########....
+# ...#..........#.############...
+# ...#..........#.#####.######...
+# ..#.....##....#.###..#...####..
+# .#.....#.##...#.##..##########.
+# #.....##########....##...######
+# #.....#...##..#.##..####.######
+# .#...##....##.#.##..###..#####.
+# ..#.##......#.#.####...######..
+# ..#...........#.#############..
+# ..#...........#.#############..
+# ...##.........#.############...
+# ......#.......#.#########......
+# .......#......#.########.......
+# .........#####...#####.........
+# /STOP
+# PROJECT: AsperBackend
+# FILE: requirements.security.txt
+# CREATION DATE: 11-10-2025
+# LAST Modified: 1:4:11 03-11-2025
+# DESCRIPTION: 
+# This is the backend server in charge of making the actual website work.
+# /STOP
+# COPYRIGHT: (c) Asperguide
+# PURPOSE: The dependencies required for processing security elements like pasword hashing or dotenv loading.
+# // AR
+# +==== END AsperBackend =================+
+# 
+# For hashing passwords
+bcrypt ==5.0.0
+
+# For getting .env files
+dotenv-python == 0.0.1

@@ -1,0 +1,235 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: fffamily_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:43:21 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The Architectural overview of the ff family downloader module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml fffamily_architecture
+!theme plain
+allowmixing
+
+title FFmpeg Family Module Architecture
+
+package "FFmpeg Family Module" {
+    class FFMPEGDownloader {
+        + available_binaries: List[str]
+        - cwd: str
+        - error: int
+        - debug: bool
+        - success: int
+        - file_url: str | None
+        - file_path: str | None
+        - fold_path: str | None
+        - query_timeout: int
+        - new_folder_path: str | None
+        - extracted_folder: str | None
+        - system: str
+        - architecture: str
+        --
+        + __init__(cwd, query_timeout, success, error, debug)
+        + main(): int
+        {static} + get_ffmpeg_binary_path(...): str
+        {static} + get_ffprobe_binary_path(...): str
+        {static} + get_ffplay_binary_path(...): str
+        {static} + get_ff_family_path(...): str
+        {static} + get_system_name(): str
+        {static} + get_platform(): str
+        {static} + generate_audio_sample(tone): AudioSegment
+        {static} + process_file_path(*args, cwd): str
+        {static} - _download_file(file_url, file_path, timeout): None
+        {static} - _create_path_if_not_exists(path): None
+        {static} - _grant_executable_rights(file_path): None
+        {static} - _rename_extracted_folder(old, new): None
+    }
+
+    class "ff_constants" as Constants {
+        + FFMPEG_KEY: str
+        + FFPROBE_KEY: str
+        + FFPLAY_KEY: str
+        + WINDOWS_KEY: str
+        + LINUX_KEY: str
+        + MAC_KEY: str
+        + FILE_URL_TOKEN: str
+        + FFMPEG_URLS: Dict[str, str]
+        --
+        + process_file_path(*args, cwd): str
+    }
+
+    package "Exceptions" {
+        class ArchitectureNotSupported {
+            <<exception>>
+        }
+
+        class PackageNotInstalled {
+            <<exception>>
+        }
+
+        class PackageNotSupported {
+            <<exception>>
+        }
+    }
+}
+
+package "Python Standard Library" {
+    class platform {
+        {static} + system(): str
+        {static} + architecture(): tuple
+    }
+
+    class os {
+        {static} + getcwd(): str
+        {static} + path.exists(path): bool
+        {static} + path.isfile(path): bool
+        {static} + makedirs(path, exist_ok): None
+        {static} + chmod(path, mode): None
+    }
+
+    class shutil {
+        {static} + move(src, dst): None
+    }
+
+    class zipfile {
+        + ZipFile
+        + extractall(): None
+    }
+
+    class tarfile {
+        + TarFile
+        + extractall(): None
+    }
+
+    class subprocess {
+        {static} + run(cmd, ...): CompletedProcess
+    }
+}
+
+package "External Libraries" {
+    class requests {
+        {static} + get(url, timeout): Response
+    }
+
+    package "pydub" {
+        class AudioSegment {
+            {static} + converter: str
+            {static} + ffprobe: str
+            --
+            + export(filename, format): None
+        }
+
+        class playback {
+            {static} + play(audio): None
+        }
+    }
+
+    class pathlib {
+        + Path
+        + resolve(): Path
+    }
+}
+
+package "Core Modules" {
+    class FinalClass {
+        <<metaclass>>
+    }
+}
+
+package "File System" {
+    database "Binary Storage" as Storage
+    database "Downloaded Archives" as Archives
+}
+
+node "External Sources" {
+    component "FFmpeg Official" as FFmpegSource
+}
+
+' Relationships
+FFMPEGDownloader ..|> FinalClass : <<uses metaclass>>
+FFMPEGDownloader --> Constants : uses
+FFMPEGDownloader ..> ArchitectureNotSupported : throws
+FFMPEGDownloader ..> PackageNotInstalled : throws
+FFMPEGDownloader ..> PackageNotSupported : throws
+
+FFMPEGDownloader --> platform : detects system
+FFMPEGDownloader --> os : manages files
+FFMPEGDownloader --> shutil : moves files
+FFMPEGDownloader --> zipfile : extracts archives
+FFMPEGDownloader --> tarfile : extracts archives
+FFMPEGDownloader --> requests : downloads files
+FFMPEGDownloader --> pathlib : resolves paths
+FFMPEGDownloader ..> AudioSegment : generates
+FFMPEGDownloader ..> subprocess : executes binaries
+
+requests ..> FFmpegSource : downloads from
+FFMPEGDownloader ..> Archives : saves to
+FFMPEGDownloader ..> Storage : extracts to
+AudioSegment ..> Storage : uses binaries from
+
+' Flow annotations
+FFMPEGDownloader -[#blue]-> requests : 1. Download
+requests -[#blue]-> Archives : 2. Save
+Archives -[#blue]-> zipfile : 3. Extract
+zipfile -[#blue]-> Storage : 4. Place
+FFMPEGDownloader -[#blue]-> Storage : 5. Configure
+
+note right of FFMPEGDownloader
+  Cross-platform binary manager
+  that automatically downloads,
+  extracts, and configures FFmpeg
+  family binaries (ffmpeg, ffprobe,
+  ffplay) for Windows, Linux, and macOS.
+  
+  Eliminates manual installation.
+end note
+
+note bottom of Storage
+  Organized by platform:
+  - windows/
+  - linux/
+  - darwin/
+  
+  Each contains the three
+  binaries for that platform.
+end note
+
+note top of FFmpegSource
+  Official FFmpeg static builds
+  from ffmpeg.org and authorized
+  distributors
+end note
+
+' Platform-specific paths
+note as N1
+  **Platform Detection**
+  - Windows: ffmpeg.exe, ffprobe.exe, ffplay.exe
+  - Linux: ffmpeg, ffprobe, ffplay (chmod 755)
+  - macOS: ffmpeg, ffprobe, ffplay (chmod 755)
+end note
+
+@enduml

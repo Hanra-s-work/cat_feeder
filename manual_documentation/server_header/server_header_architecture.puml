@@ -1,0 +1,225 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: server_header_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:26:13 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: An overview of the architecture of the Server header module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml server_header_architecture
+!theme plain
+
+title Server Header Module Architecture
+
+package "Server Header Module" {
+    class ServerHeaders <<Final>> {
+        - disp: Disp
+        - host: str
+        - port: int
+        - app_name: str
+        - error: int
+        - success: int
+        - debug: bool
+        
+        + __init__(host, port, app_name, error, success, debug)
+        
+        ' Base functionality
+        - _get_app_name_str(): str
+        - _base_security_headers(): Dict[str, str]
+        
+        ' Dynamic content (no cache)
+        + for_json(): Dict[str, str]
+        + for_text(): Dict[str, str]
+        + for_html(): Dict[str, str]
+        + for_xml(): Dict[str, str]
+        + for_form_data(): Dict[str, str]
+        + for_streaming(): Dict[str, str]
+        
+        ' Static assets (long cache)
+        + for_css(): Dict[str, str]
+        + for_javascript(): Dict[str, str]
+        
+        ' Media files (medium cache)
+        + for_image(): Dict[str, str]
+        + for_video(): Dict[str, str]
+        + for_audio(): Dict[str, str]
+        
+        ' Downloadable files (short cache)
+        + for_file(filename): Dict[str, str]
+        + for_pdf(filename, inline): Dict[str, str]
+        + for_csv(filename): Dict[str, str]
+    }
+
+    class server_header_constants <<module>> {
+        ' Custom headers
+        + HEADER_APP_NAME: str
+        
+        ' Caching headers
+        + CACHE_CONTROL: str
+        + PRAGMA: str
+        + EXPIRES: str
+        
+        ' Content headers
+        + CONTENT_DISPOSITION: str
+        + ACCEPT_RANGES: str
+        
+        ' Privacy headers
+        + REFERRER_POLICY: str
+        
+        ' Security headers
+        + CONTENT_SECURITY_POLICY: str
+        + CONTENT_TYPE: str
+        + FRAME_OPTIONS: str
+        + XSS_PROTECTION: str
+    }
+}
+
+package "Security Features" {
+    class "Base Security" {
+        + X-Content-Type-Options: nosniff
+        + X-Frame-Options: DENY
+        + X-XSS-Protection: 1; mode=block
+        + Referrer-Policy: strict-origin-when-cross-origin
+        + app_sender: <app_name>
+    }
+    
+    class "HTML Security" extends "Base Security" {
+        + Content-Security-Policy
+        - default-src 'self'
+        - script-src 'self' 'unsafe-inline' CDN
+        - style-src 'self' 'unsafe-inline'
+        - img-src 'self' data: https:
+        - font-src 'self' data:
+    }
+}
+
+package "Caching Strategies" {
+    class "No Cache" {
+        Cache-Control: no-cache, no-store, must-revalidate
+        Pragma: no-cache
+        Expires: 0
+        ---
+        for_json()
+        for_text()
+        for_html()
+        for_xml()
+        for_form_data()
+        for_streaming()
+    }
+    
+    class "Long Cache (1 year)" {
+        Cache-Control: public, max-age=31536000, immutable
+        ---
+        for_css()
+        for_javascript()
+    }
+    
+    class "Medium Cache (24h)" {
+        Cache-Control: public, max-age=86400
+        ---
+        for_image()
+        for_video()
+        for_audio()
+    }
+    
+    class "Short Cache (1h)" {
+        Cache-Control: public, max-age=3600
+        ---
+        for_file()
+        for_pdf()
+        for_csv()
+    }
+}
+
+package "Integration Points" {
+    class HttpCodes {
+        + ok(content, headers): Response
+        + created(content, headers): Response
+        + ...
+    }
+    
+    class BoilerplateResponses {
+        - server_headers: ServerHeaders
+        + success_response(): Response
+        + error_response(): Response
+    }
+    
+    class RuntimeManager {
+        + get(ServerHeaders): ServerHeaders
+        + set(ServerHeaders, **kwargs): None
+    }
+}
+
+' Relationships
+ServerHeaders --> server_header_constants : imports
+ServerHeaders --> "Base Security" : generates
+ServerHeaders --> "HTML Security" : generates (HTML only)
+ServerHeaders --> "No Cache" : strategy
+ServerHeaders --> "Long Cache (1 year)" : strategy
+ServerHeaders --> "Medium Cache (24h)" : strategy
+ServerHeaders --> "Short Cache (1h)" : strategy
+
+HttpCodes ..> ServerHeaders : uses headers
+BoilerplateResponses --> ServerHeaders : depends on
+RuntimeManager ..> ServerHeaders : manages instance
+
+note right of ServerHeaders
+    All methods return:
+    Dict[str, str] containing
+    security + caching headers
+    
+    Base security always included
+    Caching varies by content type
+end note
+
+note bottom of "Base Security"
+    Applied to ALL responses
+    Protects against:
+    - MIME sniffing
+    - Clickjacking
+    - XSS attacks
+    - Referrer leakage
+end note
+
+note bottom of "No Cache"
+    For dynamic content that
+    changes frequently:
+    - API responses
+    - User-specific data
+    - Real-time updates
+end note
+
+note bottom of "Long Cache (1 year)"
+    For versioned static assets:
+    - app.v123.js
+    - styles.abc456.css
+    
+    Immutable = never changes
+end note
+
+@enduml

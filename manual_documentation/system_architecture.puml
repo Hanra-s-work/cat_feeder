@@ -1,0 +1,236 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: system_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 13:41:55 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The overview of the system architecture for the backend program.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml system_architecture
+!theme plain
+
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+title Asperguide Backend - Complete System Architecture
+
+' ============================================================
+' EXTERNAL LAYER
+' ============================================================
+package "External Layer" #F0F0F0 {
+    [FastAPI Framework] as FAPI
+    [Uvicorn ASGI Server] as UVI
+    database "MariaDB" as MARIADB
+    database "Redis Cache" as REDISDB
+    database "MinIO S3 Storage" as MINIO
+}
+
+' ============================================================
+' ENTRY POINT
+' ============================================================
+package "Entry Point Layer" #E8F4F8 {
+    [server_main.py] as MAIN
+}
+
+' ============================================================
+' APPLICATION LAYER
+' ============================================================
+package "Application Layer" #D4E6F1 {
+    component "Server\n(Orchestrator)" as SERVER
+    component "PathManager\n(Route Registry)" as PATHMANAGER
+    component "EndpointManager\n(Business Logic)" as ENDPOINTMGR
+    component "DocumentationHandler\n(API Docs)" as DOCHANDLER
+}
+
+' ============================================================
+' SERVICE LAYER
+' ============================================================
+package "Service Layer" #D5F4E6 {
+    component "BackgroundTasks\n(APScheduler)" as BGTASKS
+    component "Crons\n(Scheduled Jobs)" as CRONS
+    component "MailManagement\n(Email Service)" as MAIL
+    component "OAuthAuthentication\n(Token Validation)" as OAUTH
+}
+
+' ============================================================
+' DATA LAYER
+' ============================================================
+package "Data Layer" #FCF3CF {
+    component "SQL\n(Database ORM)" as SQL
+    component "Redis\n(Cache Manager)" as REDIS
+    component "Bucket\n(S3 Interface)" as BUCKET
+}
+
+' ============================================================
+' CORE LAYER
+' ============================================================
+package "Core Layer" #FADBD8 {
+    component "RuntimeManager\n(Service Locator)" as RTMGR
+    component "RuntimeControl\n(Lifecycle Manager)" as RTCTRL
+    component "FinalSingleton\n(Base Class)" as FINALSINGLETON
+    component "FinalClass\n(Metaclass)" as FINALCLASS
+}
+
+' ============================================================
+' UTILITY LAYER
+' ============================================================
+package "Utility Layer" #E8DAEF {
+    component "ServerHeaders\n(CORS/Security)" as HEADERS
+    component "BoilerplateResponses\n(Response Builder)" as BPRESP
+    component "BoilerplateIncoming\n(Request Validator)" as BPINC
+    component "HttpCodes\n(Status Codes)" as HTTPCODES
+    component "PasswordHandling\n(Hashing)" as PASSWORD
+    component "ServerManagement\n(Utilities)" as SRVMGMT
+}
+
+' ============================================================
+' RELATIONSHIPS - ENTRY POINT
+' ============================================================
+MAIN --> SERVER : creates\ninitializes
+
+' ============================================================
+' RELATIONSHIPS - SERVER TO CORE
+' ============================================================
+SERVER --> RTMGR : registers all\nservices via
+SERVER --> RTCTRL : registers
+SERVER --> HEADERS : registers
+
+' ============================================================
+' RELATIONSHIPS - SERVER TO DATA LAYER
+' ============================================================
+SERVER --> SQL : initializes
+SERVER --> REDIS : initializes
+SERVER --> BUCKET : initializes
+
+' ============================================================
+' RELATIONSHIPS - SERVER TO APPLICATION LAYER
+' ============================================================
+SERVER --> PATHMANAGER : creates
+SERVER --> ENDPOINTMGR : initializes
+SERVER --> DOCHANDLER : initializes
+
+' ============================================================
+' RELATIONSHIPS - SERVER TO SERVICE LAYER
+' ============================================================
+SERVER --> BGTASKS : initializes
+SERVER --> CRONS : initializes
+SERVER --> MAIL : initializes
+SERVER --> OAUTH : initializes
+
+' ============================================================
+' RELATIONSHIPS - APPLICATION LAYER
+' ============================================================
+ENDPOINTMGR --> PATHMANAGER : registers\nroutes to
+DOCHANDLER --> PATHMANAGER : registers\ndoc routes to
+PATHMANAGER --> FAPI : configures
+
+' ============================================================
+' RELATIONSHIPS - DATA LAYER INTERACTIONS
+' ============================================================
+SQL --> MARIADB : connects to
+REDIS --> REDISDB : connects to
+BUCKET --> MINIO : connects to
+SQL ..> REDIS : uses for\ncaching
+REDIS ..> SQL : cache\ninvalidation
+
+' ============================================================
+' RELATIONSHIPS - SERVICE LAYER INTERACTIONS
+' ============================================================
+ENDPOINTMGR --> OAUTH : validates\ntokens via
+ENDPOINTMGR --> PASSWORD : validates\npasswords via
+ENDPOINTMGR ..> SQL : queries via
+CRONS --> BGTASKS : schedules\njobs via
+CRONS ..> SQL : maintenance\noperations
+MAIL ..> SQL : fetches\nrecipients
+
+' ============================================================
+' RELATIONSHIPS - CORE LAYER
+' ============================================================
+RTMGR --> FINALSINGLETON : manages\ninstances
+FINALSINGLETON <|-- SQL : extends
+FINALSINGLETON <|-- REDIS : extends
+FINALSINGLETON <|-- BUCKET : extends
+FINALSINGLETON <|-- ENDPOINTMGR : extends
+FINALSINGLETON <|-- OAUTH : extends
+
+FINALCLASS ..> RTMGR : prevents\ninheritance
+FINALCLASS <|-- PASSWORD : uses
+FINALCLASS <|-- HTTPCODES : uses
+
+' ============================================================
+' RELATIONSHIPS - UTILITY LAYER USAGE
+' ============================================================
+ENDPOINTMGR --> BPRESP : builds\nresponses
+ENDPOINTMGR --> BPINC : validates\nrequests
+ENDPOINTMGR --> HTTPCODES : uses status\ncodes
+SERVER --> HEADERS : configures
+
+' ============================================================
+' RELATIONSHIPS - RUNTIME EXECUTION
+' ============================================================
+SERVER --> UVI : runs via
+UVI --> FAPI : serves
+
+' ============================================================
+' NOTES
+' ============================================================
+note right of RTMGR
+  Service Locator Pattern:
+  - Lazy initialization
+  - Thread-safe access
+  - Singleton enforcement
+  - Centralized lifecycle
+end note
+
+note right of PATHMANAGER
+  Deferred Registration:
+  - Routes registered before
+    FastAPI initialization
+  - Decouples business logic
+    from web framework
+end note
+
+note bottom of SQL
+  Data Layer:
+  - Connection pooling
+  - ORM abstraction
+  - Redis caching layer
+  - Async operations
+end note
+
+note right of ENDPOINTMGR
+  Business Logic:
+  - Route handlers
+  - Authentication
+  - Authorization
+  - Request validation
+end note
+
+@enduml

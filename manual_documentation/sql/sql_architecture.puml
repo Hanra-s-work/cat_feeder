@@ -1,0 +1,119 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: sql_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:25:29 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: An overview of the architecture for the SQL module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml sql_architecture
+!theme plain
+
+package "SQL Module" {
+    class SQL {
+        {static} +disp: Disp
+        -sql_manage_connections: SQLManageConnections
+        -sql_time_manipulation: SQLTimeManipulation
+        -sql_cache_orchestrator: SQLCacheOrchestrator
+        --
+        +__init__(url, port, username, password, db_name)
+        +create(url, port, username, password, db_name): SQL
+        +get_data_from_table(...): List[Dict]
+        +update_data_in_table(...): int
+        +insert_data_into_table(...): int
+        +delete_data_from_table(...): int
+        +check_if_data_exists(...): bool
+        +shutdown(): None
+    }
+
+    class SQLManageConnections {
+        -pool: ConnectionPool
+        -url: str
+        -port: int
+        -username: str
+        -password: str
+        -db_name: str
+        --
+        +execute_query(query, params): Result
+        +get_connection(): Connection
+        +close_all(): None
+    }
+
+    class SQLCacheOrchestrator {
+        -redis_cache: RedisCaching
+        -sql_manager: SQL
+        --
+        +get_cached_or_fetch(...): Any
+        +invalidate_table_cache(table): None
+    }
+
+    class SQLQueryBoilerplates {
+        +build_select_query(...): str
+        +build_insert_query(...): str
+        +build_update_query(...): str
+        +build_delete_query(...): str
+    }
+
+    class SQLTimeManipulation {
+        +convert_to_sql_datetime(dt): str
+        +convert_from_sql_datetime(s): datetime
+        +get_current_sql_timestamp(): str
+    }
+
+    class RedisCaching {
+        -client: Redis
+        --
+        +get_data_from_table(...): Any
+        +invalidate(pattern): None
+        +set(key, value, ttl): None
+    }
+
+    SQL *-- SQLManageConnections
+    SQL *-- SQLCacheOrchestrator
+    SQL *-- SQLQueryBoilerplates
+    SQL *-- SQLTimeManipulation
+    SQLCacheOrchestrator --> RedisCaching
+}
+
+note right of SQL
+    FinalClass metaclass:
+    - Not a singleton (no FinalSingleton)
+    - Can have multiple instances
+    - Used via RuntimeManager
+    - Prevents inheritance
+end note
+
+note right of SQLCacheOrchestrator
+    Caching Strategy:
+    - Write-through cache
+    - Redis-backed
+    - Automatic invalidation
+    - TTL-based expiration
+end note
+
+@enduml

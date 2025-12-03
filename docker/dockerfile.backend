@@ -1,0 +1,254 @@
+#!
+#
+# 
+# +==== BEGIN AsperBackend =================+
+# LOGO: 
+# ..........####...####..........
+# ......###.....#.#########......
+# ....##........#.###########....
+# ...#..........#.############...
+# ...#..........#.#####.######...
+# ..#.....##....#.###..#...####..
+# .#.....#.##...#.##..##########.
+# #.....##########....##...######
+# #.....#...##..#.##..####.######
+# .#...##....##.#.##..###..#####.
+# ..#.##......#.#.####...######..
+# ..#...........#.#############..
+# ..#...........#.#############..
+# ...##.........#.############...
+# ......#.......#.#########......
+# .......#......#.########.......
+# .........#####...#####.........
+# /STOP
+# PROJECT: AsperBackend
+# FILE: dockerfile
+# CREATION DATE: 10-10-2025
+# LAST Modified: 15:51:36 30-11-2025
+# DESCRIPTION: 
+# File in charge of setting up the environement so that the uvicorn server can run.
+# /STOP
+# COPYRIGHT: (c) Asperguide
+# PURPOSE: 
+# // AR
+# +==== END AsperBackend =================+
+# 
+#/**
+# * @file dockerfile.backend
+# * @brief Dockerfile used to build the server runtime image (Python 3.10-slim base).
+# *
+# * The Dockerfile performs the following high-level tasks:
+# *  - set environment variables used by the container
+# *  - prepare a reusable python virtual environment inside the image
+# *  - install runtime dependencies from requirements.txt
+# *  - create a small launcher script to start the application
+# *
+# * @author Asperguide
+# * @date 2025-10-12
+# * @copyright (c) Asperguide
+# */
+FROM python:3.14-slim
+
+ENV LOCATION=server \
+    DEBIAN_FRONTEND=noninteractive \
+    HOME=/srv \
+    LAUNCH_FILE=./src \
+    HOST="0.0.0.0" \
+    PORT=5000 \
+    DEBUG=False \
+    LAUNCH_SERVER_ON_BOOT=True \
+    SYSTEM_ENV_LOCATION=/the_system_environement \
+    SYSTEM_ENV_NAME=docker_env \
+    LOG_SERVER_DATA=False \
+    LOG_PATH="/srv/log" \
+    LOG_ADD_DATE=True \
+    LOG_FILE_FORMAT="log" \
+    LOG_DATA='log_' \
+    BASH_FILE_LAUNCHER=my_docker_bash_launcher.sh \
+    PIP_CACHE_DIR=/pip-cache \
+    XDG_CACHE_HOME=/pip-cache \
+    BASE_BASHRC=/root/.bashrc \
+    BASH_PROFILE=/root/.bash_profile \
+    ALIAS_FILE=/aliasing.sh
+
+# Restore colored ls, prompt, and normal user-like shell for root
+RUN set -eux; \
+    # Create /root/.bashrc if missing
+    touch ${BASE_BASHRC}; \
+    # Enable colored 'ls' and 'grep' like a normal user
+    echo "alias ls='ls --color=auto'" >> ${BASE_BASHRC}; \
+    echo "alias ll='ls -alF'" >> ${BASE_BASHRC}; \
+    echo "alias grep='grep --color=auto'" >> ${BASE_BASHRC}; \
+    # Add a colored PS1 prompt similar to Ubuntu’s default
+    echo 'PS1="\\[\\e[1;32m\\]\\u@\\h:\\[\\e[1;34m\\]\\w\\$\\[\\e[0m\\] "' >> ${BASE_BASHRC}; \
+    # Source /etc/bash.bashrc if it exists (for distros that use it)
+    echo '[ -f /etc/bash.bashrc ] && source /etc/bash.bashrc' >> ${BASE_BASHRC}; \
+    # Ensure bash uses the rc file even for non-login interactive shells
+    echo "export BASH_ENV=${BASE_BASHRC}" >> ${BASH_PROFILE}
+
+# Setting pip's cache directory
+RUN mkdir -p "$PIP_CACHE_DIR" "$XDG_CACHE_HOME" \
+    && chmod -R 0777 "$PIP_CACHE_DIR" "$XDG_CACHE_HOME" \
+    && pip config set global.cache-dir "$PIP_CACHE_DIR" \
+    && python -m pip config set global.cache-dir "$PIP_CACHE_DIR"
+
+# Update de docker system, install tzdata, set the timezone to Europe/Paris, install mariadb dependencies and install python in the container
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    tzdata \
+    bash \
+    libmariadb-dev \
+    python3-dev \
+    build-essential \
+    && ln -fs /usr/share/zoneinfo/Europe/Paris /etc/localtime \
+    && dpkg-reconfigure --frontend noninteractive tzdata \
+    && python -m pip install -U pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Inject bash aliasing commands for ease of use
+RUN echo "" > ${ALIAS_FILE} \
+    && echo 'alias ls="ls --color=auto"' >> ${ALIAS_FILE} \
+    && echo 'alias ll="ls -l"' >> ${ALIAS_FILE} \
+    && echo 'alias la="ls -la"' >> ${ALIAS_FILE} \
+    && echo "alias l.='ls -d .* --color=auto'" >> ${ALIAS_FILE} \
+    && echo "alias cd..='cd ..'" >> ${ALIAS_FILE} \
+    && echo "alias ..='cd ..'" >> ${ALIAS_FILE} \
+    && echo "alias ...='cd ../../../'" >> ${ALIAS_FILE} \
+    && echo "alias ....='cd ../../../../'" >> ${ALIAS_FILE} \
+    && echo "alias .....='cd ../../../../'" >> ${ALIAS_FILE} \
+    && echo "alias .4='cd ../../../../'" >> ${ALIAS_FILE} \
+    && echo "alias .5='cd ../../../../..'" >> ${ALIAS_FILE} \
+    && echo "alias grep='grep --color=auto'" >> ${ALIAS_FILE} \
+    && echo "alias egrep='egrep --color=auto'" >> ${ALIAS_FILE} \
+    && echo "alias fgrep='fgrep --color=auto'" >> ${ALIAS_FILE} \
+    && echo "alias bc='bc -l'" >> ${ALIAS_FILE} \
+    && echo "alias sha1='openssl sha1'" >> ${ALIAS_FILE} \
+    && echo "alias diff='colordiff'" >> ${ALIAS_FILE} \
+    && echo "alias mount='mount |column -t'" >> ${ALIAS_FILE} \
+    && echo "alias h='history'" >> ${ALIAS_FILE} \
+    && echo "alias j='jobs -l'" >> ${ALIAS_FILE} \
+    && echo "alias nowtime=now" >> ${ALIAS_FILE} \
+    && echo "alias vi=nano" >> ${ALIAS_FILE} \
+    && echo "alias edit='nano'" >> ${ALIAS_FILE} \
+    && echo "alias vim='nano'" >> ${ALIAS_FILE} \
+    && echo "alias ping='ping -c 5'" >> ${ALIAS_FILE} \
+    && echo "alias fastping='ping -c 100 -s.2'" >> ${ALIAS_FILE} \
+    && echo "alias ports='netstat -tulanp'" >> ${ALIAS_FILE} \
+    && echo "alias ipt='/sbin/iptables'" >> ${ALIAS_FILE} \
+    && echo "alias iptlist='/sbin/iptables -L -n -v --line-numbers'" >> ${ALIAS_FILE} \
+    && echo "alias iptlistin='/sbin/iptables -L INPUT -n -v --line-numbers'" >> ${ALIAS_FILE} \
+    && echo "alias iptlistout='/sbin/iptables -L OUTPUT -n -v --line-numbers'" >> ${ALIAS_FILE} \
+    && echo "alias iptlistfw='/sbin/iptables -L FORWARD -n -v --line-numbers'" >> ${ALIAS_FILE} \
+    && echo "alias firewall=iptlist" >> ${ALIAS_FILE} \
+    && echo "alias header='curl -I'" >> ${ALIAS_FILE} \
+    && echo "alias headerc='curl -I --compress'" >> ${ALIAS_FILE} \
+    && echo "alias rm='rm -I --preserve-root'" >> ${ALIAS_FILE} \
+    && echo "alias chown='chown --preserve-root'" >> ${ALIAS_FILE} \
+    && echo "alias chmod='chmod --preserve-root'" >> ${ALIAS_FILE} \
+    && echo "alias chgrp='chgrp --preserve-root'" >> ${ALIAS_FILE} \
+    && echo "alias meminfo='free -m -l -t'" >> ${ALIAS_FILE} \
+    && echo "alias psmem='ps auxf | sort -nr -k 4'" >> ${ALIAS_FILE} \
+    && echo "alias psmem10='ps auxf | sort -nr -k 4 | head -10'" >> ${ALIAS_FILE} \
+    && echo "alias pscpu='ps auxf | sort -nr -k 3'" >> ${ALIAS_FILE} \
+    && echo "alias pscpu10='ps auxf | sort -nr -k 3 | head -10'" >> ${ALIAS_FILE} \
+    && echo "alias cpuinfo='lscpu'" >> ${ALIAS_FILE} \
+    && echo "alias gpumeminfo='grep -i --color memory /var/log/Xorg.0.log'" >> ${ALIAS_FILE} \
+    && echo "alias df='df -H'" >> ${ALIAS_FILE} \
+    && echo "alias du='du -ch'" >> ${ALIAS_FILE} \
+    && echo "alias now='date +\"%T\"'" >> ${ALIAS_FILE} \
+    && echo "alias path='echo -e \${PATH//:/\\n}'" >> ${ALIAS_FILE} \
+    && echo "alias nowdate='date +\"%d-%m-%Y\"'" >> ${ALIAS_FILE} \
+    && echo "Alias injection success"
+
+# Inject environement activations into shell configuration files
+RUN echo ". ${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME}/bin/activate" >> /etc/profile \
+    && echo ". ${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME}/bin/activate" >> /etc/zprofile \
+    && echo ". ${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME}/bin/activate" >> /etc/csh.cshrc \
+    && echo ". ${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME}/bin/activate" >> /etc/csh.login \
+    && echo ". ${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME}/bin/activate" >> /etc/bash.bashrc \
+    && mkdir -p /etc/zsh/ && echo ". ${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME}/bin/activate" >> /etc/zsh/zshrc \
+    && mkdir -p /etc/fish && echo ". ${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME}/bin/activate" >> /etc/fish/config.fish
+
+# Inject the line required for restoring the aliasing
+RUN if [ "$(${LAUNCH_SERVER_ON_BOOT} | tr \"[:upper:]\" \"[:lower:]\")" != "true" ]; then \
+    echo ". ${ALIAS_FILE}" >> /etc/profile \
+    && echo ". ${ALIAS_FILE}" >> /etc/zprofile \
+    && echo ". ${ALIAS_FILE}" >> /etc/csh.cshrc \
+    && echo ". ${ALIAS_FILE}" >> /etc/csh.login \
+    && echo ". ${ALIAS_FILE}" >> /etc/bash.bashrc \
+    && mkdir -p /etc/zsh/ && echo ". ${ALIAS_FILE}" >> /etc/zsh/zshrc \
+    && mkdir -p /etc/fish && echo ". ${ALIAS_FILE}" >> /etc/fish/config.fish; \
+    fi
+
+# Inject the line required for restoring the aliasing
+RUN if [ "$(${LAUNCH_SERVER_ON_BOOT} | tr \"[:upper:]\" \"[:lower:]\")" != "true" ]; then \
+    echo "Installing additional dependencies for debugging" \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+    less \
+    curl \
+    nano \
+    net-tools \
+    iputils-ping \
+    mariadb-client \
+    && rm -rf /var/lib/apt/lists/*; \
+    fi
+
+# Go to the working folder
+WORKDIR ${HOME}
+
+# Copy the content of the backend into the container
+COPY . ${HOME}
+
+# DEBUG: Displaying the content of the folder
+# RUN ls && sleep 5s
+
+# Create a system environement and also run the setup code from the project
+RUN mkdir -p ${SYSTEM_ENV_LOCATION} \
+    && python3 -m venv ${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME} \
+    && . ${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME}/bin/activate \
+    && python -m pip install -U pip setuptools wheel \
+    && python -m pip install --no-cache-dir -r ./requirements.txt \
+    && deactivate
+
+# Expose the ports that need to be used
+EXPOSE 1024-9000
+
+# Dump script runner
+RUN echo '#!/bin/bash' > ${BASH_FILE_LAUNCHER} \
+    && echo "cd \"\$HOME\"" >> ${BASH_FILE_LAUNCHER} \
+    && echo ". \${SYSTEM_ENV_LOCATION}/\${SYSTEM_ENV_NAME}/bin/activate" >> ${BASH_FILE_LAUNCHER} \
+    # && echo "sleep 5s" >> ${BASH_FILE_LAUNCHER} \
+    && echo "if [[ -f \"./requirements.txt\" ]]; then " >> ${BASH_FILE_LAUNCHER} \
+    && echo "  pip install -r ./requirements.txt" >> ${BASH_FILE_LAUNCHER} \
+    && echo "fi" >> ${BASH_FILE_LAUNCHER} \
+    && echo "LOGGER_COMMAND=\"\"" >> ${BASH_FILE_LAUNCHER} \
+    && echo "if [[ \"\${LOG_SERVER_DATA,,}\" == 'true' ]]; then" >> ${BASH_FILE_LAUNCHER} \
+    && echo "  echo 'setting logger command'" >> ${BASH_FILE_LAUNCHER} \
+    && echo "  mkdir -p \"\${LOG_PATH}\"" >> ${BASH_FILE_LAUNCHER} \
+    && echo "  DATA=\"\$LOG_PATH/\$LOG_DATA\"" >> ${BASH_FILE_LAUNCHER} \
+    && echo "  if [[ \"\${LOG_ADD_DATE,,}\" == 'true' ]]; then" >> ${BASH_FILE_LAUNCHER} \
+    && echo "    DATA+=\"_\$(date -u +%Y_%m_%dT%Hh%Mm%SZ)\"" >> ${BASH_FILE_LAUNCHER} \
+    && echo "  fi" >> ${BASH_FILE_LAUNCHER} \
+    && echo "  DATA+=\".\${LOG_FILE_FORMAT}\"" >> ${BASH_FILE_LAUNCHER} \
+    && echo "  echo \"log file name: \$DATA\"" >> ${BASH_FILE_LAUNCHER} \
+    && echo "  LOGGER_COMMAND=\">\\\"\${DATA}\\\" 2>&1 & tail -f \\\"\${DATA}\\\"\"" >> ${BASH_FILE_LAUNCHER} \
+    && echo "fi" >> ${BASH_FILE_LAUNCHER} \
+    && echo "CMD=\"python3 \$LAUNCH_FILE --port=\"\$PORT\" --host=\"\$HOST\"\"" >> ${BASH_FILE_LAUNCHER} \
+    && echo "if [[ \"\${DEBUG,,}\" == 'true' ]]; then echo 'Debug is true';CMD+=\" --debug\";fi" >> ${BASH_FILE_LAUNCHER} \
+    && echo "echo \"python command: \$CMD\"" >> ${BASH_FILE_LAUNCHER} \
+    && echo "if [[ \"\${LAUNCH_SERVER_ON_BOOT,,}\" != 'true' ]]; then echo 'Start server is false';/bin/bash -c 'yes buffer >/dev/null'; exit \$?; fi" >> ${BASH_FILE_LAUNCHER} \
+    && echo "if [[ -n \"\$LOGGER_COMMAND\" ]]; then" >> ${BASH_FILE_LAUNCHER} \
+    && echo "  \$CMD \$LOGGER_COMMAND" >> ${BASH_FILE_LAUNCHER} \
+    && echo "else" >> ${BASH_FILE_LAUNCHER} \
+    && echo "  \$CMD" >> ${BASH_FILE_LAUNCHER} \
+    && echo "fi" >> ${BASH_FILE_LAUNCHER} \
+    && chmod +x "$BASH_FILE_LAUNCHER" \
+    && cp -f ${BASH_FILE_LAUNCHER} ${SYSTEM_ENV_LOCATION}
+
+# Cleaning cache
+RUN apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Entry point
+CMD ["/bin/bash", "-c", "chmod +x ${SYSTEM_ENV_LOCATION}/${BASH_FILE_LAUNCHER} && ${SYSTEM_ENV_LOCATION}/${BASH_FILE_LAUNCHER}"]

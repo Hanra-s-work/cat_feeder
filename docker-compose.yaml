@@ -1,0 +1,253 @@
+#
+# +==== BEGIN AsperBackend =================+
+# LOGO:
+# ..........####...####..........
+# ......###.....#.#########......
+# ....##........#.###########....
+# ...#..........#.############...
+# ...#..........#.#####.######...
+# ..#.....##....#.###..#...####..
+# .#.....#.##...#.##..##########.
+# #.....##########....##...######
+# #.....#...##..#.##..####.######
+# .#...##....##.#.##..###..#####.
+# ..#.##......#.#.####...######..
+# ..#...........#.#############..
+# ..#...........#.#############..
+# ...##.........#.############...
+# ......#.......#.#########......
+# .......#......#.########.......
+# .........#####...#####.........
+# /STOP
+# PROJECT: AsperBackend
+# FILE: docker-compose.yaml
+# CREATION DATE: 10-10-2025
+# LAST Modified: 6:44:10 02-12-2025
+# DESCRIPTION:
+# This is the docker compose of the project, it allows the server to spin up and have access to all the other ressources it needs.
+# /STOP
+# COPYRIGHT: (c) Asperguide
+# PURPOSE: The docker compose to spin up the server with it's required environement
+# // AR
+# +==== END AsperBackend =================+
+#
+name: local-asperguide
+
+services:
+  database:
+    image: mysql:lts
+    container_name: local-asperguide-database
+    tty: false
+    cpus: 2
+    mem_limit: 2g
+    env_file:
+      - ./docker/.db.env
+    ports:
+      - "3307:3306"
+    volumes:
+      - database-data:/var/lib/mysql
+      - ./docker/db/configuration:/etc/mysql/conf.d:ro
+      - database-initialisation-data:/docker-entrypoint-initdb.d
+    networks:
+      - db-to-back
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -p$${MYSQL_ROOT_PASSWORD:-rootpassword} --silent",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db-cache:
+    image: redis:8.4.0
+    container_name: local-asperguide-db-cache
+    tty: false
+    cpus: 1
+    mem_limit: 160m
+    env_file:
+      - ./docker/.redis.env
+    command:
+      - bash
+      - -lc
+      - 'mkdir -p /run/redis && redis-server --unixsocket /run/redis/redis.sock --unixsocketperm 770 --port 0 --requirepass "$${REDIS_PASSWORD:-redispassword}" --loglevel $${REDIS_LOG_LEVEL:-warning} --maxmemory $${REDIS_MAXMEMORY:-128mb} --maxmemory-policy allkeys-lru --dir /data --save 60 100'
+    sysctls:
+      net.ipv4.conf.all.rp_filter: 0
+    volumes:
+      - redis-sock:/run/redis
+      - redis-data:/data
+      - ./docker/redis/configuration:/usr/local/etc/redis:ro
+    networks:
+      - db-to-back
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "redis-cli -s /run/redis/redis.sock -a $${REDIS_PASSWORD:-redispassword} ping | grep PONG",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  bucket:
+    image: minio/minio:latest
+    container_name: local-asperguide-bucket
+    cpus: 1
+    mem_limit: 1g
+    env_file:
+      - ./docker/.bucket.env
+    entrypoint: []
+    command:
+      - /bin/bash
+      - -c
+      - |
+        mkdir -p /data/$${MINIO_DEFAULT_BUCKET:-asperguide-local}
+        echo "expected default bucket location in data: $${MINIO_DEFAULT_BUCKET:-asperguide-local}"
+        echo "contens of /data: $(ls /data)"
+        exec minio server /data --console-address ":$${MINIO_CONSOLE_PORT:-9001}"
+    ports:
+      # - "9000:9000" # s3 API
+      - "9001:9001" # Admin console # should not be required
+    volumes:
+      - bucket-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://localhost:9000/minio/health/live || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bucket-to-back
+
+  backend:
+    depends_on:
+      - database
+      - db-cache
+      - bucket
+    build:
+      context: .
+      dockerfile: docker/dockerfile.backend
+    image: local-asperguide-backend-image
+    container_name: local-asperguide-backend-container
+    cpus: 2.0
+    mem_limit: 2g
+    tty: false
+    restart: on-failure
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./.env
+    volumes:
+      - server-data:/srv:rw
+      - redis-sock:/run/redis
+    working_dir: /srv
+    ulimits:
+      nproc: 8000
+      nofile:
+        soft: 40000
+        hard: 60000
+      memlock:
+        soft: 2147483648 # 2GB in bytes
+        hard: 2147483648
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - db-to-back
+      - bucket-to-back
+      - default
+
+volumes:
+  database-data:
+    name: "database-data"
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./docker/db/data
+    labels:
+      com.asperguide_database.description: "Asperguide Database Data"
+      com.asperguide_database.department: "IT/DB"
+      com.asperguide_database.role: "Volume in charge of storing the database cache so that the database persists after the container gets removed."
+
+  database-initialisation-data:
+    name: "database-initialisation-data"
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./docker/db/sql
+    labels:
+      com.asperguide_database.description: "Asperguide Database Data"
+      com.asperguide_database.department: "IT/DB"
+      com.asperguide_database.role: "Volume in charge of storing the database cache so that the database persists after the container gets removed."
+
+  redis-sock:
+    name: "redis-sock"
+    labels:
+      com.redis-sock.description: "Asperguide Redis socket"
+      com.redis-sock.department: "IT/Network"
+      com.redis-sock.role: "The redis socket for the connection between the backend and the redis instance."
+    driver: local
+
+  redis-data:
+    name: "redis-data"
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./docker/redis/data
+    labels:
+      com.redis-data.description: "Asperguide Redis peristent data"
+      com.redis-data.department: "IT/DB"
+      com.redis-data.role: "The redis persistent cache between container reboots"
+
+  server-data:
+    name: "server-data"
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./backend
+    labels:
+      com.asperguide_data.description: "Asperguide Server Data"
+      com.asperguide_data.department: "IT/Ai"
+      com.asperguide_data.role: "Volume in charge of storing the server data so that it persists after the container gets removed."
+
+  bucket-data:
+    name: "bucket-data"
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "./docker/bucket/data"
+    labels:
+      com.asperguide_data.description: "Asperguide Minio Data"
+      com.asperguide_data.department: "IT/DB"
+      com.asperguide_data.role: "Volume in charge of allowing the minio container (imitating the cellar storage from Clever Cloud) to persist it's data between runs."
+
+networks:
+  db-to-back:
+    name: "db-to-back"
+    attachable: true
+    driver: "bridge"
+    labels:
+      com.db-to-back.description: "Asperguide Database To Backend network."
+      com.db-to-back.department: "IT/Networking"
+      com.db-to-back.role: "Network in charge of conneting the database instance with the backend instance so that it is not exposed to the internet and only the backend is."
+
+  bucket-to-back:
+    name: "bucket-to-back"
+    attachable: true
+    driver: "bridge"
+    labels:
+      com.db-to-back.description: "Asperguide bucket To Backend network."
+      com.db-to-back.department: "IT/Networking"
+      com.db-to-back.role: "Network in charge of conneting the bucket instance with the backend instance so that it is not exposed to the internet and only the backend is."

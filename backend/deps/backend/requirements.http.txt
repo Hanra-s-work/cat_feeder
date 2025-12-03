@@ -1,0 +1,39 @@
+# 
+# +==== BEGIN AsperBackend =================+
+# LOGO: 
+# ..........####...####..........
+# ......###.....#.#########......
+# ....##........#.###########....
+# ...#..........#.############...
+# ...#..........#.#####.######...
+# ..#.....##....#.###..#...####..
+# .#.....#.##...#.##..##########.
+# #.....##########....##...######
+# #.....#...##..#.##..####.######
+# .#...##....##.#.##..###..#####.
+# ..#.##......#.#.####...######..
+# ..#...........#.#############..
+# ..#...........#.#############..
+# ...##.........#.############...
+# ......#.......#.#########......
+# .......#......#.########.......
+# .........#####...#####.........
+# /STOP
+# PROJECT: AsperBackend
+# FILE: requirements.http.txt
+# CREATION DATE: 11-10-2025
+# LAST Modified: 16:27:39 11-10-2025
+# DESCRIPTION: 
+# This is the backend server in charge of making the actual website work.
+# /STOP
+# COPYRIGHT: (c) Asperguide
+# PURPOSE: The dependencies required to listen for incoming messages as well as send them.
+# // AR
+# +==== END AsperBackend =================+
+# 
+# For http protocols
+fastapi[all] ==0.123.4
+uvicorn ==0.38.0
+
+# FastAPI dependency
+python-multipart == 0.0.20

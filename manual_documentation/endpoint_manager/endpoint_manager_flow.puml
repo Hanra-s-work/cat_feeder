@@ -1,0 +1,109 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: endpoint_manager_flow.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:44:30 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The overview of the process for the endpoint manager.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml endpoint_manager_flow
+!theme plain
+
+participant "Application" as App
+participant "PathManager" as PM
+participant "EndpointManager" as EM
+participant "Bonus" as Bonus
+participant "OAuthAuth" as OAuth
+participant "TestingEndpoints" as Test
+participant "Config" as Cfg
+
+App -> EM : __init__()
+activate EM
+EM -> EM : _retrieve_path_manager()
+EM -> Bonus : new Bonus()
+EM -> Test : new TestingEndpoints()
+return EndpointManager instance
+
+App -> PM : load_default_paths_initialised()
+activate PM
+PM -> EM : inject_routes()
+activate EM
+
+EM -> EM : _retrieve_path_manager()
+EM -> PM : verify PathManager exists
+alt PathManager not found
+  EM --> App : RuntimeError
+end
+
+group Bonus Routes
+  EM -> PM : add_path("", bonus.get_welcome, ["GET", "POST", ...])
+  EM -> PM : add_path("/", bonus.get_welcome, ["GET", "POST", ...])
+  EM -> PM : add_path("/api/v1/", bonus.get_welcome, "GET")
+  EM -> PM : add_path("/api/v1/stop", bonus.post_stop_server, "PUT")
+  EM -> PM : add_path("/health", bonus.get_health, "GET")
+  EM -> PM : add_path("/favicon.ico", bonus.get_favicon, "GET")
+  EM -> PM : add_path("/static/logo.png", bonus.get_static_logo, "GET")
+end
+
+group OAuth Routes
+  EM -> OAuth : verify instance exists
+  alt OAuth not found
+    EM --> App : RuntimeError
+  end
+  EM -> PM : add_path("/api/v1/oauth/login", oauth.oauth_login, "POST")
+  EM -> PM : add_path("/api/v1/oauth/callback", oauth.oauth_callback, "POST")
+  EM -> PM : add_path("/api/v1/oauth/{provider}", oauth.add_oauth_provider, "POST")
+  EM -> PM : add_path("/api/v1/oauth/{provider}", oauth.update_oauth_provider_data, "PUT")
+  EM -> PM : add_path("/api/v1/oauth/{provider}", oauth.patch_oauth_provider_data, "PATCH")
+  EM -> PM : add_path("/api/v1/oauth/{provider}", oauth.delete_oauth_provider, "DELETE")
+end
+
+group Testing Routes (Conditional)
+  EM -> Cfg : check TEST_ENABLE_TESTING_ENDPOINTS
+  alt Testing enabled
+    EM -> PM : add_path("/testing/sql/tables", test.get_tables, "GET")
+    EM -> PM : add_path("/testing/sql/table/columns", test.get_table_columns, "GET")
+    EM -> PM : add_path("/testing/sql/connected", test.test_sql_connection, "GET")
+    EM -> PM : add_path("/testing/bucket/buckets", test.get_buckets, "GET")
+    EM -> PM : add_path("/testing/bucket/connected", test.test_bucket_connection, "GET")
+    note right: Many more testing endpoints registered...
+  else Testing disabled
+    note right: Testing endpoints skipped
+  end
+end
+
+return all routes registered
+return routes loaded
+deactivate PM
+
+note over PM
+  All routes now stored in PathManager,
+  ready for injection into FastAPI
+end note
+
+@enduml

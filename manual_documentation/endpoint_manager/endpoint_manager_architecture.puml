@@ -1,0 +1,139 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: endpoint_manager_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:44:54 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The overview of the endpoint manager class and dependencies.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml endpoint_manager_architecture
+!theme plain
+
+package "EndpointManager Module" {
+  class EndpointManager {
+    - paths_initialised: PathManager
+    - password_handling_initialised: PasswordHandling
+    - oauth_authentication_initialised: OAuthAuthentication
+    - runtime_manager: RuntimeManager
+    - bonus: Bonus
+    - testing_endpoints: TestingEndpoints
+    + __init__(success, error, debug)
+    + inject_routes()
+    - _retrieve_path_manager()
+  }
+
+  class EndpointConstants {
+    + TOML_CONF: dict
+    + TEST_ENABLE_TESTING_ENDPOINTS: bool
+    + _get_toml_variable(toml_conf, section, key, default)
+  }
+}
+
+package "Endpoint Sub-Modules" {
+  class Bonus {
+    + get_welcome()
+    + post_stop_server()
+    + get_health()
+    + get_favicon()
+    + get_static_logo()
+  }
+
+  class TestingEndpoints {
+    + get_tables()
+    + get_table_columns()
+    + describe_table()
+    + test_sql_connection()
+    + get_buckets()
+    + test_bucket_connection()
+    + ... (many more)
+  }
+
+  class UserEndpoints {
+    + create_user()
+    + get_user()
+    + update_user()
+    + delete_user()
+  }
+}
+
+package "PathManager" {
+  class PathManager {
+    + add_path(path, endpoint, method)
+  }
+}
+
+package "Authentication" {
+  class OAuthAuthentication {
+    + oauth_login()
+    + oauth_callback()
+    + add_oauth_provider()
+    + update_oauth_provider_data()
+    + delete_oauth_provider()
+  }
+
+  class PasswordHandling {
+    + hash_password()
+    + verify_password()
+  }
+}
+
+package "Core" {
+  class RuntimeManager {
+    + get(class_type)
+    + get_if_exists(class_type, default)
+  }
+
+  class FinalClass {
+    <<metaclass>>
+  }
+}
+
+EndpointManager --> PathManager : registers routes to
+EndpointManager --> Bonus : contains
+EndpointManager --> TestingEndpoints : contains
+EndpointManager --> UserEndpoints : may contain
+EndpointManager --> OAuthAuthentication : integrates
+EndpointManager --> PasswordHandling : uses
+EndpointManager --> RuntimeManager : retrieves instances
+EndpointManager ..|> FinalClass : metaclass
+EndpointManager --> EndpointConstants : reads config
+
+note right of EndpointManager::inject_routes
+  Main entry point: orchestrates
+  registration of ALL application
+  routes by calling PathManager.add_path()
+  for each endpoint
+end note
+
+note bottom of TestingEndpoints
+  Conditionally loaded based on
+  TEST_ENABLE_TESTING_ENDPOINTS
+  configuration value
+end note
+
+@enduml

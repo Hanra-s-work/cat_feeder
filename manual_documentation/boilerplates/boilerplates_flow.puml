@@ -1,0 +1,106 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: boilerplates_flow.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 15:29:41 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The flow for the boilerplate classes.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml boilerplates_flow
+!theme plain
+
+actor Client
+participant "Endpoint" as EP
+participant "BoilerplateIncoming" as BI
+participant "BoilerplateNonHTTP" as BN
+participant "BoilerplateResponses" as BR
+participant "SQL" as DB
+participant "HCI" as HTTP
+
+Client -> EP : HTTP Request
+activate EP
+
+group Request Validation
+  EP -> BI : get_body(request)
+  activate BI
+  BI -> BI : parse JSON/form data
+  BI --> EP : body dict
+  deactivate BI
+  
+  EP -> BI : get_token_if_present(request)
+  activate BI
+  BI -> BI : check headers & body
+  BI --> EP : token or None
+  deactivate BI
+end
+
+group Token Validation
+  EP -> BI : token_correct(request)
+  activate BI
+  BI -> BN : is_token_correct(token)
+  activate BN
+  BN -> DB : query Connections table
+  DB --> BN : token data
+  BN -> BN : check expiration
+  alt Token valid
+    BN -> DB : refresh expiration
+    BN --> BI : True
+  else Token invalid/expired
+    BN --> BI : False
+  end
+  deactivate BN
+  BI --> EP : validation result
+  deactivate BI
+end
+
+alt Not Authenticated
+  EP -> BR : not_logged_in("Endpoint Name")
+  activate BR
+  BR -> BR : build_response_body()
+  BR -> HTTP : unauthorized()
+  HTTP --> BR : Response(401)
+  BR --> EP : error response
+  deactivate BR
+  EP --> Client : 401 Unauthorized
+else Authenticated
+  EP -> EP : process business logic
+  EP -> BR : build_response_body()
+  activate BR
+  BR -> BN : is_token_correct(token)
+  BN --> BR : True
+  BR -> BR : add logged_in: true
+  BR -> HTTP : ok()
+  HTTP --> BR : Response(200)
+  BR --> EP : success response
+  deactivate BR
+  EP --> Client : 200 OK with data
+end
+
+deactivate EP
+
+@enduml

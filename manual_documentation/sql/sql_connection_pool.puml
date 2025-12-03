@@ -1,0 +1,114 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: sql_connection_pool.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:3:9 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The overview of the sql connection pool from the sql wrapper.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml sql_connection_pool
+!theme plain
+
+participant "Server Init" as Server
+participant "SQL" as SQL
+participant "SQLManageConnections" as ConnMgr
+database "Connection Pool" as Pool
+database "MariaDB" as DB
+
+Server -> SQL: create(url, port, username, password, db_name)
+activate SQL
+
+SQL -> ConnMgr: __init__(credentials)
+activate ConnMgr
+
+ConnMgr -> Pool: create pool
+activate Pool
+Pool -> DB: establish connections (lazy)
+note right
+    Pool creates connections
+    on-demand, not eagerly
+end note
+Pool --> ConnMgr: pool ready
+deactivate Pool
+
+ConnMgr --> SQL: connection manager ready
+deactivate ConnMgr
+
+SQL --> Server: SQL instance
+deactivate SQL
+
+== Query Execution ==
+
+Server -> SQL: get_data_from_table(...)
+activate SQL
+
+SQL -> ConnMgr: execute_query(sql, params)
+activate ConnMgr
+
+ConnMgr -> Pool: get_connection()
+activate Pool
+Pool --> ConnMgr: connection
+deactivate Pool
+
+ConnMgr -> DB: execute(sql, params)
+activate DB
+DB --> ConnMgr: result
+deactivate DB
+
+ConnMgr -> Pool: return connection
+activate Pool
+note right: Connection reused
+deactivate Pool
+
+ConnMgr --> SQL: processed result
+deactivate ConnMgr
+
+SQL --> Server: data
+deactivate SQL
+
+== Shutdown ==
+
+Server -> SQL: shutdown()
+activate SQL
+
+SQL -> ConnMgr: close_all()
+activate ConnMgr
+
+ConnMgr -> Pool: close all connections
+activate Pool
+Pool -> DB: disconnect
+Pool --> ConnMgr: closed
+deactivate Pool
+
+ConnMgr --> SQL: cleanup complete
+deactivate ConnMgr
+
+SQL --> Server: shutdown complete
+deactivate SQL
+
+@enduml

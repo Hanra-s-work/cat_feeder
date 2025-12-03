@@ -1,0 +1,87 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: sql_query_flow.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:2:38 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The overview of an sql query when it navigates through the internal functions (here: get_data_from_table).
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml sql_query_flow
+!theme plain
+
+participant "Client" as Client
+participant "SQL" as SQL
+participant "SQLCacheOrchestrator" as Cache
+participant "RedisCaching" as Redis
+participant "SQLManageConnections" as Conn
+database "MariaDB" as DB
+
+Client -> SQL: get_data_from_table(table, columns, where)
+activate SQL
+
+SQL -> Cache: get_cached_or_fetch()
+activate Cache
+
+Cache -> Redis: get(cache_key)
+activate Redis
+
+alt Cache HIT
+    Redis --> Cache: cached_data
+    Cache --> SQL: cached_data
+    SQL --> Client: return data
+else Cache MISS
+    Redis --> Cache: None
+    deactivate Redis
+    
+    Cache -> SQL: execute query (fallback)
+    SQL -> Conn: execute_query(sql, params)
+    activate Conn
+    
+    Conn -> Conn: get_connection from pool
+    Conn -> DB: SELECT query
+    activate DB
+    DB --> Conn: result rows
+    deactivate DB
+    
+    Conn --> SQL: processed result
+    deactivate Conn
+    
+    SQL -> Cache: return result
+    Cache -> Redis: set(cache_key, result, ttl)
+    activate Redis
+    Redis --> Cache: OK
+    deactivate Redis
+    
+    Cache --> SQL: result
+    deactivate Cache
+    SQL --> Client: return data
+end
+
+deactivate SQL
+
+@enduml

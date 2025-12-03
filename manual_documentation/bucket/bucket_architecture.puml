@@ -1,0 +1,186 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: bucket_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 15:28:46 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The architecture of the bucket module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml bucket_architecture
+!theme plain
+
+' Title
+title Bucket Module Architecture
+
+' Class definitions
+class Bucket <<FinalClass>> {
+  ' Class attributes
+  - {static} _initialization_attempted: bool
+  - {static} _initialization_failed: bool
+  + {static} disp: Disp
+  
+  ' Instance attributes
+  - connection: Optional[S3ServiceResourceLike]
+  - _is_connected: bool
+  + debug: bool
+  + success: int
+  + error: int
+  
+  ' Constructor
+  + __init__(error: int, success: int, auto_connect: bool, debug: bool)
+  + __del__()
+  
+  ' Connection management
+  + connect(): int
+  + is_connected(): bool
+  + disconnect(): int
+  - _auto_connect(): None
+  - _ensure_connected(): None
+  
+  ' Bucket operations
+  + get_bucket_names(): Union[List[str], int]
+  + create_bucket(bucket_name: str): int
+  + delete_bucket(bucket_name: str): int
+  
+  ' File operations
+  + upload_file(bucket_name: str, file_path: str, key_name: Optional[str]): int
+  + download_file(bucket_name: str, key_name: str, destination_path: str): int
+  + delete_file(bucket_name: str, key_name: str): int
+  + get_bucket_files(bucket_name: str): Union[List[str], int]
+  + get_bucket_file(bucket_name: str, key_name: str): Union[Dict[str, Any], int]
+}
+
+' Protocol definitions
+interface S3ServiceResourceLike <<Protocol>> {
+  + meta: ClientMeta
+  + buckets: S3BucketsCollectionLike
+  + create_bucket(Bucket: str): Any
+  + Bucket(name: str): S3BucketLike
+}
+
+interface S3BucketLike <<Protocol>> {
+  + name: str
+  + objects: S3ObjectsCollectionLike
+  + upload_file(Filename: str, Key: str): Any
+  + download_file(Key: str, Filename: str): Any
+  + delete(): Any
+  + Object(key: str): S3ObjectLike
+}
+
+interface S3ObjectLike <<Protocol>> {
+  + key: str
+  + content_length: int
+  + delete(): Any
+}
+
+interface S3ObjectsCollectionLike <<Protocol>> {
+  + all(): Iterable[S3ObjectLike]
+}
+
+interface S3BucketsCollectionLike <<Protocol>> {
+  + all(): Iterable[Any]
+}
+
+' External dependencies
+class boto3 <<external>> {
+  + {static} resource(service_name: str, ...): Any
+}
+
+class Disp <<external>> {
+  + log_debug(msg: str, func: str)
+  + log_info(msg: str, func: str)
+  + log_warning(msg: str, func: str)
+  + log_error(msg: str, func: str)
+  + update_disp_debug(debug: bool)
+}
+
+class FinalClass <<metaclass>> {
+  Prevents subclassing
+}
+
+' Configuration
+package "Configuration" {
+  class bucket_constants {
+    + BUCKET_RESSOURCE_TYPE: str
+    + BUCKET_SIGNATURE_VERSION: str
+    + BUCKET_HOST: str
+    + BUCKET_PORT: str
+    + BUCKET_USER: str
+    + BUCKET_PASSWORD: str
+  }
+}
+
+' Relationships
+Bucket ..|> FinalClass : <<instanceOf>>
+Bucket --> S3ServiceResourceLike : connection
+Bucket --> Disp : disp
+Bucket ..> boto3 : <<uses>>
+Bucket ..> bucket_constants : <<imports>>
+
+S3ServiceResourceLike --> S3BucketsCollectionLike : buckets
+S3ServiceResourceLike ..> S3BucketLike : <<creates>>
+S3BucketLike --> S3ObjectsCollectionLike : objects
+S3BucketLike ..> S3ObjectLike : <<creates>>
+S3ObjectsCollectionLike --> S3ObjectLike : all()
+S3BucketsCollectionLike --> S3BucketLike : all()
+
+' Exception handling
+package "Exception Handling" {
+  class BotoCoreError <<exception>>
+  class ClientError <<exception>>
+  class ConnectionError <<exception>>
+  class RuntimeError <<exception>>
+}
+
+Bucket ..> BotoCoreError : <<catches>>
+Bucket ..> ClientError : <<catches>>
+Bucket ..> ConnectionError : <<catches/raises>>
+Bucket ..> RuntimeError : <<raises>>
+
+' Notes
+note right of Bucket
+  The Bucket class provides a simplified
+  facade over boto3's S3 interface with:
+  - Automatic connection management
+  - Comprehensive error handling
+  - Type-safe Protocol-based interfaces
+  - Integration with display_tty logging
+end note
+
+note bottom of S3ServiceResourceLike
+  Protocol-based type hints allow static
+  type checking without requiring boto3-stubs
+  or other optional dependencies.
+end note
+
+note top of bucket_constants
+  Configuration loaded from environment
+  variables (.env file) at module import
+end note
+
+@enduml

@@ -1,0 +1,187 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: e_mail_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 15:31:49 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: An overview of the architecture for the e-mail module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml e_mail_architecture
+!theme plain
+allowmixing
+
+title Email Management Architecture
+
+package "Email Module" {
+    class MailManagement {
+        - disp: Disp
+        - debug: bool
+        - success: int
+        - error: int
+        - sender: str
+        - host: str
+        - api_key: str
+        - port: int
+        --
+        + __init__(error, success, debug)
+        + send_email(receiver, subject, body, body_type): int
+        + send_email_with_attachment(receiver, subject, body, attachments, body_type): int
+        + send_email_to_multiple(receivers, subject, body, body_type): int
+        + send_email_with_inline_image(receiver, subject, body, image_path, body_type): int
+        - _send(em): int
+    }
+
+    class "mail_constants" as Constants {
+        + SENDER_ADDRESS: str
+        + SENDER_HOST: str
+        + SENDER_KEY: str
+        + SENDER_PORT: int
+        + ENV: Dict[str, str]
+        --
+        + _get_environement_variable(env, var_name): str
+    }
+}
+
+package "Python Standard Library" {
+    class EmailMessage {
+        + From: str
+        + To: str
+        + Subject: str
+        --
+        + set_content(content): None
+        + add_alternative(content, subtype): None
+        + add_attachment(data, maintype, subtype, filename): None
+        + add_related(data, maintype, subtype, cid): None
+    }
+
+    class "smtplib.SMTP_SSL" as SMTP_SSL {
+        - host: str
+        - port: int
+        - context: SSLContext
+        --
+        + login(user, password): None
+        + send_message(msg): Dict
+    }
+
+    class "ssl.SSLContext" as SSLContext {
+        + create_default_context(): SSLContext
+    }
+
+    class MIMEBase {
+        + set_payload(data): None
+        + add_header(name, value): None
+        + get_payload(decode): bytes
+    }
+
+    package "encoders" {
+        class encoders {
+            + encode_base64(msg): None
+        }
+    }
+
+    package "email.utils" {
+        class utils {
+            + make_msgid(): str
+        }
+    }
+}
+
+package "Core Modules" {
+    class FinalClass {
+        <<metaclass>>
+    }
+
+    class Disp {
+        + log_debug(message, func): None
+        + log_critical(message, func): None
+        + update_disp_debug(debug): None
+    }
+}
+
+package "External Services" {
+    node "SMTP Server" as SMTP {
+        component [Gmail SMTP]
+        component [SendGrid]
+        component [Custom SMTP]
+    }
+}
+
+package "Environment" {
+    database ".env File" as EnvFile
+}
+
+' Relationships
+MailManagement ..|> FinalClass : <<uses metaclass>>
+MailManagement --> Constants : uses
+MailManagement --> Disp : logs with
+MailManagement ..> EmailMessage : creates
+MailManagement ..> SMTP_SSL : sends via
+MailManagement ..> SSLContext : uses
+MailManagement ..> MIMEBase : encodes attachments
+MailManagement ..> encoders : encodes with
+MailManagement ..> utils : generates IDs
+
+Constants ..> EnvFile : loads from
+
+SMTP_SSL --> SSLContext : requires
+SMTP_SSL ..> SMTP : connects to
+SMTP_SSL ..> EmailMessage : sends
+
+EmailMessage ..> MIMEBase : contains
+MIMEBase ..> encoders : encoded by
+
+' Use Case Connections
+note right of MailManagement
+  Provides secure email sending
+  capabilities with support for:
+  - HTML/Plain text
+  - Attachments
+  - Multiple recipients
+  - Inline images
+  - SSL/TLS encryption
+end note
+
+note bottom of SMTP_SSL
+  Establishes secure connection
+  on port 465 using SSL/TLS.
+  Authenticates with API key
+  before sending messages.
+end note
+
+note top of EmailMessage
+  MIME-compliant email message
+  supporting multipart content,
+  attachments, and inline images
+end note
+
+' Flow annotations
+MailManagement -[#blue]-> EmailMessage : 1. Create
+EmailMessage -[#blue]-> SMTP_SSL : 2. Pass to
+SMTP_SSL -[#blue]-> SMTP : 3. Transmit
+
+@enduml

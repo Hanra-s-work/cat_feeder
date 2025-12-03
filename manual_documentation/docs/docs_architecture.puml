@@ -1,0 +1,234 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: docs_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 15:21:53 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The dependency overview of the documentation architecture.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml docs_architecture
+!theme plain
+
+title Documentation Handler Architecture
+
+package "Documentation Module" {
+    class DocumentationHandler {
+        - disp: Disp
+        - debug: bool
+        - success: int
+        - error: int
+        - runtime_manager: RuntimeManager
+        - enabled_providers: tuple
+        - providers: Dict[str, Any]
+        - provider_factories: Dict
+        - openapi_url: str
+        - api_title: str
+        - api_version: str
+        - api_description: str
+        --
+        + __init__(providers, openapi_url, api_title, ...)
+        + inject(providers): int
+        - _initialize_providers(): None
+        - _get_custom_openapi_schema(app): Dict
+        - _custom_openapi_wrapper(request): Response
+        - _oauth2_redirect_handler(request): Response
+        - _create_provider_handler(provider_instance): Any
+    }
+
+    enum DocumentationProvider {
+        SWAGGER
+        REDOC
+        RAPIDOC
+        SCALAR
+        ELEMENTS
+        EDITOR
+        EXPLORER
+        RAPIPDF
+    }
+
+    class "docs_constants" as Constants {
+        + OPENAPI_URL: str
+        + OPENAPI_TITLE: str
+        + OPENAPI_VERSION: str
+        + OPENAPI_DESCRIPTION: str
+        + ENABLE_OAUTH2_DOCS: bool
+        + OAUTH2_AUTHORIZATION_URL: str
+        + OAUTH2_TOKEN_URL: str
+        + OAUTH2_SCOPES: Dict
+        + DEFAULT_PROVIDERS: tuple
+    }
+
+    package "Providers" {
+        class SwaggerHandler {
+            + get_documentation(request): Response
+        }
+
+        class RedocHandler {
+            + get_documentation(request): Response
+        }
+
+        class RapiDocProvider {
+            + get_documentation(request): Response
+        }
+
+        class ScalarProvider {
+            + get_documentation(request): Response
+        }
+
+        class StoplightElementsProvider {
+            + get_documentation(request): Response
+        }
+
+        class SwaggerEditorProvider {
+            + get_documentation(request): Response
+        }
+
+        class OpenAPIExplorerProvider {
+            + get_documentation(request): Response
+        }
+
+        class RapiPDFProvider {
+            + get_documentation(request): Response
+        }
+    }
+}
+
+package "FastAPI" {
+    class FastAPI {
+        + routes: List
+        + openapi_schema: Dict
+    }
+
+    class Request {
+        + headers: Dict
+        + query_params: Dict
+    }
+
+    class Response {
+        + content: Any
+        + status_code: int
+    }
+}
+
+package "Core Modules" {
+    class RuntimeManager {
+        + get(class_type): instance
+    }
+
+    class RuntimeControl {
+        + app: FastAPI
+    }
+
+    class ServerHeaders {
+        + get_headers(): Dict
+    }
+
+    class PathManager {
+        + resolve_path(path): str
+    }
+
+    class BoilerplateResponses {
+        + standard_response(): Response
+    }
+
+    class BoilerplateIncoming {
+        + get_token_if_present(request): str
+    }
+
+    class FinalClass {
+        <<metaclass>>
+    }
+}
+
+package "Utilities" {
+    class HCI {
+        + success(content, content_type): Response
+        + error(content, content_type): Response
+    }
+
+    class HttpDataTypes {
+        + JSON: str
+        + HTML: str
+    }
+
+    class Disp {
+        + log_debug(message, func): None
+        + log_error(message, func): None
+        + log_critical(message, func): None
+        + update_disp_debug(debug): None
+    }
+}
+
+' Relationships
+DocumentationHandler ..|> FinalClass : <<uses metaclass>>
+DocumentationHandler --> DocumentationProvider : manages
+DocumentationHandler --> Constants : uses
+DocumentationHandler *-- SwaggerHandler : creates
+DocumentationHandler *-- RedocHandler : creates
+DocumentationHandler *-- RapiDocProvider : creates
+DocumentationHandler *-- ScalarProvider : creates
+DocumentationHandler *-- StoplightElementsProvider : creates
+DocumentationHandler *-- SwaggerEditorProvider : creates
+DocumentationHandler *-- OpenAPIExplorerProvider : creates
+DocumentationHandler *-- RapiPDFProvider : creates
+
+DocumentationHandler --> RuntimeManager : uses
+DocumentationHandler --> RuntimeControl : accesses
+DocumentationHandler --> ServerHeaders : uses
+DocumentationHandler --> PathManager : uses
+DocumentationHandler --> BoilerplateResponses : uses
+DocumentationHandler --> BoilerplateIncoming : uses
+DocumentationHandler --> Disp : logs with
+DocumentationHandler --> HCI : returns responses
+
+DocumentationHandler ..> FastAPI : injects routes
+DocumentationHandler ..> Request : processes
+DocumentationHandler ..> Response : returns
+
+RuntimeControl --> FastAPI : contains
+SwaggerHandler ..> Response : returns
+RedocHandler ..> Response : returns
+RapiDocProvider ..> Response : returns
+ScalarProvider ..> Response : returns
+
+HCI --> HttpDataTypes : uses
+
+note right of DocumentationHandler
+  Central hub for managing multiple
+  API documentation providers.
+  Supports OAuth2 authentication
+  and custom OpenAPI schemas.
+end note
+
+note bottom of Providers
+  Each provider implements its own
+  documentation rendering logic
+  and returns HTML responses
+end note
+
+@enduml

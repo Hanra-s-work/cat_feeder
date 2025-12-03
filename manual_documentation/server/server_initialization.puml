@@ -1,0 +1,289 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: server_initialization.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:28:44 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The steps called when the server starts up.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml server_initialization
+!theme plain
+
+participant "Main Entry Point" as Main
+participant "Server" as Server
+participant "RuntimeManager" as RM
+participant "ServerManagement" as SM
+participant "PathManager" as PM
+participant "BackgroundTasks" as BG
+participant "Crons" as Cron
+participant "RuntimeControl" as RC
+participant "FastAPI" as FastAPI
+participant "Uvicorn" as Uvicorn
+
+activate Main
+
+' ================== PHASE 1: Constructor ==================
+Main -> Server: __init__(host, port, debug)
+activate Server
+
+Server -> Server: Initialize logger
+Server -> Server: Store config parameters
+
+note right of Server
+    Parameters:
+    - host: "0.0.0.0"
+    - port: 5000
+    - app_name: "Asperguide"
+    - debug: False
+    - success: 0
+    - error: 84
+end note
+
+Server -> RM: Get RuntimeManager instance (RI)
+activate RM
+RM --> Server: RuntimeManager singleton
+deactivate RM
+
+Server -> RM: update_debug(debug)
+
+' Service Registration Sequence
+Server -> RM: set(RuntimeControl)
+activate RM
+RM -> RC: __init__()
+activate RC
+RC --> RM: instance
+deactivate RC
+RM --> Server: registered
+deactivate RM
+
+Server -> RM: set(ServerHeaders, host, port, app_name, ...)
+activate RM
+RM -> RM: Create ServerHeaders instance
+RM --> Server: registered
+deactivate RM
+
+Server -> RM: set(SQL, url, port, username, password, db_name)
+activate RM
+RM -> RM: Create SQL instance
+note right
+    Database connection
+    established here
+end note
+RM --> Server: registered
+deactivate RM
+
+Server -> RM: set(Bucket)
+activate RM
+RM -> RM: Create Bucket instance
+RM --> Server: registered
+deactivate RM
+
+Server -> RM: set(BackgroundTasks)
+Server -> RM: set(Crons)
+Server -> RM: set(ServerManagement)
+Server -> RM: set(BoilerplateResponses)
+Server -> RM: set(BoilerplateIncoming)
+Server -> RM: set(BoilerplateNonHTTP)
+Server -> RM: set(PathManager)
+Server -> RM: set(EndpointManager)
+Server -> RM: set(OAuthAuthentication)
+Server -> RM: set(MailManagement)
+Server -> RM: set(DocumentationHandler)
+
+note right of Server
+    All 15 services registered
+    with RuntimeManager
+end note
+
+' Retrieve cached instances
+Server -> RM: get(ServerManagement)
+activate RM
+RM --> Server: server_management_initialised
+deactivate RM
+
+Server -> RM: get(PathManager)
+activate RM
+RM --> Server: paths_initialised
+deactivate RM
+
+Server -> RM: get(Crons)
+activate RM
+RM --> Server: crons_initialised
+deactivate RM
+
+Server -> RM: get(BackgroundTasks)
+activate RM
+RM --> Server: background_tasks_initialised
+deactivate RM
+
+Server -> RM: get(RuntimeControl)
+activate RM
+RM --> Server: runtime_control
+deactivate RM
+
+Server -> RM: get(SQL)
+activate RM
+RM --> Server: sql_connection
+deactivate RM
+
+Server --> Main: Server instance ready
+deactivate Server
+
+' ================== PHASE 2: Main Execution ==================
+Main -> Server: main()
+activate Server
+
+' Step 1: Initialize FastAPI
+Server -> SM: initialise_classes()
+activate SM
+
+SM -> RC: app = FastAPI(debug, docs_url=None, ...)
+activate RC
+RC -> FastAPI: Create app instance
+activate FastAPI
+FastAPI --> RC: app
+deactivate FastAPI
+RC --> SM: app created
+deactivate RC
+
+SM -> RC: app.add_middleware(CORSMiddleware)
+activate RC
+RC -> FastAPI: Add CORS middleware
+FastAPI --> RC: configured
+deactivate RC
+RC --> SM: middleware added
+deactivate RC
+
+SM -> RC: config = uvicorn.Config(app, host, port, ...)
+activate RC
+RC -> Uvicorn: Create config
+activate Uvicorn
+Uvicorn --> RC: config
+deactivate Uvicorn
+RC --> SM: config created
+deactivate RC
+
+SM -> RC: server = uvicorn.Server(config)
+activate RC
+RC -> Uvicorn: Create server
+Uvicorn --> RC: server
+deactivate Uvicorn
+RC --> SM: server ready
+deactivate RC
+
+SM -> RC: continue_running = True
+SM --> Server: Classes initialized
+deactivate SM
+
+note right of RC
+    FastAPI app configured:
+    - CORS middleware
+    - Uvicorn server
+    - Ready to accept routes
+end note
+
+' Step 2: Load default routes
+Server -> PM: load_default_paths_initialised()
+activate PM
+PM -> PM: Register default endpoints
+PM -> PM: Register error handlers
+PM -> PM: Configure static files
+PM --> Server: Default routes loaded
+deactivate PM
+
+' Step 3: Inject routes into FastAPI
+Server -> PM: inject_routes()
+activate PM
+PM -> RC: Get FastAPI app
+activate RC
+RC --> PM: app instance
+deactivate RC
+PM -> FastAPI: app.include_router(routes)
+activate FastAPI
+FastAPI --> PM: routes registered
+deactivate FastAPI
+PM --> Server: Routes injected
+deactivate PM
+
+' Step 4: Inject cron jobs
+Server -> Cron: inject_crons()
+activate Cron
+Cron -> Cron: Register scheduled tasks
+Cron -> Cron: Validate cron expressions
+Cron --> Server: Crons injected
+deactivate Cron
+
+' Step 5: Start background tasks
+Server -> BG: safe_start()
+activate BG
+BG -> BG: Initialize worker pools
+BG -> BG: Start task queue
+BG -> Cron: Start scheduler
+activate Cron
+Cron -> Cron: Begin cron execution
+Cron --> BG: Scheduler running
+deactivate Cron
+BG --> Server: success (0)
+deactivate BG
+
+note right of BG
+    Background tasks active:
+    - Worker threads running
+    - Cron scheduler active
+    - Task queue processing
+end note
+
+' Step 6: Run server
+Server -> RC: Check if server exists
+activate RC
+RC --> Server: server instance valid
+deactivate RC
+
+Server -> RC: server.run()
+activate RC
+RC -> Uvicorn: Start server
+activate Uvicorn
+
+note right of Uvicorn
+    Server is now running:
+    - Listening on host:port
+    - Accepting HTTP requests
+    - Blocking until shutdown
+end note
+
+Uvicorn --> RC: Server stopped
+deactivate Uvicorn
+RC --> Server: Execution completed
+deactivate RC
+
+Server --> Main: return success (0)
+deactivate Server
+
+deactivate Main
+
+@enduml

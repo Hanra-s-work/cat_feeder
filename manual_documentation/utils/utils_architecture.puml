@@ -1,0 +1,246 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: utils_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 13:58:12 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The technical overview of the utils module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml utils_architecture
+!theme plain
+
+title Utils Module Architecture
+
+package "Utils Module" {
+    class OAuthAuthentication {
+        - disp: Disp
+        - debug: bool
+        - success: int
+        - error: int
+        - runtime_manager_initialised: RuntimeManager
+        - database_link: SQL
+        - boilerplate_non_http_initialised: BoilerplateNonHTTP
+        - boilerplate_responses_initialised: BoilerplateResponses
+        - boilerplate_incoming_initialised: BoilerplateIncoming
+        - server_headers_initialised: ServerHeaders
+        
+        + __init__(success, error, debug)
+        - _generate_oauth_authorization_url(provider): Union[int, str]
+        - _exchange_code_for_token(provider, code): Union[int, dict]
+        - _refresh_oauth_token(provider, refresh_token): Union[int, dict]
+        - _get_user_info_from_provider(provider, token): Union[int, dict]
+        + renew_oaths(): None
+    }
+
+    class PasswordHandling {
+        - disp: Disp
+        - debug: bool
+        - success: int
+        - error: int
+        - salt_rounds: int
+        
+        + __init__(error, success, debug)
+        + hash_password(password): str
+        + check_password(password, password_hash): bool
+    }
+
+    class ServerManagement <<Final>> {
+        - disp: Disp
+        - error: int
+        - success: int
+        - debug: bool
+        - runtime_manager: RuntimeManager
+        - runtime_control: RuntimeControl
+        - database_link: SQL
+        - background_tasks_initialised: BackgroundTasks
+        - boilerplate_responses_initialised: Optional[BoilerplateResponses]
+        - server_headers: ServerHeaders
+        - documentation_handler_initialised: Optional[DocumentationHandler]
+        
+        + __init__(error, success, debug)
+        + is_server_alive(): bool
+        + is_server_running(): bool
+        + shutdown(background_tasks): Response
+        - _perform_shutdown(): None
+    }
+
+    class constants <<module>> {
+        + ENV: Dict[str, Optional[str]]
+        + TOML_CONF: dict
+        
+        + _get_environement_variable(env, var_name): str
+        + _get_toml_variable(toml, section, key, default): Any
+        
+        ' Common constants
+        + TAB_USER_OAUTH_CONNECTION: str
+        + TAB_CONNECTIONS: str
+        + TAB_VERIFICATION: str
+        + REDIRECT_URI: str
+        + EMAIL_VERIFICATION_DELAY: int
+    }
+}
+
+package "OAuth Providers" {
+    class "Google OAuth" {
+        + authorization_url
+        + token_url
+        + user_info_url
+        + client_id
+        + client_secret
+        + scope
+    }
+    
+    class "Facebook OAuth" {
+        + authorization_url
+        + token_url
+        + user_info_url
+    }
+    
+    class "GitHub OAuth" {
+        + authorization_url
+        + token_url
+        + user_info_url
+    }
+    
+    note as ProviderNote
+        Providers configured
+        in database table:
+        TAB_USER_OAUTH_CONNECTION
+    end note
+}
+
+package "Security Libraries" {
+    class bcrypt {
+        + gensalt(rounds): bytes
+        + hashpw(password, salt): bytes
+        + checkpw(password, hashed): bool
+    }
+    
+    class uuid {
+        + uuid4(): UUID
+    }
+}
+
+package "Core Dependencies" {
+    class SQL {
+        + get_data_from_table(): Union[int, List]
+        + insert_data_into_table(): int
+        + remove_data_from_table(): int
+        + is_connected(): bool
+        + close(): None
+        + datetime_to_string(): str
+        + string_to_datetime(): datetime
+    }
+    
+    class RuntimeManager {
+        + get(cls): Any
+        + set(cls, **kwargs): None
+        + get_if_exists(cls, default): Any
+    }
+    
+    class RuntimeControl {
+        + continue_running: bool
+        + server: Optional[Any]
+        + graceful_shutdown(): None
+    }
+    
+    class BackgroundTasks {
+        + safe_start(): int
+        + safe_stop(): int
+    }
+}
+
+package "External APIs" {
+    class requests {
+        + post(url, data, headers): Response
+        + get(url, headers): Response
+    }
+}
+
+' Relationships
+OAuthAuthentication --> SQL : database operations
+OAuthAuthentication --> RuntimeManager : retrieves instances
+OAuthAuthentication --> requests : HTTP requests
+OAuthAuthentication --> uuid : state generation
+OAuthAuthentication --> "Google OAuth" : integrates
+OAuthAuthentication --> "Facebook OAuth" : integrates
+OAuthAuthentication --> "GitHub OAuth" : integrates
+
+PasswordHandling --> bcrypt : password hashing
+PasswordHandling --> bcrypt : password verification
+
+ServerManagement --> RuntimeManager : manages instances
+ServerManagement --> RuntimeControl : server control
+ServerManagement --> SQL : database management
+ServerManagement --> BackgroundTasks : background jobs
+
+constants --> ENV : loads
+constants --> TOML_CONF : loads
+
+' OAuth Flow
+note right of OAuthAuthentication
+    OAuth Flow:
+    1. Generate authorization URL
+    2. User authorizes at provider
+    3. Exchange code for token
+    4. Get user information
+    5. Store tokens in database
+    6. Periodically renew tokens
+end note
+
+' Password Flow
+note right of PasswordHandling
+    Password Security:
+    - Bcrypt with salt rounds
+    - Constant-time comparison
+    - Automatic salt generation
+    - Prevents timing attacks
+    - Prevents rainbow tables
+end note
+
+' Server Management
+note right of ServerManagement
+    Shutdown Process:
+    1. Schedule in background
+    2. Send response to client
+    3. Close database
+    4. Stop background tasks
+    5. Graceful server stop
+end note
+
+' Configuration
+note right of constants
+    Configuration Sources:
+    - .env file (secrets)
+    - os.environ (system vars)
+    - config.toml (structure)
+    
+    Priority: .env > os.environ
+end note
+
+@enduml

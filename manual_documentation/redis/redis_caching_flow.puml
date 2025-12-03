@@ -1,0 +1,85 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: redis_caching_flow.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:30:37 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The flow employed by redis for handling it's cache relative to the API.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml redis_caching_flow
+!theme plain
+
+participant "Client" as Client
+participant "RedisCaching" as Cache
+participant "Redis Server" as Redis
+participant "Data Fetcher" as Fetcher
+
+Client -> Cache: get_data_from_table(table, columns, where, fetcher)
+activate Cache
+
+Cache -> Cache: build_cache_key(table, columns, where)
+note right
+    Key format:
+    sql:{table}:{hash(columns, where)}
+end note
+
+Cache -> Redis: GET cache_key
+activate Redis
+
+alt Cache HIT
+    Redis --> Cache: cached_value (JSON)
+    Cache -> Cache: json.loads(cached_value)
+    Cache --> Client: return data
+    
+else Cache MISS
+    Redis --> Cache: None
+    deactivate Redis
+    
+    Cache -> Fetcher: fetcher()
+    activate Fetcher
+    note right
+        Fetcher is a callable
+        provided by client
+        (e.g., SQL query)
+    end note
+    Fetcher --> Cache: fresh_data
+    deactivate Fetcher
+    
+    Cache -> Cache: json.dumps(fresh_data)
+    
+    Cache -> Redis: SET cache_key value EX ttl
+    activate Redis
+    Redis --> Cache: OK
+    deactivate Redis
+    
+    Cache --> Client: return fresh_data
+end
+
+deactivate Cache
+
+@enduml

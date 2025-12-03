@@ -1,0 +1,270 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: bucket_operations.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 15:28:57 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The operational overview of some processes for the bucket module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml bucket_operations
+!theme plain
+
+' Title
+title Common Bucket Operations Flow
+
+' Participants
+participant "Application" as App
+participant "Bucket" as Bucket
+participant "S3 Service" as S3
+database "Object Storage\n(MinIO/S3)" as Storage
+
+' === Initialization ===
+group Initialization
+  App -> Bucket: __init__(auto_connect=True, debug=False)
+  activate Bucket
+  Bucket -> Bucket: _auto_connect()
+  Bucket -> Bucket: connect()
+  Bucket -> S3: boto3.resource("s3", credentials)
+  activate S3
+  S3 -> Storage: Establish connection
+  activate Storage
+  Storage --> S3: Connection OK
+  deactivate Storage
+  S3 --> Bucket: resource object
+  deactivate S3
+  Bucket -> S3: list_buckets() [health check]
+  activate S3
+  S3 -> Storage: List buckets
+  activate Storage
+  Storage --> S3: Bucket list
+  deactivate Storage
+  S3 --> Bucket: Success
+  deactivate S3
+  Bucket --> App: Bucket instance (connected)
+  deactivate Bucket
+end
+
+' === Create Bucket ===
+group Create Bucket
+  App -> Bucket: create_bucket("my-bucket")
+  activate Bucket
+  Bucket -> Bucket: _ensure_connected()
+  Bucket -> S3: create_bucket(Bucket="my-bucket")
+  activate S3
+  S3 -> Storage: Create bucket
+  activate Storage
+  Storage --> S3: Bucket created
+  deactivate Storage
+  S3 --> Bucket: Success
+  deactivate S3
+  Bucket --> App: success code (0)
+  deactivate Bucket
+end
+
+' === Upload File ===
+group Upload File
+  App -> Bucket: upload_file("my-bucket", "/tmp/file.txt", "data/file.txt")
+  activate Bucket
+  Bucket -> Bucket: _ensure_connected()
+  Bucket -> S3: Bucket("my-bucket")
+  activate S3
+  S3 --> Bucket: S3BucketLike
+  deactivate S3
+  Bucket -> S3: upload_file("/tmp/file.txt", "data/file.txt")
+  activate S3
+  S3 -> Storage: PUT object: data/file.txt
+  activate Storage
+  Storage --> S3: Object stored
+  deactivate Storage
+  S3 --> Bucket: Success
+  deactivate S3
+  Bucket --> App: success code (0)
+  deactivate Bucket
+end
+
+' === List Files ===
+group List Files
+  App -> Bucket: get_bucket_files("my-bucket")
+  activate Bucket
+  Bucket -> Bucket: _ensure_connected()
+  Bucket -> S3: Bucket("my-bucket")
+  activate S3
+  S3 --> Bucket: S3BucketLike
+  deactivate S3
+  Bucket -> S3: objects.all()
+  activate S3
+  S3 -> Storage: List objects
+  activate Storage
+  Storage --> S3: Object list
+  deactivate Storage
+  S3 --> Bucket: Iterator[S3ObjectLike]
+  deactivate S3
+  Bucket -> Bucket: [obj.key for obj in objects]
+  Bucket --> App: ["data/file.txt", "data/file2.txt"]
+  deactivate Bucket
+end
+
+' === Get File Info ===
+group Get File Metadata
+  App -> Bucket: get_bucket_file("my-bucket", "data/file.txt")
+  activate Bucket
+  Bucket -> Bucket: _ensure_connected()
+  Bucket -> S3: Bucket("my-bucket")
+  activate S3
+  S3 --> Bucket: S3BucketLike
+  deactivate S3
+  Bucket -> S3: Object("data/file.txt")
+  activate S3
+  S3 -> Storage: HEAD object: data/file.txt
+  activate Storage
+  Storage --> S3: Object metadata
+  deactivate Storage
+  S3 --> Bucket: S3ObjectLike
+  deactivate S3
+  Bucket -> Bucket: Extract key and content_length
+  Bucket --> App: {"file_path": "data/file.txt", "file_size": 1024}
+  deactivate Bucket
+end
+
+' === Download File ===
+group Download File
+  App -> Bucket: download_file("my-bucket", "data/file.txt", "/tmp/downloaded.txt")
+  activate Bucket
+  Bucket -> Bucket: _ensure_connected()
+  Bucket -> S3: Bucket("my-bucket")
+  activate S3
+  S3 --> Bucket: S3BucketLike
+  deactivate S3
+  Bucket -> S3: download_file("data/file.txt", "/tmp/downloaded.txt")
+  activate S3
+  S3 -> Storage: GET object: data/file.txt
+  activate Storage
+  Storage --> S3: Object data stream
+  deactivate Storage
+  S3 -> S3: Write to /tmp/downloaded.txt
+  S3 --> Bucket: Success
+  deactivate S3
+  Bucket --> App: success code (0)
+  deactivate Bucket
+end
+
+' === Delete File ===
+group Delete File
+  App -> Bucket: delete_file("my-bucket", "data/file.txt")
+  activate Bucket
+  Bucket -> Bucket: _ensure_connected()
+  Bucket -> S3: Bucket("my-bucket")
+  activate S3
+  S3 --> Bucket: S3BucketLike
+  deactivate S3
+  Bucket -> S3: Object("data/file.txt").delete()
+  activate S3
+  S3 -> Storage: DELETE object: data/file.txt
+  activate Storage
+  Storage --> S3: Object deleted
+  deactivate Storage
+  S3 --> Bucket: Success
+  deactivate S3
+  Bucket --> App: success code (0)
+  deactivate Bucket
+end
+
+' === List All Buckets ===
+group List Buckets
+  App -> Bucket: get_bucket_names()
+  activate Bucket
+  Bucket -> Bucket: _ensure_connected()
+  Bucket -> S3: buckets.all()
+  activate S3
+  S3 -> Storage: List buckets
+  activate Storage
+  Storage --> S3: Bucket list
+  deactivate Storage
+  S3 --> Bucket: Iterator[BucketLike]
+  deactivate S3
+  Bucket -> Bucket: [bucket.name for bucket in buckets]
+  Bucket --> App: ["my-bucket", "another-bucket"]
+  deactivate Bucket
+end
+
+' === Connection Check ===
+group Check Connection
+  App -> Bucket: is_connected()
+  activate Bucket
+  Bucket -> S3: list_buckets() [health check]
+  activate S3
+  S3 -> Storage: List buckets
+  activate Storage
+  Storage --> S3: Bucket list
+  deactivate Storage
+  S3 --> Bucket: Success
+  deactivate S3
+  Bucket --> App: True
+  deactivate Bucket
+end
+
+' === Cleanup ===
+group Cleanup
+  App -> Bucket: disconnect()
+  activate Bucket
+  Bucket -> Bucket: connection = None
+  Bucket --> App: success code (0)
+  deactivate Bucket
+  
+  App -> Bucket: __del__() [garbage collection]
+  activate Bucket
+  Bucket -> Bucket: disconnect()
+  Bucket -> Bucket: connection = None
+  deactivate Bucket
+end
+
+' Notes
+note over App, Bucket
+  All operations automatically ensure
+  connection is established via
+  _ensure_connected() before proceeding
+end note
+
+note over Bucket, S3
+  Return codes: 0 for success, 84 for error
+  (configurable in constructor)
+  
+  List operations return List[str] on success
+  or error code on failure
+end note
+
+note over S3, Storage
+  boto3 handles:
+  - Connection pooling
+  - Automatic retries
+  - Multipart uploads (large files)
+  - Streaming downloads
+  - Request signing
+end note
+
+@enduml

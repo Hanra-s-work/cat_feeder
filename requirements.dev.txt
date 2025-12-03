@@ -1,0 +1,42 @@
+#
+# +==== BEGIN AsperBackend =================+
+# LOGO: 
+# ..........####...####..........
+# ......###.....#.#########......
+# ....##........#.###########....
+# ...#..........#.############...
+# ...#..........#.#####.######...
+# ..#.....##....#.###..#...####..
+# .#.....#.##...#.##..##########.
+# #.....##########....##...######
+# #.....#...##..#.##..####.######
+# .#...##....##.#.##..###..#####.
+# ..#.##......#.#.####...######..
+# ..#...........#.#############..
+# ..#...........#.#############..
+# ...##.........#.############...
+# ......#.......#.#########......
+# .......#......#.########.......
+# .........#####...#####.........
+# /STOP
+# PROJECT: AsperBackend
+# FILE: requirements.dev.txt
+# CREATION DATE: 09-10-2025
+# LAST Modified: 18:53:13 11-10-2025
+# DESCRIPTION: 
+# This is the backend server in charge of making the actual website work.
+# /STOP
+# COPYRIGHT: (c) Asperguide
+# PURPOSE: The developper requirements for the server.
+# // AR
+# +==== END AsperBackend =================+
+#
+
+# Default environment for the project
+-r ./requirements.txt
+
+# Dependencies for testing
+-r ./backend/deps/requirements.testing.txt
+
+# Dependencies for the development
+-r ./backend/deps/requirements.dev.txt

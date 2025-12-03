@@ -1,0 +1,107 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: path_manager_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:40:8 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The overall architecture of the Path Manager module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml path_manager_architecture
+!theme plain
+
+package "PathManager Module" {
+  class PathManager {
+    - routes: List[Dict[str, Any]]
+    - runtime_manager_initialised: RuntimeManager
+    - endpoints_initialised: EndpointManager
+    - runtime_control_initialised: RuntimeControl
+    + __init__(success, error, debug)
+    + add_path(path, endpoint, method)
+    + has_endpoint(path, endpoint, method)
+    + load_default_paths_initialised()
+    + inject_routes()
+    - endpoint_valid(path, endpoint, method)
+    - _build_endpoint(path, endpoint, method)
+    - _find_route_index(path, endpoint)
+    - _merge_methods(existing, new)
+  }
+
+  class PathConstants {
+    + PATH_KEY: str = "path"
+    + ENDPOINT_KEY: str = "endpoint"
+    + METHOD_KEY: str = "method"
+    + ALLOWED_METHODS: List[str]
+  }
+}
+
+package "Core" {
+  class RuntimeManager {
+    + get(class_type)
+    + get_if_exists(class_type, default)
+    + exists(class_type)
+  }
+
+  class RuntimeControl {
+    + app: FastAPI
+  }
+
+  class FinalClass {
+    <<metaclass>>
+  }
+}
+
+package "EndpointManager" {
+  class EndpointManager {
+    + inject_routes()
+  }
+}
+
+PathManager --> PathConstants : uses
+PathManager --> RuntimeManager : retrieves instances
+PathManager --> RuntimeControl : accesses FastAPI app
+PathManager --> EndpointManager : loads routes from
+PathManager ..|> FinalClass : metaclass
+PathManager --> "FastAPI" : injects routes into
+
+note right of PathManager
+  **Internal Storage (routes):**
+  Deferred routes structure:
+  [
+    {
+      "path": "/api/v1/users",
+      "endpoint": function_ref,
+      "method": ["GET", "POST"]
+    }
+  ]
+  
+  **inject_routes():**
+  Final step that injects all stored
+  routes into FastAPI app instance
+end note
+
+@enduml

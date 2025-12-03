@@ -1,0 +1,179 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: bucket_upload_flow.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 15:27:22 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The in depth view of a call for the upload_file function.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml bucket_upload_flow
+!theme plain
+
+' Title
+title File Upload Flow - Bucket Module
+
+' Participants
+actor User
+participant "Bucket" as Bucket
+participant "_ensure_connected()" as Ensure
+participant "S3ServiceResourceLike\n(boto3 resource)" as S3Resource
+participant "S3BucketLike\n(boto3 bucket)" as S3Bucket
+participant "MinIO/S3 Server" as Server
+participant "Disp\n(Logger)" as Logger
+
+' Flow
+User -> Bucket: upload_file(bucket_name, file_path, key_name)
+activate Bucket
+
+Bucket -> Logger: log_debug("Uploading file...")
+activate Logger
+Logger --> Bucket: 
+deactivate Logger
+
+Bucket -> Ensure: _ensure_connected()
+activate Ensure
+
+alt Not connected
+  Ensure -> Ensure: Check _is_connected
+  Ensure -> Bucket: connect()
+  activate Bucket
+  Bucket -> S3Resource: boto3.resource("s3", endpoint_url, credentials)
+  activate S3Resource
+  S3Resource -> Server: Establish connection
+  activate Server
+  Server --> S3Resource: Connection established
+  deactivate Server
+  S3Resource --> Bucket: resource object
+  deactivate S3Resource
+  Bucket -> S3Resource: meta.client.list_buckets()
+  activate S3Resource
+  S3Resource -> Server: List buckets (health check)
+  activate Server
+  Server --> S3Resource: Bucket list
+  deactivate Server
+  S3Resource --> Bucket: Success
+  deactivate S3Resource
+  Bucket --> Ensure: success
+  deactivate Bucket
+  Ensure -> Ensure: Set _is_connected = True
+else Already connected
+  Ensure -> Bucket: is_connected()
+  activate Bucket
+  Bucket -> S3Resource: meta.client.list_buckets()
+  activate S3Resource
+  S3Resource -> Server: List buckets
+  activate Server
+  Server --> S3Resource: Bucket list
+  deactivate Server
+  S3Resource --> Bucket: True
+  deactivate S3Resource
+  Bucket --> Ensure: True
+  deactivate Bucket
+end
+
+Ensure --> Bucket: Connection verified
+deactivate Ensure
+
+' Null check
+alt connection is None
+  Bucket -> Bucket: raise ConnectionError("No connection established.")
+  Bucket -> Logger: log_error("Connection error")
+  activate Logger
+  Logger --> Bucket: 
+  deactivate Logger
+  Bucket --> User: error code
+else connection exists
+  ' Get bucket object
+  Bucket -> S3Resource: Bucket(bucket_name)
+  activate S3Resource
+  S3Resource --> Bucket: S3BucketLike object
+  deactivate S3Resource
+  
+  ' Set key_name if None
+  alt key_name is None
+    Bucket -> Bucket: key_name = file_path
+  end
+  
+  ' Upload file
+  Bucket -> S3Bucket: upload_file(file_path, key_name)
+  activate S3Bucket
+  
+  S3Bucket -> S3Bucket: Read local file
+  S3Bucket -> Server: PUT object (multipart if large)
+  activate Server
+  
+  alt Upload successful
+    Server --> S3Bucket: 200 OK
+    deactivate Server
+    S3Bucket --> Bucket: Success
+    deactivate S3Bucket
+    
+    Bucket -> Logger: log_info("File uploaded successfully")
+    activate Logger
+    Logger --> Bucket: 
+    deactivate Logger
+    
+    Bucket --> User: success code
+    
+  else Upload failed
+    Server --> S3Bucket: Error (403, 404, 500, etc.)
+    deactivate Server
+    S3Bucket --> Bucket: ClientError exception
+    deactivate S3Bucket
+    
+    Bucket -> Logger: log_error("Upload failed: <error>")
+    activate Logger
+    Logger --> Bucket: 
+    deactivate Logger
+    
+    Bucket --> User: error code
+  end
+end
+
+deactivate Bucket
+
+' Notes
+note over Bucket, S3Resource
+  The _ensure_connected() method is called
+  before every operation to verify the
+  connection is active and reconnect if needed.
+end note
+
+note over S3Bucket, Server
+  boto3 automatically handles multipart
+  uploads for large files, retries on
+  network failures, and connection pooling.
+end note
+
+note over Logger
+  All operations are logged with context
+  including function name and detailed
+  error messages for debugging.
+end note
+
+@enduml

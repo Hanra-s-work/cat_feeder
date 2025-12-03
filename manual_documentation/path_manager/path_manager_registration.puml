@@ -1,0 +1,84 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: path_manager_registration.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:35:56 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: An overview of the context in which the path manager would be initialised.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml path_manager_registration
+!theme plain
+
+participant "Application" as App
+participant "EndpointManager" as EM
+participant "PathManager" as PM
+participant "RuntimeControl" as RC
+participant "FastAPI" as FA
+
+App -> PM : __init__()
+activate PM
+PM -> PM : routes = []
+PM -> RC : get RuntimeControl
+PM -> EM : get EndpointManager (if exists)
+return PathManager instance
+
+App -> PM : load_default_paths_initialised()
+activate PM
+PM -> EM : inject_routes()
+activate EM
+EM -> PM : add_path("/api/v1/login", login_handler, "POST")
+activate PM
+PM -> PM : endpoint_valid()
+PM -> PM : _build_endpoint()
+PM -> PM : routes.append({...})
+return success
+EM -> PM : add_path("/api/v1/users", get_users, "GET")
+PM -> PM : routes.append({...})
+return success
+EM -> PM : add_path("/api/v1/users", create_user, "POST")
+PM -> PM : _find_route_index()
+PM -> PM : _merge_methods(["GET"], ["POST"])
+PM -> PM : routes[idx]["method"] = ["GET", "POST"]
+return success
+return all routes registered
+
+App -> PM : inject_routes()
+activate PM
+PM -> RC : get app instance
+RC --> PM : FastAPI app
+PM -> FA : add_api_route("/api/v1/login", login_handler, methods=["POST"])
+PM -> FA : add_api_route("/api/v1/users", get_users, methods=["GET", "POST"])
+PM -> FA : ... (all other routes)
+return routes injected
+
+note over PM
+  Routes are now live and
+  FastAPI can handle requests
+end note
+
+@enduml

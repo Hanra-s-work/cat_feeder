@@ -1,0 +1,217 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: module_dependencies.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 13:54:6 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: An overview of module dependencies.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml module_dependencies
+!theme plain
+
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle rectangle
+
+title Asperguide Backend - Module Dependency Graph
+
+' ============================================================
+' LAYER DEFINITIONS
+' ============================================================
+
+package "Layer 0: External Dependencies" #F0F0F0 {
+    [FastAPI] as FASTAPI
+    [Uvicorn] as UVICORN
+    [SQLAlchemy] as SQLALCHEMY
+    [Redis-py] as REDISPY
+    [Boto3] as BOTO3
+    [APScheduler] as APSCHEDULER
+}
+
+package "Layer 1: Core Infrastructure" #FADBD8 {
+    [RuntimeManager] as RTMGR
+    [FinalSingleton] as FINALSINGLETON
+    [FinalClass] as FINALCLASS
+    [RuntimeControl] as RTCTRL
+}
+
+package "Layer 2: Utility Components" #E8DAEF {
+    [ServerHeaders] as HEADERS
+    [BoilerplateResponses] as BPRESP
+    [BoilerplateIncoming] as BPINC
+    [HttpCodes] as HTTPCODES
+    [PasswordHandling] as PASSWORD
+    [ServerManagement] as SRVMGMT
+}
+
+package "Layer 3: Data Access" #FCF3CF {
+    [SQL] as SQL
+    [Redis] as REDIS
+    [Bucket] as BUCKET
+}
+
+package "Layer 4: Service Components" #D5F4E6 {
+    [BackgroundTasks] as BGTASKS
+    [Crons] as CRONS
+    [MailManagement] as MAIL
+    [OAuthAuthentication] as OAUTH
+}
+
+package "Layer 5: Application Logic" #D4E6F1 {
+    [PathManager] as PATHMANAGER
+    [EndpointManager] as ENDPOINTMGR
+    [DocumentationHandler] as DOCHANDLER
+    [Server] as SERVER
+}
+
+package "Layer 6: Entry Point" #E8F4F8 {
+    [server_main.py] as MAIN
+}
+
+' ============================================================
+' LAYER 0 -> LAYER 1: Core depends on external libraries
+' ============================================================
+RTMGR ..> FASTAPI : (optional)
+FINALSINGLETON ..> FASTAPI : (optional)
+
+' ============================================================
+' LAYER 1 -> LAYER 2: Utilities depend on Core
+' ============================================================
+BPRESP --> FINALCLASS : uses metaclass
+HTTPCODES --> FINALCLASS : uses metaclass
+PASSWORD --> FINALCLASS : uses metaclass
+HEADERS --> RTMGR : registered with
+
+' ============================================================
+' LAYER 2 -> LAYER 3: Data layer depends on Utilities
+' ============================================================
+SQL --> FINALSINGLETON : extends
+SQL --> RTMGR : managed by
+SQL --> SQLALCHEMY : uses
+SQL ..> HTTPCODES : (error handling)
+
+REDIS --> FINALSINGLETON : extends
+REDIS --> RTMGR : managed by
+REDIS --> REDISPY : uses
+REDIS ..> HTTPCODES : (error handling)
+
+BUCKET --> FINALSINGLETON : extends
+BUCKET --> RTMGR : managed by
+BUCKET --> BOTO3 : uses
+BUCKET ..> HTTPCODES : (error handling)
+
+' ============================================================
+' LAYER 3 INTERNAL: Data layer interactions
+' ============================================================
+SQL ..> REDIS : caches to\n(dotted = runtime)
+
+' ============================================================
+' LAYER 3 -> LAYER 4: Services depend on Data
+' ============================================================
+BGTASKS --> RTMGR : managed by
+BGTASKS --> APSCHEDULER : wraps
+BGTASKS ..> SQL : (optional)
+
+CRONS --> FINALSINGLETON : extends
+CRONS --> RTMGR : managed by
+CRONS --> BGTASKS : schedules via
+CRONS ..> SQL : maintenance on
+CRONS ..> REDIS : maintenance on
+
+MAIL --> FINALSINGLETON : extends
+MAIL --> RTMGR : managed by
+MAIL ..> SQL : queries
+
+OAUTH --> FINALSINGLETON : extends
+OAUTH --> RTMGR : managed by
+OAUTH ..> REDIS : caches tokens
+OAUTH --> PASSWORD : validates passwords
+
+' ============================================================
+' LAYER 4 -> LAYER 5: Application depends on Services
+' ============================================================
+PATHMANAGER --> RTMGR : managed by
+PATHMANAGER --> FASTAPI : configures
+
+ENDPOINTMGR --> FINALSINGLETON : extends
+ENDPOINTMGR --> RTMGR : managed by
+ENDPOINTMGR --> PATHMANAGER : registers routes
+ENDPOINTMGR --> OAUTH : validates via
+ENDPOINTMGR --> BPRESP : builds responses
+ENDPOINTMGR --> BPINC : validates requests
+ENDPOINTMGR --> HTTPCODES : uses codes
+ENDPOINTMGR ..> SQL : queries
+ENDPOINTMGR ..> BUCKET : uploads/downloads
+
+DOCHANDLER --> FINALSINGLETON : extends
+DOCHANDLER --> RTMGR : managed by
+DOCHANDLER --> PATHMANAGER : registers docs
+
+SERVER --> RTMGR : initializes all via
+SERVER --> RTCTRL : registers
+SERVER --> HEADERS : registers
+SERVER --> SQL : initializes
+SERVER --> REDIS : initializes
+SERVER --> BUCKET : initializes
+SERVER --> PATHMANAGER : creates
+SERVER --> ENDPOINTMGR : initializes
+SERVER --> DOCHANDLER : initializes
+SERVER --> BGTASKS : initializes
+SERVER --> CRONS : initializes
+SERVER --> MAIL : initializes
+SERVER --> OAUTH : initializes
+SERVER --> UVICORN : runs
+
+' ============================================================
+' LAYER 5 -> LAYER 6: Entry point depends on Application
+' ============================================================
+MAIN --> SERVER : creates & runs
+
+' ============================================================
+' LEGEND & NOTES
+' ============================================================
+
+note right of MAIN
+  **Layer Isolation:**
+  Each layer only depends on
+  layers below it. This creates
+  a clean separation of concerns
+  and prevents circular dependencies.
+  
+  **RuntimeManager Pattern:**
+  Services use RuntimeManager.get()
+  to access dependencies at runtime,
+  avoiding hard imports and enabling
+  lazy initialization.
+  
+  **FinalSingleton Pattern:**
+  Most services extend FinalSingleton
+  to ensure single instance and
+  controlled lifecycle via RuntimeManager.
+end note
+
+@enduml

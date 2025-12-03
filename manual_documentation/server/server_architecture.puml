@@ -1,0 +1,257 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: server_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:29:34 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The server architecture overview.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml server_architecture
+!theme plain
+package "Server Layer" {
+    class Server {
+        {static} +disp: Disp
+        --
+        -host: str
+        -port: int
+        -success: int
+        -error: int
+        -debug: bool
+        -app_name: str
+        --
+        -runtime_manager: RuntimeManager
+        -server_management_initialised: ServerManagement
+        -paths_initialised: PathManager
+        -crons_initialised: Crons
+        -background_tasks_initialised: BackgroundTasks
+        -runtime_control: RuntimeControl
+        -sql_connection: SQL
+        --
+        +__init__(host, port, success, error, app_name, debug)
+        +main(): int
+        +is_running(): bool
+        +stop_server(): None
+        +__del__(): None
+    }
+}
+
+package "Core Layer" {
+    class RuntimeManager {
+        {static} -_instances: Dict[str, Any]
+        {static} -_classes: Dict[str, Type]
+        {static} -_thread_locks: Dict[str, Lock]
+        --
+        {static} +set(service, *args, **kwargs): None
+        {static} +get(service, *args, **kwargs): T
+        {static} +exists(service): bool
+    }
+    
+    class RuntimeControl {
+        -continue_running: bool
+        -server: Optional[uvicorn.Server]
+        -app: Optional[FastAPI]
+        -config: Optional[uvicorn.Config]
+        --
+        +graceful_shutdown(): None
+    }
+}
+
+package "Data Layer" {
+    class SQL {
+        -url: str
+        -port: int
+        -username: str
+        -password: str
+        -db_name: str
+        --
+        +connect(): None
+        +execute_query(): Result
+        +close(): None
+    }
+    
+    class Bucket {
+        -client: S3Client
+        --
+        +upload(): bool
+        +download(): bytes
+        +delete(): bool
+    }
+}
+
+package "Application Layer" {
+    class PathManager {
+        -routes: List[Route]
+        --
+        +load_default_paths_initialised(): None
+        +inject_routes(): None
+        +register_route(): None
+    }
+    
+    class EndpointManager {
+        -endpoints: Dict[str, Endpoint]
+        --
+        +register_endpoint(): None
+        +get_endpoint(): Endpoint
+    }
+    
+    class BackgroundTasks {
+        -task_queue: Queue
+        -workers: List[Thread]
+        --
+        +safe_start(): int
+        +add_task(): None
+        +shutdown(): None
+    }
+    
+    class Crons {
+        -scheduler: Scheduler
+        -jobs: List[Job]
+        --
+        +inject_crons(): None
+        +add_job(): None
+        +remove_job(): None
+    }
+}
+
+package "Service Layer" {
+    class ServerManagement {
+        -runtime_control: RuntimeControl
+        -database_link: SQL
+        -server_headers: ServerHeaders
+        --
+        +initialise_classes(): None
+        +is_server_running(): bool
+        +is_server_alive(): bool
+    }
+    
+    class ServerHeaders {
+        -host: str
+        -port: int
+        -app_name: str
+        --
+        +get_headers(): Dict
+    }
+    
+    class OAuthAuthentication {
+        -oauth_client: OAuth2Client
+        --
+        +authenticate(): Token
+        +validate_token(): bool
+    }
+    
+    class MailManagement {
+        -smtp_client: SMTPClient
+        --
+        +send_email(): bool
+    }
+    
+    class DocumentationHandler {
+        -docs_config: DocsConfig
+        --
+        +generate_docs(): None
+    }
+}
+
+package "Utility Layer" {
+    class BoilerplateResponses {
+        +success_response(): Response
+        +error_response(): Response
+    }
+    
+    class BoilerplateIncoming {
+        +validate_request(): bool
+        +parse_body(): Dict
+    }
+    
+    class BoilerplateNonHTTP {
+        +handle_websocket(): None
+        +handle_grpc(): None
+    }
+}
+
+' Relationships
+Server --> RuntimeManager : uses
+Server --> RuntimeControl : manages
+Server --> ServerManagement : orchestrates
+Server --> PathManager : configures routes
+Server --> EndpointManager : configures endpoints
+Server --> BackgroundTasks : starts
+Server --> Crons : schedules
+Server --> SQL : database access
+
+RuntimeManager ..> RuntimeControl : provides
+RuntimeManager ..> SQL : provides
+RuntimeManager ..> Bucket : provides
+RuntimeManager ..> PathManager : provides
+RuntimeManager ..> EndpointManager : provides
+RuntimeManager ..> BackgroundTasks : provides
+RuntimeManager ..> Crons : provides
+RuntimeManager ..> ServerManagement : provides
+RuntimeManager ..> ServerHeaders : provides
+RuntimeManager ..> OAuthAuthentication : provides
+RuntimeManager ..> MailManagement : provides
+RuntimeManager ..> DocumentationHandler : provides
+RuntimeManager ..> BoilerplateResponses : provides
+RuntimeManager ..> BoilerplateIncoming : provides
+RuntimeManager ..> BoilerplateNonHTTP : provides
+
+ServerManagement --> RuntimeControl : controls
+ServerManagement --> SQL : uses
+ServerManagement --> ServerHeaders : uses
+ServerManagement --> BackgroundTasks : monitors
+ServerManagement --> DocumentationHandler : configures
+
+PathManager --> EndpointManager : coordinates with
+BackgroundTasks --> Crons : integrates with
+
+note right of Server
+    Main Orchestrator:
+    - Single entry point
+    - Service registration
+    - Lifecycle management
+    - Dependency injection
+    - Graceful shutdown
+end note
+
+note right of RuntimeManager
+    Service Locator:
+    - Centralized registry
+    - Lazy instantiation
+    - Thread-safe access
+    - Singleton management
+end note
+
+note bottom of ServerManagement
+    Server Lifecycle:
+    - FastAPI app creation
+    - Uvicorn configuration
+    - Middleware setup
+    - Route injection
+end note
+
+@enduml

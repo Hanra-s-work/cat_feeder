@@ -1,0 +1,89 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: redis_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:30:58 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The architecture overview of the redis module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml redis_architecture
+!theme plain
+
+package "Redis Module" {
+    class RedisCaching {
+        -client: Redis
+        -namespace: str
+        +default_ttls: Dict[str, int]
+        --
+        +__init__()
+        +get(key): Optional[Any]
+        +set(key, value, ttl): bool
+        +delete(key): bool
+        +invalidate(pattern): int
+        +get_data_from_table(...): Any
+        +update_data_in_table(...): int
+        +check_cache_health(): bool
+    }
+
+    class RedisArgs {
+        +socket_path: str
+        +password: str
+        +decode_responses: bool
+        --
+        +from_env(): RedisArgs
+        +to_redis_kwargs(): Dict
+    }
+
+    class Redis <<external>> {
+        +get(key): str
+        +set(key, value, ex): bool
+        +delete(*keys): int
+        +scan_iter(match): Iterator
+        +ping(): bool
+    }
+
+    RedisCaching --> Redis : uses
+    RedisCaching ..> RedisArgs : configuration
+}
+
+note right of RedisCaching
+    Key Patterns:
+    - sql:{db}:{category}:{name}
+    - Uses SHA-256 hash for params
+    - JSON serialization
+    - Deterministic keys
+end note
+
+note right of RedisArgs
+    Environment Variables:
+    - REDIS_SOCKET_PATH
+    - REDIS_PASSWORD
+    - REDIS_DECODE_RESPONSES
+end note
+
+@enduml

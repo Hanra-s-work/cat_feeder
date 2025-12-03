@@ -1,0 +1,165 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: crons_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 15:23:29 02-12-20255
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The dependency overview of the cron module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml crons_architecture
+!theme plain
+
+title Crons Module Architecture
+
+package "Crons Module" {
+    class BackgroundTasks <<Final>> {
+        - disp: Disp
+        - scheduler: BackgroundScheduler
+        - success: int
+        - error: int
+        - debug: bool
+        
+        + __init__(success, error, debug)
+        + safe_add_task(func, args, kwargs, trigger, seconds): Union[int, Job]
+        + safe_start(): int
+        + safe_pause(pause): int
+        + safe_resume(): int
+        + safe_stop(wait): int
+        + add_task(func, args, kwargs, trigger, seconds): Union[Job, None]
+        + start(): Union[int, None]
+        + pause(pause): Union[int, None]
+        + resume(): Union[int, None]
+        + stop(wait): Union[int, None]
+        - _to_dict(data): dict
+    }
+
+    class Crons <<Final>> {
+        - disp: Disp
+        - error: int
+        - success: int
+        - debug: bool
+        - runtime_manager: RuntimeManager
+        - background_tasks: BackgroundTasks
+        - database_link: SQL
+        - oauth_authentication_initialised: Optional[OAuthAuthentication]
+        - boilerplate_non_http_initialised: Optional[BoilerplateNonHTTP]
+        
+        + __init__(error, success, debug)
+        + inject_crons(): int
+        + check_actions(): None
+        + clean_expired_tokens(): None
+        + clean_expired_verification_nodes(): None
+        + renew_oaths(): None
+        - _test_hello_world(): None
+        - _test_current_date(*args): None
+    }
+
+    class crons_constants {
+        + TOML_CONF: dict
+        + ENABLE_TEST_CRONS: bool
+        + CLEAN_TOKENS: bool
+        + CLEAN_VERIFICATION: bool
+        + RENEW_OATH_TOKENS: bool
+        + CHECK_ACTIONS_INTERVAL: int
+        + TEST_CRONS_INTERVAL: int
+        + CLEAN_TOKENS_INTERVAL: int
+        + CLEAN_VERIFICATION_INTERVAL: int
+        + RENEW_OATH_TOKENS_INTERVAL: int
+        + _get_toml_variable(toml_conf, section, key, default): Any
+    }
+}
+
+package "APScheduler" {
+    class BackgroundScheduler {
+        + add_job(func, trigger, **kwargs): Job
+        + start(): None
+        + pause(): None
+        + resume(): None
+        + shutdown(wait): None
+    }
+    
+    class Job {
+        + id: str
+        + name: str
+        + next_run_time: datetime
+        + trigger: Trigger
+    }
+}
+
+package "Core Dependencies" {
+    class RuntimeManager {
+        + get(cls): Any
+        + set(cls, **kwargs): None
+        + get_if_exists(cls, default): Any
+        + exists(cls): bool
+    }
+    
+    class SQL {
+        + get_data_from_table(): Union[int, List]
+        + remove_data_from_table(): int
+        + string_to_datetime(): datetime
+    }
+    
+    class OAuthAuthentication {
+        + renew_oauth_tokens(): int
+    }
+    
+    class BoilerplateNonHTTP {
+        + set_lifespan(): datetime
+    }
+}
+
+' Relationships
+Crons --> BackgroundTasks : uses
+Crons --> crons_constants : imports
+BackgroundTasks --> BackgroundScheduler : wraps
+BackgroundScheduler --> Job : creates
+Crons --> RuntimeManager : retrieves instances
+Crons --> SQL : database operations
+Crons --> OAuthAuthentication : token renewal
+Crons --> BoilerplateNonHTTP : utility functions
+
+' Task scheduling flow
+note right of Crons
+    Task Injection Flow:
+    1. inject_crons() called
+    2. Adds tasks via safe_add_task()
+    3. Tasks run on intervals
+    4. Database cleanup performed
+    5. OAuth tokens renewed
+end note
+
+note right of BackgroundTasks
+    Safe Pattern:
+    - safe_* methods catch exceptions
+    - Return error code on failure
+    - Log all operations
+    - Graceful degradation
+end note
+
+@enduml

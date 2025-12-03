@@ -1,0 +1,95 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: redis_invalidation.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:30:13 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The invalidation process for redis data.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml redis_invalidation
+!theme plain
+
+participant "Client" as Client
+participant "RedisCaching" as Cache
+participant "Redis Server" as Redis
+
+== Targeted Invalidation ==
+
+Client -> Cache: invalidate("sql:users:*")
+activate Cache
+
+Cache -> Redis: SCAN 0 MATCH "sql:users:*"
+activate Redis
+
+loop for each matching key
+    Redis --> Cache: keys batch
+    Cache -> Redis: DELETE key1, key2, ...
+    Redis --> Cache: deleted count
+end
+
+Redis --> Cache: scan complete
+deactivate Redis
+
+Cache --> Client: total_deleted_count
+deactivate Cache
+
+== Table-Wide Invalidation ==
+
+Client -> Cache: update_data_in_table(table, ...)
+activate Cache
+
+Cache -> Cache: perform write operation
+
+Cache -> Cache: invalidate(f"sql:{table}:*")
+note right
+    Automatically clear
+    all cached queries
+    for this table
+end note
+
+Cache -> Redis: SCAN + DELETE
+activate Redis
+Redis --> Cache: keys deleted
+deactivate Redis
+
+Cache --> Client: write_result
+deactivate Cache
+
+== Manual Cache Clear ==
+
+Client -> Cache: client.flushdb()
+activate Cache
+note right: Nuclear option - clears ALL cache
+Cache -> Redis: FLUSHDB
+activate Redis
+Redis --> Cache: OK
+deactivate Redis
+Cache --> Client: cache cleared
+deactivate Cache
+
+@enduml

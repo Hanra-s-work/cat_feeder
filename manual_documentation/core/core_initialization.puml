@@ -1,0 +1,80 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: core_initialization.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 15:25:50 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The initialisation of the server class from the core module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml core_initialization
+!theme plain
+
+participant "Client Code" as Client
+participant "RuntimeManager" as RM
+participant "Service Class" as Service
+participant "FinalSingleton" as FS
+database "Instance Cache" as Cache
+
+Client -> RM: get(ServiceClass, arg1, arg2)
+activate RM
+
+RM -> RM: _get_key(ServiceClass)
+note right: Generate cache key\nfrom class name
+
+RM -> Cache: check if exists
+alt Instance cached
+    Cache --> RM: instance
+    RM --> Client: return instance
+else Not cached
+    RM -> RM: acquire lock
+    note right: Thread-safe creation
+    
+    RM -> Service: __new__(arg1, arg2)
+    activate Service
+    Service -> FS: __new__()
+    activate FS
+    FS -> FS: check if direct call
+    note right: Enforces RuntimeManager usage
+    FS --> Service: new instance
+    deactivate FS
+    Service --> RM: instance
+    deactivate Service
+    
+    RM -> Service: async_init() if defined
+    activate Service
+    Service --> RM: completed
+    deactivate Service
+    
+    RM -> Cache: store instance
+    RM -> RM: release lock
+    RM --> Client: return instance
+end
+
+deactivate RM
+
+@enduml

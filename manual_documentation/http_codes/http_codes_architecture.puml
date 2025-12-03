@@ -1,0 +1,210 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: http_codes_architecture.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 14:41:1 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: The architectural overview of the http_code module.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml http_codes_architecture
+!theme plain
+
+title HTTP Codes Module Architecture
+
+package "HTTP Codes Module" {
+    class HttpCodes <<Final>> {
+        - authorised_statuses: List[int]
+        - data_types: Dict[str, str]
+        
+        + __init__()
+        + send_message_on_status(status, content, content_type, headers): Response
+        - _package_correctly(status, content, content_type, headers): Response
+        - _check_data_type(data_type): str
+        - _check_header(header): Dict[str, str]
+        - _process_data_content(data, data_type): Any
+        
+        ' 1xx Informational
+        + continue_(content, ...): Response
+        + switching_protocols(content, ...): Response
+        + processing(content, ...): Response
+        + early_hints(content, ...): Response
+        
+        ' 2xx Success
+        + ok(content, ...): Response
+        + created(content, ...): Response
+        + accepted(content, ...): Response
+        + no_content(...): Response
+        + reset_content(...): Response
+        + partial_content(content, ...): Response
+        
+        ' 3xx Redirection
+        + moved_permanently(url, ...): RedirectResponse
+        + found(url, ...): RedirectResponse
+        + see_other(url, ...): RedirectResponse
+        + not_modified(...): Response
+        + temporary_redirect(url, ...): RedirectResponse
+        + permanent_redirect(url, ...): RedirectResponse
+        
+        ' 4xx Client Errors
+        + bad_request(message, ...): Response
+        + unauthorized(message, ...): Response
+        + forbidden(message, ...): Response
+        + not_found(message, ...): Response
+        + method_not_allowed(message, ...): Response
+        + conflict(message, ...): Response
+        + unprocessable_entity(message, ...): Response
+        + too_many_requests(message, ...): Response
+        
+        ' 5xx Server Errors
+        + internal_server_error(message, ...): Response
+        + not_implemented(message, ...): Response
+        + bad_gateway(message, ...): Response
+        + service_unavailable(message, ...): Response
+        + gateway_timeout(message, ...): Response
+    }
+
+    enum DataTypes {
+        _7Z = "application/x-7z-compressed"
+        JSON = "application/json"
+        HTML = "text/html"
+        PDF = "application/pdf"
+        PNG = "image/png"
+        JPEG = "image/jpeg"
+        MP4 = "video/mp4"
+        CSV = "text/csv"
+        ...
+        
+        + from_key(key: str): Optional[DataTypes]
+    }
+
+    class http_constants <<module>> {
+        + AUTHORISED_STATUSES: List[int]
+        + DATA_TYPES: Dict[str, str]
+        + DEFAULT_MESSAGE_TYPE: str
+        + DEFAULT_MESSAGE_CONTENT: str
+        
+        + FILE_MIME_TYPES: Set[str]
+        + HTML_MIME_TYPES: Set[str]
+        + JSON_MIME_TYPES: Set[str]
+        + PLAIN_TEXT_MIME_TYPES: Set[str]
+        + REDIRECT_MIME_TYPES: Set[str]
+        + STREAMING_MIME_TYPES: Set[str]
+        + UJSON_MIME_TYPES: Set[str]
+        + ORJSON_MIME_TYPES: Set[str]
+    }
+
+    class "HCI (Global)" <<singleton>> {
+        Global HttpCodes instance
+        Ready-to-use in application
+    }
+}
+
+package "FastAPI Responses" {
+    abstract class Response {
+        + content: Any
+        + status_code: int
+        + headers: Dict[str, str]
+        + media_type: str
+    }
+    
+    class JSONResponse extends Response {
+        Optimized for JSON content
+    }
+    
+    class HTMLResponse extends Response {
+        For HTML/XML content
+    }
+    
+    class PlainTextResponse extends Response {
+        For plain text content
+    }
+    
+    class FileResponse extends Response {
+        For serving files
+    }
+    
+    class RedirectResponse extends Response {
+        For URL redirects
+    }
+    
+    class StreamingResponse extends Response {
+        For streaming content
+    }
+    
+    class UJSONResponse extends Response {
+        For ultra-fast JSON
+    }
+    
+    class ORJSONResponse extends Response {
+        For optimized JSON
+    }
+}
+
+' Relationships
+HttpCodes --> http_constants : imports
+HttpCodes --> DataTypes : uses
+http_constants --> DataTypes : generates
+"HCI (Global)" -up-|> HttpCodes : instance of
+
+HttpCodes ..> Response : creates
+HttpCodes ..> JSONResponse : creates
+HttpCodes ..> HTMLResponse : creates
+HttpCodes ..> PlainTextResponse : creates
+HttpCodes ..> FileResponse : creates
+HttpCodes ..> RedirectResponse : creates
+HttpCodes ..> StreamingResponse : creates
+HttpCodes ..> UJSONResponse : creates
+HttpCodes ..> ORJSONResponse : creates
+
+note right of HttpCodes
+    Response Selection Logic:
+    1. Check content type category
+    2. Select appropriate Response class
+    3. Process content accordingly
+    4. Add headers and status
+    5. Return typed response
+end note
+
+note right of DataTypes
+    Content Type Resolution:
+    - Enum member: DataTypes.JSON
+    - String key: "json", "JSON"
+    - Raw MIME: "application/json"
+    - Fallback: DEFAULT_MESSAGE_TYPE
+end note
+
+note bottom of http_constants
+    Categories:
+    - 1xx: Informational (100-103)
+    - 2xx: Success (200-226)
+    - 3xx: Redirection (300-308)
+    - 4xx: Client Error (400-451)
+    - 5xx: Server Error (500-511)
+end note
+
+@enduml

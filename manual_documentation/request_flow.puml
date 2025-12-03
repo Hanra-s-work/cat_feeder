@@ -1,0 +1,243 @@
+' 
+' +==== BEGIN AsperBackend =================+
+' LOGO: 
+' ..........####...####..........
+' ......###.....#.#########......
+' ....##........#.###########....
+' ...#..........#.############...
+' ...#..........#.#####.######...
+' ..#.....##....#.###..#...####..
+' .#.....#.##...#.##..##########.
+' #.....##########....##...######
+' #.....#...##..#.##..####.######
+' .#...##....##.#.##..###..#####.
+' ..#.##......#.#.####...######..
+' ..#...........#.#############..
+' ..#...........#.#############..
+' ...##.........#.############...
+' ......#.......#.#########......
+' .......#......#.########.......
+' .........#####...#####.........
+' /STOP
+' PROJECT: AsperBackend
+' FILE: request_flow.puml
+' CREATION DATE: 02-12-2025
+' LAST Modified: 13:44:24 02-12-2025
+' DESCRIPTION: 
+' This is the backend server in charge of making the actual website work.
+' /STOP
+' COPYRIGHT: (c) Asperguide
+' PURPOSE: An overview of the path that might be traveled by some http requests.
+' // AR
+' +==== END AsperBackend =================+
+' 
+@startuml request_flow
+!theme plain
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+
+title Asperguide Backend - HTTP Request Flow Through System Layers
+
+actor "Client" as CLIENT
+participant "Uvicorn\nASGI Server" as UVICORN
+participant "FastAPI\nApplication" as FASTAPI
+participant "PathManager\nRoute Dispatcher" as PATHMANAGER
+participant "EndpointManager\nBusiness Logic" as ENDPOINT
+participant "OAuthAuthentication\nToken Validator" as OAUTH
+participant "BoilerplateIncoming\nRequest Validator" as VALIDATOR
+participant "SQL\nDatabase Layer" as SQL
+participant "Redis\nCache Layer" as REDIS
+participant "BoilerplateResponses\nResponse Builder" as RESPONSE
+participant "ServerHeaders\nCORS/Security" as HEADERS
+
+== Request Reception ==
+
+CLIENT -> UVICORN : HTTP Request\n(GET /api/users/123)
+activate UVICORN
+
+UVICORN -> FASTAPI : Forward ASGI Request
+activate FASTAPI
+
+FASTAPI -> PATHMANAGER : Route Lookup\n(/api/users/{id})
+activate PATHMANAGER
+
+PATHMANAGER -> ENDPOINT : Dispatch to Handler\nget_user_by_id()
+activate ENDPOINT
+
+== Authentication & Authorization ==
+
+ENDPOINT -> OAUTH : validate_token(headers)
+activate OAUTH
+
+alt Token in Redis cache
+    OAUTH -> REDIS : get_cached_token()
+    activate REDIS
+    REDIS --> OAUTH : token_data
+    deactivate REDIS
+else Token not cached
+    OAUTH -> OAUTH : decode_jwt(token)
+    OAUTH -> REDIS : cache_token(token_data)
+    activate REDIS
+    deactivate REDIS
+end
+
+alt Valid Token
+    OAUTH --> ENDPOINT : user_context
+    deactivate OAUTH
+else Invalid Token
+    OAUTH --> ENDPOINT : AuthenticationError
+    deactivate OAUTH
+    ENDPOINT -> RESPONSE : error_response(401)
+    activate RESPONSE
+    RESPONSE --> ENDPOINT : JSON Response
+    deactivate RESPONSE
+    ENDPOINT --> PATHMANAGER : 401 Unauthorized
+    deactivate ENDPOINT
+    PATHMANAGER --> FASTAPI : HTTP Response
+    deactivate PATHMANAGER
+    FASTAPI -> HEADERS : apply_headers(response)
+    activate HEADERS
+    HEADERS --> FASTAPI : response + CORS
+    deactivate HEADERS
+    FASTAPI --> UVICORN : ASGI Response
+    deactivate FASTAPI
+    UVICORN --> CLIENT : HTTP 401
+    deactivate UVICORN
+    [<-- note: Early return on auth failure
+end
+
+== Request Validation ==
+
+ENDPOINT -> VALIDATOR : validate_request(params)
+activate VALIDATOR
+
+alt Invalid Parameters
+    VALIDATOR --> ENDPOINT : ValidationError
+    deactivate VALIDATOR
+    ENDPOINT -> RESPONSE : error_response(400)
+    activate RESPONSE
+    RESPONSE --> ENDPOINT : JSON Response
+    deactivate RESPONSE
+    ENDPOINT --> PATHMANAGER : 400 Bad Request
+    deactivate ENDPOINT
+    PATHMANAGER --> FASTAPI : HTTP Response
+    deactivate PATHMANAGER
+    FASTAPI -> HEADERS : apply_headers(response)
+    activate HEADERS
+    HEADERS --> FASTAPI : response + CORS
+    deactivate HEADERS
+    FASTAPI --> UVICORN : ASGI Response
+    deactivate FASTAPI
+    UVICORN --> CLIENT : HTTP 400
+    deactivate UVICORN
+    [<-- note: Early return on validation failure
+else Valid Parameters
+    VALIDATOR --> ENDPOINT : validated_data
+    deactivate VALIDATOR
+end
+
+== Data Access Layer ==
+
+ENDPOINT -> SQL : get_user(user_id)
+activate SQL
+
+SQL -> REDIS : check_cache(query_key)
+activate REDIS
+
+alt Cache Hit
+    REDIS --> SQL : cached_result
+    deactivate REDIS
+else Cache Miss
+    deactivate REDIS
+    SQL -> SQL : execute_query()
+    SQL -> REDIS : cache_result(query_key, result)
+    activate REDIS
+    deactivate REDIS
+end
+
+alt User Found
+    SQL --> ENDPOINT : user_object
+    deactivate SQL
+else User Not Found
+    SQL --> ENDPOINT : None
+    deactivate SQL
+    ENDPOINT -> RESPONSE : error_response(404)
+    activate RESPONSE
+    RESPONSE --> ENDPOINT : JSON Response
+    deactivate RESPONSE
+    ENDPOINT --> PATHMANAGER : 404 Not Found
+    deactivate ENDPOINT
+    PATHMANAGER --> FASTAPI : HTTP Response
+    deactivate PATHMANAGER
+    FASTAPI -> HEADERS : apply_headers(response)
+    activate HEADERS
+    HEADERS --> FASTAPI : response + CORS
+    deactivate HEADERS
+    FASTAPI --> UVICORN : ASGI Response
+    deactivate FASTAPI
+    UVICORN --> CLIENT : HTTP 404
+    deactivate UVICORN
+    [<-- note: Early return on not found
+end
+
+== Response Building ==
+
+ENDPOINT -> RESPONSE : success_response(user_object)
+activate RESPONSE
+
+RESPONSE -> RESPONSE : serialize_data()
+RESPONSE -> RESPONSE : add_metadata()
+RESPONSE --> ENDPOINT : JSON Response (200)
+deactivate RESPONSE
+
+ENDPOINT --> PATHMANAGER : 200 OK + JSON
+deactivate ENDPOINT
+
+PATHMANAGER --> FASTAPI : HTTP Response
+deactivate PATHMANAGER
+
+== Response Headers & CORS ==
+
+FASTAPI -> HEADERS : apply_headers(response)
+activate HEADERS
+
+HEADERS -> HEADERS : add_cors_headers()
+HEADERS -> HEADERS : add_security_headers()
+HEADERS --> FASTAPI : response + headers
+deactivate HEADERS
+
+== Response Delivery ==
+
+FASTAPI --> UVICORN : ASGI Response
+deactivate FASTAPI
+
+UVICORN --> CLIENT : HTTP 200 OK\n+ JSON Body\n+ CORS Headers
+deactivate UVICORN
+
+== Notes ==
+
+note over ENDPOINT, SQL
+  **Data Flow Pattern:**
+  1. Authentication first
+  2. Request validation
+  3. Cache check
+  4. Database query (if needed)
+  5. Response building
+end note
+
+note over OAUTH, REDIS
+  **Performance Optimization:**
+  - JWT tokens cached in Redis
+  - Database results cached
+  - Early returns on errors
+end note
+
+note over RESPONSE, HEADERS
+  **Response Standardization:**
+  - Consistent JSON structure
+  - Standard error codes
+  - CORS headers on all responses
+end note
+
+@enduml

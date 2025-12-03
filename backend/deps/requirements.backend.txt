@@ -1,0 +1,68 @@
+# 
+# +==== BEGIN AsperBackend =================+
+# LOGO: 
+# ..........####...####..........
+# ......###.....#.#########......
+# ....##........#.###########....
+# ...#..........#.############...
+# ...#..........#.#####.######...
+# ..#.....##....#.###..#...####..
+# .#.....#.##...#.##..##########.
+# #.....##########....##...######
+# #.....#...##..#.##..####.######
+# .#...##....##.#.##..###..#####.
+# ..#.##......#.#.####...######..
+# ..#...........#.#############..
+# ..#...........#.#############..
+# ...##.........#.############...
+# ......#.......#.#########......
+# .......#......#.########.......
+# .........#####...#####.........
+# /STOP
+# PROJECT: AsperBackend
+# FILE: requirements.backend.txt
+# CREATION DATE: 11-10-2025
+# LAST Modified: 1:4:58 03-11-2025
+# DESCRIPTION: 
+# This is the backend server in charge of making the actual website work.
+# /STOP
+# COPYRIGHT: (c) Asperguide
+# PURPOSE: The dependencies required for the server to run in production mode.
+# // AR
+# +==== END AsperBackend =================+
+# 
+# uuid generator
+uuid == 1.30
+
+# Fetch packages online
+-r ./backend/requirements.internet.txt
+
+# Audio dependencies
+-r ./backend/requirements.audio.txt
+
+# spritesheet management
+-r ./backend/requirements.image.txt
+
+# Code linting
+-r ./backend/requirements.linting.txt
+
+# Text designing
+-r ./backend/requirements.logging.txt
+
+# database management
+-r ./backend/requirements.database.txt
+
+# Minio connector
+-r ./backend/requirements.s3.txt
+
+# For http protocols
+-r ./backend/requirements.http.txt
+
+# For background scheduled jobs
+-r ./backend/requirements.cron.txt
+
+# For getting config files
+-r ./backend/requirements.config.txt
+
+# For passwords and environment variables (security)
+-r ./backend/requirements.security.txt
