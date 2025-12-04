@@ -1,36 +1,26 @@
 #!/bin/bash
 # 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: import_time.sh
 # CREATION DATE: 27-11-2025
 # LAST Modified: 4:33:36 27-11-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: This file aims to provide an easy way to track the time the server takes to import the required dependencies.
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 # 
 SYSTEM_ENV_LOCATION=${1:-"$(pwd)"}
 SYSTEM_ENV_NAME=${2:-"server_env"}

@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,17 +19,17 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: http_codes.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 14:40:33 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The overview of the http module.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # HTTP Codes Module
 

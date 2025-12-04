@@ -1,35 +1,25 @@
 """ 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: server_main.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:57:18 25-11-2025
+# LAST Modified: 6:10:21 04-12-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The file allowing the server to be run as a standalone.
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 """
 
 
@@ -53,7 +43,7 @@ class Main(metaclass=FinalClass):
         self.port: int = 5000
         self.success: int = success
         self.error: int = error
-        self.app_name: str = "Asperguide"
+        self.app_name: str = "Cat Feeder"
         self.debug: bool = False
 
     def process_args(self) -> None:
@@ -80,6 +70,12 @@ class Main(metaclass=FinalClass):
                 )
                 print(
                     "  --debug                                                             Enable debug mode"
+                )
+                print(
+                    "  --config                                                            Specify the configuration file to load when the server is started (default: config.toml)"
+                )
+                print(
+                    "  --env                                                               Specify the environement file to load when the server is started (default: .env)"
                 )
                 print(
                     "  --help, -h                                                          Show this help message"

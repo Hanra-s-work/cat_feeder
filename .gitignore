@@ -1,7 +1,36 @@
+# 
+# +==== BEGIN CatFeeder =================+
+# LOGO: 
+# ..............(..../\
+# ...............)..(.')
+# ..............(../..)
+# ...............\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
+# /STOP
+# PROJECT: CatFeeder
+# FILE: .gitignore
+# CREATION DATE: 04-12-2025
+# LAST Modified: 14:34:5 04-12-2025
+# DESCRIPTION: 
+# This is the project in charge of making the connected cat feeder project work.
+# /STOP
+# COPYRIGHT: (c) Cat Feeder
+# PURPOSE: The .gitignore file.
+# // AR
+# +==== END CatFeeder =================+
+# 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
 *$py.class
+
+# No temporary files
+*tmp*
+
+# No .vscode directory
+.vscode/
 
 # C extensions
 *.so
@@ -135,12 +164,30 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+*.env
+!sample*.env
 .envrc
 .venv
+.env/
+.venv/
+.lenv/
+.wenv/
+.menv/
+.server_env/
+.ENV/
+.env.back/
+.venv.back/
+.env.bak/
+.venv.bak/
 env/
 venv/
+wenv/
+menv/
+lenv/
+server_env/
 ENV/
+env.back/
+venv.back/
 env.bak/
 venv.bak/
 
@@ -182,9 +229,9 @@ cython_debug/
 .abstra/
 
 # Visual Studio Code
-#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
+#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore
 #  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#  and can be added to the global gitignore or merged into this file. However, if you prefer, 
+#  and can be added to the global gitignore or merged into this file. However, if you prefer,
 #  you could uncomment the following to ignore the entire vscode folder
 # .vscode/
 
@@ -205,3 +252,16 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# No binaries
+tts_server
+bin_Cat Feeder_server
+
+# No system cache
+.lesshst
+.bash_history
+.mariadb_history
+
+# No artifacts from running the generation script
+/Doxyfile
+/documentation/**

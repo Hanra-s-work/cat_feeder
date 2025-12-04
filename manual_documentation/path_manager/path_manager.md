@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,23 +19,23 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: path_manager.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 14:35:7 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: Overview of the PathManager library (the one in charge of handling server endpoints).
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # PathManager
 
 ## Overview
 
-The `PathManager` is a critical component of the AsperBackend routing system that implements a **deferred route registration pattern**. It allows routes to be defined and registered BEFORE the FastAPI application instance exists, storing them in memory until they can be injected into the FastAPI app at initialization time.
+The `PathManager` is a critical component of the CatFeeder routing system that implements a **deferred route registration pattern**. It allows routes to be defined and registered BEFORE the FastAPI application instance exists, storing them in memory until they can be injected into the FastAPI app at initialization time.
 
 ## Core Concept: Deferred Registration
 

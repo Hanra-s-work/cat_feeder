@@ -1,35 +1,25 @@
 """ 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: server.py
 # CREATION DATE: 19-11-2025
 # LAST Modified: 6:53:41 02-12-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The main class required to set up the environement for the server to run properly.
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 """
 
 from display_tty import Disp, initialise_logger
@@ -52,7 +42,7 @@ class Server(metaclass=FinalClass):
 
     disp: Disp = initialise_logger(__qualname__, False)
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 5000, success: int = 0, error: int = 84, app_name: str = "Asperguide", debug: bool = False) -> None:
+    def __init__(self, host: str = "0.0.0.0", port: int = 5000, success: int = 0, error: int = 84, app_name: str = "Cat Feeder", debug: bool = False) -> None:
         """_summary_
             This is the class Server, a class that contains the structures used to allow the uvicorn and fastapi combo to run successfully.
             host (str, optional): _description_. Defaults to "0.0.0.0".

@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,17 +19,17 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: redis.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 14:29:44 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The structure of the redis module.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # Redis Module
 

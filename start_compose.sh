@@ -1,36 +1,26 @@
 #!/bin/bash
 # 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: start_compose.sh
 # CREATION DATE: 16-10-2025
-# LAST Modified: 1:32:55 26-11-2025
+# LAST Modified: 3:11:10 04-12-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: Wrapper script that forwards to the actual implementation in docker/utils/start_compose.sh
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 # 
 #
 # @file start_compose.sh
@@ -40,7 +30,7 @@
 # while the actual implementation lives in docker/utils/. All command-line arguments
 # are forwarded to the actual script.
 #
-# @author Asperguide
+# @author Cat Feeder
 # @date 2025-10-16
 #
 # Usage:

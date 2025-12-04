@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,21 +19,26 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: README.md
 -- CREATION DATE: 02-12-2025
--- LAST Modified: 13:44:45 02-12-2025
+-- LAST Modified: 12:6:45 04-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The doxygen handwritten readme of the project.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
-# Asperguide Backend Manual Documentation
+# Cat Feeder Backend Manual Documentation
 
-This directory contains comprehensive architectural documentation for the Asperguide Backend, organized to match the actual source code structure in `backend/src/`.
+This directory contains comprehensive architectural documentation for the Cat Feeder Backend, organized to match the actual source code structure in `backend/src/`.
+
+## Attention
+
+> Most of the manual documentation you will read has been AI Generated and partially reviewed by humnans.
+> This documentation is to take with a grain of salt but should never the less provide an overview of the inner workings of the project.
 
 ## 📚 Documentation Structure
 
@@ -50,10 +55,11 @@ This directory contains comprehensive architectural documentation for the Asperg
 | **[project_structure.md](project_structure/project_structure.md)** | Directory structure, entry points, assets, dependencies |
 | **[server_main.md](project_structure/server_main.md)** | Entry point and CLI arguments |
 
-### Module Documentation (maps to `backend/src/libs/`)
+### Module Documentation (maps to `backend/src/libs/` and `backend/src/config/`)
 
 | Module | Description | Documentation |
 |--------|-------------|---------------|
+| **config/** | Configuration & environment loading | [config/config.md](config/config.md) |
 | **server.py** | Main Server orchestration | [server/server.md](server/server.md) |
 | **boilerplates/** | Request/Response handlers | [boilerplates/boilerplates.md](boilerplates/boilerplates.md) |
 | **bucket/** | S3 storage (MinIO) | [bucket/bucket.md](bucket/bucket.md) |
@@ -75,7 +81,7 @@ This directory contains comprehensive architectural documentation for the Asperg
 | File | Description |
 |------|-------------|
 | **[QUICK_START.md](QUICK_START.md)** | Quick start guide for development |
-| **[DOCUMENTATION_SUMMARY.md](DOCUMENTATION_SUMMARY.md)** | Documentation overview |
+| **[00_ARCHITECTURE.md](00_ARCHITECTURE.md)** | Documentation overview |
 
 ## 🎯 Purpose
 
@@ -90,23 +96,41 @@ This documentation serves multiple purposes:
 
 ### For Developers
 
-1. **Start with the Overview**: Read [00_OVERVIEW.md](00_OVERVIEW.md) to understand the big picture
+1. **Start with the Overview**: Read [00_ARCHITECTURE.md](00_ARCHITECTURE.md) to understand the big picture
 2. **Dive into Layers**: Explore specific layers based on your work area
 3. **Reference Diagrams**: Use PlantUML diagrams to understand component interactions
 
 ### For Doxygen Generation
 
-These files are automatically included in the Doxygen-generated documentation:
+See `QUICK_START.md` for a full quickstart. Key points summarized here:
 
 ```bash
-# Generate documentation
-cd doxygen_generation
-doxygen Doxyfile
+# Make the generator scripts executable (one-time)
+chmod +x doxygen_generation/generate_docs.sh doxygen_generation/make_documentation.sh
 
-# View in browser
-cd documentation/html
-python3 -m http.server 8000
-# Open http://localhost:8000
+# Recommended: pull the prebuilt image first (fast, ~3-4 minutes)
+docker pull hanralatalliard/doxygen:latest || true
+
+# Then run the generator from the repository root; the script will pull or
+# build the image as required (it prefers pulling the prebuilt image):
+./doxygen_generation/generate_docs.sh
+
+# Serve the generated HTML with an httpd Docker container (preferred):
+docker run --rm --name Cat Feeder_docs -p 8080:80 \
+   -v "$(pwd)/documentation/html":/usr/local/apache2/htdocs/:ro \
+   httpd:2.4
+# Open http://localhost:8080
+
+# If your Docker requires root access, prefix with sudo:
+sudo ./doxygen_generation/generate_docs.sh
+sudo docker run --rm --name Cat Feeder_docs -p 8080:80 \
+   -v "$(pwd)/documentation/html":/usr/local/apache2/htdocs/:ro \
+   httpd:2.4
+
+# WARNING: building the Docker image locally may trigger a full LaTeX
+# toolchain build — compiling LaTeX/PDF artifacts from source can take
+# several hours (~4h). Prefer pulling the prebuilt image and only build
+# locally as a last resort.
 ```
 
 The PlantUML diagrams will be rendered as images in the HTML output.
@@ -188,25 +212,25 @@ The backend follows a **layered architecture**:
 
 ### For Backend Developers
 
-1. Start: `00_OVERVIEW.md` → `01_CORE.md`
+1. Start: `00_ARCHITECTURE.md` → `01_CORE.md`
 2. Then: `02_DATA_LAYER.md` for database/caching
 3. Then: `03_APPLICATION_LAYER.md` for endpoint management
 
 ### For Frontend Developers
 
-1. Start: `00_OVERVIEW.md` (high-level only)
+1. Start: `00_ARCHITECTURE.md` (high-level only)
 2. Focus: `03_APPLICATION_LAYER.md` → EndpointManager
 3. Reference: API documentation at `/docs` endpoint
 
 ### For DevOps Engineers
 
-1. Start: `00_OVERVIEW.md` → Architecture Diagram
+1. Start: `00_ARCHITECTURE.md` → Architecture Diagram
 2. Focus: Service initialization sequence
 3. Reference: Docker configuration and deployment
 
 ### For QA/Testing
 
-1. Start: `00_OVERVIEW.md` → Testing Strategy
+1. Start: `00_ARCHITECTURE.md` → Testing Strategy
 2. Reference: Testing sections in each layer document
 3. Focus: Mock implementations and test patterns
 
@@ -242,6 +266,8 @@ After editing, regenerate Doxygen documentation to see rendered diagrams.
 - **Source Code**: `../backend/src/libs/`
 - **API Documentation**: `http://localhost:5000/docs` (when server running)
 - **PlantUML Documentation**: <https://plantuml.com/>
+
+**Note about live API documentation endpoints**: The live API documentation endpoints (for example `http://localhost:5000/docs`, `http://localhost:5000/redoc`, `http://localhost:5000/rapidpdf`, `http://localhost:5000/scalar`, `http://localhost:5000/editor`, `http://localhost:5000/elements`, `http://localhost:5000/explorer`) are only available when the corresponding documentation endpoints are enabled in your project's `.env` configuration. Check `sample.env` or your environment settings and enable the API docs features before expecting these routes to be accessible.
 
 ## 📝 Document Conventions
 
@@ -286,4 +312,4 @@ When contributing to this documentation:
 
 ---
 
-**Questions?** Check the [Overview](00_OVERVIEW.md) or consult the generated Doxygen documentation.
+**Questions?** Check the [Overview](00_ARCHITECTURE.md) or consult the generated Doxygen documentation.

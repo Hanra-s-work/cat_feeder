@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,23 +19,23 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: server.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 14:28:7 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The Server class of the program, it is in charge of the core steps in the startup process.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # Server Module
 
 ## Overview
 
-The **Server** class is the **main orchestrator** of the Asperguide backend system. It acts as the entry point that initializes, coordinates, and manages all backend services through the `RuntimeManager`. The Server class is responsible for the complete lifecycle of the application—from service registration and initialization to graceful shutdown.
+The **Server** class is the **main orchestrator** of the Cat Feeder backend system. It acts as the entry point that initializes, coordinates, and manages all backend services through the `RuntimeManager`. The Server class is responsible for the complete lifecycle of the application—from service registration and initialization to graceful shutdown.
 
 **Location**: `backend/src/libs/server.py`
 
@@ -112,7 +112,7 @@ RuntimeControl (base)
 server = Server(
     host="0.0.0.0",
     port=5000,
-    app_name="Asperguide",
+    app_name="Cat Feeder",
     debug=False
 )
 ```
@@ -333,7 +333,7 @@ from server import Server
 server = Server(
     host="0.0.0.0",
     port=8080,
-    app_name="Asperguide",
+    app_name="Cat Feeder",
     debug=True
 )
 
@@ -352,7 +352,7 @@ from server import Server
 server = Server(
     host="0.0.0.0",
     port=443,  # HTTPS
-    app_name="Asperguide Production",
+    app_name="Cat Feeder Production",
     debug=False,
     success=0,
     error=1
@@ -379,7 +379,7 @@ import os
 server = Server(
     host="127.0.0.1",
     port=5000,
-    app_name="Asperguide Dev",
+    app_name="Cat Feeder Dev",
     debug=True
 )
 
@@ -434,7 +434,7 @@ signal.signal(signal.SIGINT, shutdown_handler)
 server = Server(
     host="0.0.0.0",
     port=8000,
-    app_name="Asperguide"
+    app_name="Cat Feeder"
 )
 
 # Check if server is healthy before starting
@@ -457,7 +457,7 @@ sys.exit(exit_code)
 | `port` | `int` | `5000` | Server listen port |
 | `success` | `int` | `0` | Success return code |
 | `error` | `int` | `84` | Error return code |
-| `app_name` | `str` | `"Asperguide"` | Application name for headers/docs |
+| `app_name` | `str` | `"Cat Feeder"` | Application name for headers/docs |
 | `debug` | `bool` | `False` | Enable debug logging and detailed errors |
 
 ### Environment-Based Configuration
@@ -785,7 +785,7 @@ server.stop_server()
 
 ## Summary
 
-The **Server class** is the backbone of the Asperguide backend:
+The **Server class** is the backbone of the Cat Feeder backend:
 
 ✅ **Single Entry Point**: All services initialized through one class  
 ✅ **Dependency Coordination**: Manages inter-service dependencies automatically  

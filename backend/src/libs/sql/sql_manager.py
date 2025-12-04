@@ -1,38 +1,28 @@
 """ 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: sql_manager.py
 # CREATION DATE: 11-10-2025
 # LAST Modified: 7:30:29 02-12-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE:
 # File in charge of containing the interfacing between an sql library and the program.
 # This contains functions that simplify the process of interracting with databases as well as check for injection attempts.
 # /STOP
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 
 """
 

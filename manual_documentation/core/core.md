@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,23 +19,23 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: core.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 15:24:23 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The core dependencies of the server.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # Core Module
 
 ## Overview
 
-The **core** module provides the foundational design patterns for the Asperguide backend architecture. It implements a **Service Locator Pattern** combined with a **Protected Singleton Pattern** to enable centralized, thread-safe service management.
+The **core** module provides the foundational design patterns for the Cat Feeder backend architecture. It implements a **Service Locator Pattern** combined with a **Protected Singleton Pattern** to enable centralized, thread-safe service management.
 
 **Location**: `backend/src/libs/core/`
 
@@ -500,7 +500,7 @@ class DatabasePool(FinalSingleton):
 
 ## Related Documentation
 
-- [server.md](server.md) - How Server uses RuntimeManager
-- [sql.md](sql.md) - SQL as FinalSingleton example
-- [redis.md](redis.md) - Redis as FinalSingleton example
-- [bucket.md](bucket.md) - Bucket as FinalSingleton example
+- [../server/server.md](../server/server.md) - How Server uses RuntimeManager
+- [../sql/sql.md](../sql/sql.md) - SQL as FinalSingleton example
+- [../redis/redis.md](../redis/redis.md) - Redis as FinalSingleton example
+- [../bucket/bucket.md](../bucket/bucket.md) - Bucket as FinalSingleton example

@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,17 +19,17 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: sql.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 14:1:22 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The overview of the SQL module.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # SQL Module
 
@@ -81,18 +81,18 @@ from core import RuntimeManager
 sql = SQL.create(
     url="localhost",
     port=3306,
-    username="asperguide",
+    username="Cat Feeder",
     password="secure_password",
-    db_name="asperguide_db"
+    db_name="Cat Feeder_db"
 )
 
 # Or via RuntimeManager
 RuntimeManager.set(SQL, 
     url="localhost",
     port=3306,
-    username="asperguide",
+    username="Cat Feeder",
     password="secure_password",
-    db_name="asperguide_db"
+    db_name="Cat Feeder_db"
 )
 sql = RuntimeManager.get(SQL)
 ```
@@ -561,9 +561,9 @@ def test_sql_integration():
 # Database connection
 SQL_HOST=localhost
 SQL_PORT=3306
-SQL_USERNAME=asperguide
+SQL_USERNAME=Cat Feeder
 SQL_PASSWORD=secure_password
-SQL_DATABASE=asperguide_db
+SQL_DATABASE=Cat Feeder_db
 
 # Connection pool
 SQL_POOL_SIZE=10

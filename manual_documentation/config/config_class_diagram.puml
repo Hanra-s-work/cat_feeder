@@ -1,0 +1,111 @@
+' 
+' +==== BEGIN CatFeeder =================+
+' LOGO: 
+' ..............(..../\
+' ...............)..(.')
+' ..............(../..)
+' ...............\(__)|
+' Inspired by Joan Stark
+' source https://www.asciiart.eu/
+' animals/cats
+' /STOP
+' PROJECT: CatFeeder
+' FILE: config_class_diagram.puml
+' CREATION DATE: 04-12-2025
+' LAST Modified: 8:7:4 04-12-2025
+' DESCRIPTION: 
+' This is the project in charge of making the connected cat feeder project work.
+' /STOP
+' COPYRIGHT: (c) Cat Feeder
+' PURPOSE: An overview of the module's diagrams.
+' // AR
+' +==== END CatFeeder =================+
+' 
+@startuml config_class_diagram
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classAttributeIconSize 0
+
+title Configuration Module Class Diagram
+
+class TOMLLoader {
+    {static} -_instance: Optional[TOMLLoader]
+    {static} -_initialized: bool
+    +debug: bool
+    +disp: Disp
+    -_config_toml: Optional[Dict[str, Any]]
+    -_project_root: Optional[Path]
+    
+    +__new__(cls) TOMLLoader
+    +__init__(debug: Optional[bool]) None
+    -_find_project_root() Path
+    -_search_directory_for_file(directory: Path, filename: str, current_depth: int, max_depth: int) Optional[Path]
+    -_find_file(filename: str, max_depth: int) Optional[Path]
+    +load_toml(force_reload: bool, custom_path: Optional[str]) Dict[str, Any]
+    +load_config_toml(force_reload: bool, custom_path: Optional[str]) Dict[str, Any]
+    +get_toml_value(*keys: str, default: Any) Any
+    +get_config_value(*keys: str, default: Any) Any
+    +clear_cache() None
+    +get_project_root() Path
+}
+
+class EnvLoader {
+    {static} -_instance: Optional[EnvLoader]
+    {static} -_initialized: bool
+    +debug: bool
+    +disp: Disp
+    -_env_vars: Optional[Dict[str, str]]
+    -_project_root: Optional[Path]
+    
+    +__new__(cls) EnvLoader
+    +__init__(debug: Optional[bool]) None
+    --Active loading in __init__--
+    +__init__ calls load_env_file()
+    -_find_project_root() Path
+    -_search_directory_for_env(directory: Path, current_depth: int, max_depth: int) Optional[Path]
+    -_find_env_file() Optional[Path]
+    +load_env_file(force_reload: bool, merge_os_environ: bool, custom_path: Optional[str]) Dict[str, str]
+    -_parse_env_file(env_path: Path) Dict[str, str]
+    +get_env_value(key: str, default: Optional[str]) Optional[str]
+    +get_environment_variable(variable_name: str) str
+    +apply_to_os_environ() None
+    +clear_cache() None
+    +get_project_root() Path
+}
+
+note right of TOMLLoader::__new__
+  Implements Singleton pattern
+  Returns same instance on every call
+end note
+
+note right of TOMLLoader::_find_project_root
+  Searches for markers:
+  - docker-compose.yaml
+  - requirements.txt
+  - backend/
+  - .git
+  - config.toml
+  - .env
+end note
+
+note right of EnvLoader::_parse_env_file
+  Handles:
+  - key=value pairs
+  - Comments (#)
+  - Quoted values
+  - Empty lines
+end note
+
+note bottom of TOMLLoader
+  **Thread-Safe Singleton**
+  _initialized flag prevents
+  re-initialization race conditions
+end note
+
+note bottom of EnvLoader
+  **Thread-Safe Singleton**
+  _initialized flag prevents
+  re-initialization race conditions
+end note
+
+@enduml

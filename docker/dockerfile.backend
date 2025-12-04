@@ -1,37 +1,27 @@
 #!
 #
 # 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: dockerfile
 # CREATION DATE: 10-10-2025
 # LAST Modified: 15:51:36 30-11-2025
 # DESCRIPTION: 
 # File in charge of setting up the environement so that the uvicorn server can run.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: 
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 # 
 #/**
 # * @file dockerfile.backend
@@ -43,9 +33,9 @@
 # *  - install runtime dependencies from requirements.txt
 # *  - create a small launcher script to start the application
 # *
-# * @author Asperguide
+# * @author Cat Feeder
 # * @date 2025-10-12
-# * @copyright (c) Asperguide
+# * @copyright (c) Cat Feeder
 # */
 FROM python:3.14-slim
 
@@ -202,7 +192,6 @@ COPY . ${HOME}
 
 # DEBUG: Displaying the content of the folder
 # RUN ls && sleep 5s
-
 # Create a system environement and also run the setup code from the project
 RUN mkdir -p ${SYSTEM_ENV_LOCATION} \
     && python3 -m venv ${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME} \

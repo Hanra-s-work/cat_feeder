@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,23 +19,23 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: endpoint_manager.md
 -- CREATION DATE: 02-12-2025
--- LAST Modified: 14:44:3 02-12-2025
+-- LAST Modified: 10:35:23 04-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The poverview of hte Endpoint manager.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # EndpointManager
 
 ## Overview
 
-The `EndpointManager` is the central coordinator for application-wide route registration in AsperBackend. It acts as a **route aggregator** that collects all endpoint definitions from various sub-modules and registers them with the `PathManager`. This creates a clean separation between route definition and route registration.
+The `EndpointManager` is the central coordinator for application-wide route registration in CatFeeder. It acts as a **route aggregator** that collects all endpoint definitions from various sub-modules and registers them with the `PathManager`. This creates a clean separation between route definition and route registration.
 
 ## Core Concept: Route Aggregation
 

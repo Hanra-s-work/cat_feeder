@@ -1,6 +1,29 @@
-# Contributing to Asperguide Front
+<!-- 
+-- +==== BEGIN CatFeeder =================+
+-- LOGO: 
+-- ..............(..../\
+-- ...............)..(.')
+-- ..............(../..)
+-- ...............\(__)|
+-- Inspired by Joan Stark
+-- source https://www.asciiart.eu/
+-- animals/cats
+-- /STOP
+-- PROJECT: CatFeeder
+-- FILE: CONTRIBUTING.md
+-- CREATION DATE: 04-12-2025
+-- LAST Modified: 14:31:4 04-12-2025
+-- DESCRIPTION: 
+-- This is the project in charge of making the connected cat feeder project work.
+-- /STOP
+-- COPYRIGHT: (c) Cat Feeder
+-- PURPOSE: The contributing guideline for the Cat Feeder project.
+-- // AR
+-- +==== END CatFeeder =================+
+-->
+# Contributing to Cat Feeder Front
 
-Thank you for considering contributing to Asperguide Front! This document outlines the guidelines and processes for making contributions to the project.
+Thank you for considering contributing to Cat Feeder Front! This document outlines the guidelines and processes for making contributions to the project.
 
 ---
 
@@ -30,7 +53,7 @@ We adhere to a [Code of Conduct](CODE_OF_CONDUCT.md) to ensure a welcoming and i
 
 If you encounter a bug or have a question:
 
-1. Check if the issue has already been reported in the [Issues section](https://github.com/Asperguide/front/issues).
+1. Check if the issue has already been reported in the [Issues section](<https://github.com/Cat> Feeder/front/issues).
 2. If not, create a new issue using the **Bug Report** or **Question** template.
 3. Include detailed steps to reproduce the bug or context about your question.
 

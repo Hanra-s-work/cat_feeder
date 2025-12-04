@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,23 +19,23 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: docs.md
 -- CREATION DATE: 02-12-2025
--- LAST Modified: 15:21:28 02-12-2025
+-- LAST Modified: 10:27:5 04-12-20255
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The overview of the documentation structure.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # Documentation Handler Module
 
 ## Overview
 
-The `docs` module provides a unified documentation handler for managing multiple API documentation providers in the AsperBackend FastAPI application. It supports various documentation frameworks including Swagger UI, ReDoc, RapiDoc, Scalar, Stoplight Elements, and more, allowing developers to easily expose and customize API documentation.
+The `docs` module provides a unified documentation handler for managing multiple API documentation providers in the CatFeeder FastAPI application. It supports various documentation frameworks including Swagger UI, ReDoc, RapiDoc, Scalar, Stoplight Elements, and more, allowing developers to easily expose and customize API documentation.
 
 ## Architecture
 
@@ -98,7 +98,7 @@ The module uses environment variables and TOML configuration for setup:
 ```python
 # OpenAPI Configuration
 OPENAPI_URL = "/openapi.json"
-OPENAPI_TITLE = "AsperBackend API"
+OPENAPI_TITLE = "CatFeeder API"
 OPENAPI_VERSION = "1.0.0"
 OPENAPI_DESCRIPTION = "Backend server API documentation"
 
@@ -256,7 +256,7 @@ app = FastAPI()
 
 # Initialize and inject documentation
 docs = DocumentationHandler(
-    api_title="AsperBackend API",
+    api_title="CatFeeder API",
     api_version="1.0.0",
     debug=True
 )
@@ -299,7 +299,7 @@ The `DocumentationHandler` uses the `FinalClass` metaclass to prevent inheritanc
 
 ## See Also
 
-- [Swagger Handler Documentation](swagger/swagger_class.py)
-- [ReDoc Handler Documentation](redoc/redoc_class.py)
+- [Swagger Handler Documentation](../../backend/src/libs/docs/swagger/swagger_class.py)
+- [ReDoc Handler Documentation](../../backend/src/libs/docs/redoc/redoc_class.py)
 - [Core Module Documentation](../core/core.md)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)

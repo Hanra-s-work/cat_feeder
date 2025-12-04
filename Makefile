@@ -1,35 +1,25 @@
 #
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: Makefile
 # CREATION DATE: 18-11-2025
-# LAST Modified: 23:22:4 18-11-2025
+# LAST Modified: 14:27:23 04-12-2025
 # DESCRIPTION:
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The makefile to help easily set up the python environement for the server to start without a hiccup.
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 #
 
 # The variables in charge of tracking the files for the program
@@ -43,7 +33,7 @@ COVERAGE_DIR	=	./coverage_data
 
 # Binary name
 
-NAME	=	bin_asperguide_server
+NAME	=	bin_cat_feeder_server
 
 #  Level precision of the build process
 

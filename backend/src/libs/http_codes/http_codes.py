@@ -1,5 +1,5 @@
 """
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO:
 # ..........####...####..........
 # ......###.....#.#########......
@@ -19,17 +19,17 @@
 # .......#......#.########.......
 # .........#####...#####.........
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: http_codes.py
 # CREATION DATE: 11-10-2025
 # LAST Modified: 20:59:16 22-11-2025
 # DESCRIPTION:
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File containing the list of http codes that can be sent and received by the server.
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 """
 
 import os

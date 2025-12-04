@@ -1,0 +1,124 @@
+' 
+' +==== BEGIN CatFeeder =================+
+' LOGO: 
+' ..............(..../\
+' ...............)..(.')
+' ..............(../..)
+' ...............\(__)|
+' Inspired by Joan Stark
+' source https://www.asciiart.eu/
+' animals/cats
+' /STOP
+' PROJECT: CatFeeder
+' FILE: singleton_pattern.puml
+' CREATION DATE: 04-12-2025
+' LAST Modified: 6:14:27 04-12-2025
+' DESCRIPTION: 
+' This is the project in charge of making the connected cat feeder project work.
+' /STOP
+' COPYRIGHT: (c) Cat Feeder
+' PURPOSE: An explanation of the singleton pattern.
+' // AR
+' +==== END CatFeeder =================+
+' 
+@startuml singleton_pattern
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title Singleton Pattern Implementation
+
+participant "Module A" as A
+participant "Module B" as B
+participant "Module C" as C
+participant "ConfigLoader" as loader
+participant "Class Instance" as instance
+
+== First Access (Module A) ==
+
+A -> loader: ConfigLoader()
+activate loader
+
+loader -> loader: __new__()
+activate loader
+
+alt _instance is None
+    loader -> loader: super().__new__()
+    activate loader
+    loader -> instance: Create new instance
+    activate instance
+    instance --> loader: instance reference
+    deactivate instance
+    loader -> loader: _instance = instance
+    deactivate loader
+end
+
+loader --> loader: return _instance
+deactivate loader
+
+loader -> loader: __init__()
+activate loader
+
+alt not _initialized
+    loader -> loader: Set up debug, disp
+    loader -> loader: Initialize caches
+    loader -> loader: _initialized = True
+else _initialized
+    loader -> loader: log_debug("Already initialized")
+    loader -> loader: return early
+end
+
+deactivate loader
+loader --> A: ConfigLoader instance
+deactivate loader
+
+== Second Access (Module B) ==
+
+B -> loader: ConfigLoader()
+activate loader
+
+loader -> loader: __new__()
+activate loader
+
+alt _instance is not None
+    loader --> loader: return _instance (existing)
+end
+
+deactivate loader
+
+loader -> loader: __init__()
+activate loader
+
+alt _initialized
+    loader -> loader: log_debug("Already initialized")
+    loader -> loader: return early
+end
+
+deactivate loader
+loader --> B: Same ConfigLoader instance
+deactivate loader
+
+== Third Access (Module C) ==
+
+C -> loader: ConfigLoader()
+activate loader
+
+loader -> loader: __new__()
+activate loader
+loader --> loader: return _instance (existing)
+deactivate loader
+
+loader -> loader: __init__()
+activate loader
+loader -> loader: return early (_initialized)
+deactivate loader
+
+loader --> C: Same ConfigLoader instance
+deactivate loader
+
+note over A, C
+  All three modules share
+  the SAME instance with
+  the SAME cached configuration
+end note
+
+@enduml

@@ -12,9 +12,9 @@ _All lines marked with a '*' need to be checked before proceeding_
 **Checklist**
 Please ensure the following items are completed before submitting your report:
 
-- [ ] * I have read the [Code of Conduct](https://github.com/Asperguide/back-end/blob/main/CODE_OF_CONDUCT.md).
+- [ ] * I have read the [Code of Conduct](<https://github.com/Cat> Feeder/back-end/blob/main/CODE_OF_CONDUCT.md).
 - [ ] * I have searched existing issues to ensure this bug has not been reported.
-- [ ] * I have read the [Documentation](https://github.com/Asperguide/back-end/blob/main/README.md) to ensure that my bug hasn't already been answered.
+- [ ] * I have read the [Documentation](<https://github.com/Cat> Feeder/back-end/blob/main/README.md) to ensure that my bug hasn't already been answered.
 - [ ] * I have provided all necessary details, including logs and configuration.
 
 **\* Describe the bug**
@@ -53,9 +53,9 @@ If applicable, provide links to any documentation you referred to.
 Add any other context about the problem here.
 
 **Note**
-Please ensure your report adheres to our [Code of Conduct](https://github.com/Asperguide/back-end/blob/main/CODE_OF_CONDUCT.md).
+Please ensure your report adheres to our [Code of Conduct](<https://github.com/Cat> Feeder/back-end/blob/main/CODE_OF_CONDUCT.md).
 
 **Contribution**
-If you plan to submit a fix, please follow our [commit conventions](https://github.com/Asperguide/back-end/blob/main/COMMIT_CONVENTION.md) and [contribution guidelines](https://github.com/Asperguide/back-end/blob/main/CONTRIBUTING.md).
+If you plan to submit a fix, please follow our [commit conventions](<https://github.com/Cat> Feeder/back-end/blob/main/COMMIT_CONVENTION.md) and [contribution guidelines](<https://github.com/Cat> Feeder/back-end/blob/main/CONTRIBUTING.md).
 
 _Note: Please ensure you have filled out the mandatory sections before submitting._

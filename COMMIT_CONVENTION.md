@@ -1,3 +1,26 @@
+<!-- 
+-- +==== BEGIN CatFeeder =================+
+-- LOGO: 
+-- ..............(..../\\
+-- ...............)..(.')
+-- ..............(../..)
+-- ...............\\(__)|
+-- Inspired by Joan Stark
+-- source https://www.asciiart.eu/
+-- animals/cats
+-- /STOP
+-- PROJECT: CatFeeder
+-- FILE: COMMIT_CONVENTION.md
+-- CREATION DATE: 04-12-2025
+-- LAST Modified: 3:8:50 04-12-2025
+-- DESCRIPTION: 
+-- This is the project in charge of making the connected cat feeder project work.
+-- /STOP
+-- COPYRIGHT: (c) Cat Feeder
+-- PURPOSE: File specifying the norm regarding commits for the project.
+-- // AR
+-- +==== END CatFeeder =================+
+-->
 # Commit convention
 
 This file will describe the norm used for commits in this repository.

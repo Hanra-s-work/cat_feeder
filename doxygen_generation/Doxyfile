@@ -1,35 +1,25 @@
 # 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: Doxyfile
 # CREATION DATE: 02-12-2025
-# LAST Modified: 12:50:45 02-12-2025
+# LAST Modified: 14:45:19 04-12-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The file providing the build instructions for doxygen documentation
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 # 
 # Doxyfile 1.10.0
 
@@ -75,7 +65,7 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = "Asper Guide - Backend"
+PROJECT_NAME           = "Cat Feeder"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
@@ -87,7 +77,7 @@ PROJECT_NUMBER         = 1.0.0
 # for a project that appears at the top of each page and should give viewer a
 # quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          = "The backend of the website"
+PROJECT_BRIEF          = "The Cat feeder project"
 
 # With the PROJECT_LOGO tag one can specify a logo or an icon that is included
 # in the documentation. The maximum height of the logo should not exceed 55
@@ -1053,7 +1043,9 @@ FILE_PATTERNS          = *.c \
                          *.js \
                          *.jsx \
                          *.jsm \
-                         Makefile
+                         Makefile \
+                         *.md \
+                         *.markdown
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -1074,7 +1066,7 @@ EXCLUDE                = *.o \
                          *.pyo \
                          *.pyd \
                          ** \
-                         vscode/asperheader/node_modules/** \
+                         **/node_modules/** \
                          .env \
                          .bash_history \
                          .mysql_history \
@@ -2454,6 +2446,8 @@ INCLUDE_FILE_PATTERNS  = *.h \
                          *.js \
                          *.jsx \
                          *.jsm \
+                         *.md \
+                         *.markdown \
                          Makefile
 
 # The PREDEFINED tag can be used to specify one or more macro names that are

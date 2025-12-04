@@ -1,35 +1,25 @@
 # 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: config.toml
 # CREATION DATE: 10-10-2025
 # LAST Modified: 17:0:38 02-12-2025
 # DESCRIPTION: 
 # The configuration file used to set the required settings for the server.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The server configuration file.
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 # 
 title = "Server file configuration"
 
@@ -310,8 +300,8 @@ openapi_url = "/openapi.json"
 
 # API title displayed in documentation
 # type: string
-# default: "AsperBackend API"
-api_title = "AsperBackend API"
+# default: "CatFeeder API"
+api_title = "CatFeeder API"
 
 # API version displayed in documentation
 # type: string
@@ -320,8 +310,8 @@ api_version = "1.0.0"
 
 # API description displayed in documentation
 # type: string
-# default: "API documentation for the AsperBackend server"
-api_description = """Backend API for the Asperguide application.
+# default: "API documentation for the CatFeeder server"
+api_description = """Backend API for the Cat Feeder application.
 
 This API provides endpoints for:
 * Authentication and authorization
@@ -351,14 +341,14 @@ admin = "Administrative access to API resources"
 
 # Contact information for API documentation
 [Documentation.contact]
-name = "Asperguide Team"
-url = "https://github.com/Asperguide"
-email = "support@asperguide.com"
+name = "Cat Feeder Team"
+url = "https://github.com/Cat Feeder"
+email = "support@Cat Feeder.com"
 
 # License information for API documentation
 [Documentation.license]
 name = "Proprietary"
-url = "https://github.com/Asperguide/back-end/blob/prod/LICENSE"
+url = "https://github.com/Cat Feeder/back-end/blob/prod/LICENSE"
 
 # Server URLs for different environments
 [[Documentation.servers]]
@@ -366,7 +356,7 @@ url = "http://localhost:5000"
 description = "Development server"
 
 [[Documentation.servers]]
-url = "https://api.asperguide.com"
+url = "https://api.Cat Feeder.com"
 description = "Production server"
 
 # Tags metadata for grouping endpoints

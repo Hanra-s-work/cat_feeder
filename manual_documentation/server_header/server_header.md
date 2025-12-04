@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,17 +19,17 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: server_header.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 14:25:50 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The structure of the server header module.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # Server Header Module
 
@@ -73,7 +73,7 @@ A final class that generates standardized HTTP headers for different content typ
 ServerHeaders(
     host: str = "0.0.0.0",
     port: int = 5000,
-    app_name: str = "Asperguide",
+    app_name: str = "Cat Feeder",
     error: int = 84,
     success: int = 0,
     debug: bool = False
@@ -411,7 +411,7 @@ from backend.src.libs.core import RI
 from backend.src.libs.server_header import ServerHeaders
 
 # Initialize once in application startup
-RI.set(ServerHeaders, host="0.0.0.0", port=8000, app_name="Asperguide")
+RI.set(ServerHeaders, host="0.0.0.0", port=8000, app_name="Cat Feeder")
 
 # Use anywhere in the application
 @app.get("/api/status")

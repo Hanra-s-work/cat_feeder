@@ -1,35 +1,25 @@
 /* 
-* +==== BEGIN AsperBackend =================+
+* +==== BEGIN CatFeeder =================+
 * LOGO: 
-* ..........####...####..........
-* ......###.....#.#########......
-* ....##........#.###########....
-* ...#..........#.############...
-* ...#..........#.#####.######...
-* ..#.....##....#.###..#...####..
-* .#.....#.##...#.##..##########.
-* #.....##########....##...######
-* #.....#...##..#.##..####.######
-* .#...##....##.#.##..###..#####.
-* ..#.##......#.#.####...######..
-* ..#...........#.#############..
-* ..#...........#.#############..
-* ...##.........#.############...
-* ......#.......#.#########......
-* .......#......#.########.......
-* .........#####...#####.........
+* ..............(..../\\
+* ...............)..(.')
+* ..............(../..)
+* ...............\\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
 * /STOP
-* PROJECT: AsperBackend
+* PROJECT: CatFeeder
 * FILE: backend-server.code-workspace
 * CREATION DATE: 22-11-2025
-* LAST Modified: 20:16:55 22-11-2025
-* DESCRIPTION: 
-* This is the backend server in charge of making the actual website work.
+* LAST Modified: 3:9:9 04-12-2025
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
 * /STOP
-* COPYRIGHT: (c) Asperguide
+* COPYRIGHT: (c) Cat Feeder
 * PURPOSE: 
 * // AR
-* +==== END AsperBackend =================+
+* +==== END CatFeeder =================+
 */
 {
 	"folders": [
@@ -40,14 +30,25 @@
 	"settings": {
 		"asperheader.enableDebug": false,
 		"asperheader.extensionIgnore": [
+			"renovate.json",
 			"*.code-workspace",
 			"python.version",
 			"settings.json"
 		],
+		"asperheader.headerLogo": [
+			"..............(..../\\",
+			"...............)..(.')",
+			"..............(../..)",
+			"...............\\(__)|",
+			"Inspired by Joan Stark",
+			"source https://www.asciiart.eu/",
+			"animals/cats"
+		],
+		"asperheader.projectCopyright": "(c) Cat Feeder",
 		"asperheader.promptToCreateIfMissing": true,
 		"asperheader.useWorkspaceNameWhenAvailable": false,
-		"asperheader.projectDescription": "This is the backend server in charge of making the actual website work.",
-		"asperheader.extensionName": "AsperBackend",
+		"asperheader.projectDescription": "This is the project in charge of making the connected cat feeder project work.",
+		"asperheader.extensionName": "CatFeeder",
 		"files.associations": {
 			"*.cnf": "nginx" // This is for linting purposes, the comments in both file types are the same.
 		}

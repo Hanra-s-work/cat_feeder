@@ -1,30 +1,20 @@
 """ 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: downloader.py
 # CREATION DATE: 11-10-2025
 # LAST Modified: 20:58:55 22-11-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # 
 # This file raises:
 #     ArchitectureNotSupported: This means that the architecure you are running this file on is unknown to it.
@@ -33,10 +23,10 @@
 #     NotImplementedError: This class inform the user that a required operation is not implemented and thus not completable.
 #     ValueError: This is used for any error that does not fit into any specific class.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File in charge of downloading and extracting the FFmpeg binaries for the current system.
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 """
 import os
 import sys

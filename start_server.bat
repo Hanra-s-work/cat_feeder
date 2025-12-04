@@ -1,42 +1,37 @@
 @REM 
-@REM +==== BEGIN AsperBackend =================+
+@REM +==== BEGIN CatFeeder =================+
 @REM LOGO: 
-@REM ..........####...####..........
-@REM ......###.....#.#########......
-@REM ....##........#.###########....
-@REM ...#..........#.############...
-@REM ...#..........#.#####.######...
-@REM ..#.....##....#.###..#...####..
-@REM .#.....#.##...#.##..##########.
-@REM #.....##########....##...######
-@REM #.....#...##..#.##..####.######
-@REM .#...##....##.#.##..###..#####.
-@REM ..#.##......#.#.####...######..
-@REM ..#...........#.#############..
-@REM ..#...........#.#############..
-@REM ...##.........#.############...
-@REM ......#.......#.#########......
-@REM .......#......#.########.......
-@REM .........##.##...#####.........
+@REM ..............(..../\\
+@REM ...............)..(.')
+@REM ..............(../..)
+@REM ...............\\(__)|
+@REM Inspired by Joan Stark
+@REM source https://www.asciiart.eu/
+@REM animals/cats
 @REM /STOP
-@REM PROJECT: AsperBackend
+@REM PROJECT: CatFeeder
 @REM FILE: start_server.bat
 @REM CREATION DATE: 04-10-2025
-@REM LAST Modified: 23:37:33 18-11-2025
+@REM LAST Modified: 14:22:22 04-12-2025
 @REM DESCRIPTION: 
-@REM This is the backend server in charge of making the actual website work.
+@REM This is the project in charge of making the connected cat feeder project work.
 @REM /STOP
-@REM COPYRIGHT: (c) Asperguide
+@REM COPYRIGHT: (c) Cat Feeder
 @REM PURPOSE: The script to start the server on windows
 @REM // AR
-@REM +==== END AsperBackend =================+
+@REM +==== END CatFeeder =================+
 @REM 
 REM Optional args: 1) env location (defaults to current dir), 2) env name (defaults to server_env)
+REM Additional args after those two are passed to the Python script
 set "SYSTEM_ENV_LOCATION=%~1"
 if "%SYSTEM_ENV_LOCATION%"=="" set "SYSTEM_ENV_LOCATION=%CD%"
 
 set "SYSTEM_ENV_NAME=%~2"
 if "%SYSTEM_ENV_NAME%"=="" set "SYSTEM_ENV_NAME=server_env"
+
+REM Shift to pass remaining args to Python
+shift
+shift
 
 if exist "%SYSTEM_ENV_LOCATION%\%SYSTEM_ENV_NAME%\Scripts\activate.bat" (
 	call "%SYSTEM_ENV_LOCATION%\%SYSTEM_ENV_NAME%\Scripts\activate.bat"
@@ -54,6 +49,6 @@ if exist "%SYSTEM_ENV_LOCATION%\%SYSTEM_ENV_NAME%\Scripts\activate.bat" (
 	)
 )
 
-python .\backend\src\ --host 0.0.0.0 --port 5000 --debug
+python .\backend\src\ --host 0.0.0.0 --port 5001 --debug %*
 
 call deactivate

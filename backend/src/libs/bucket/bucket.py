@@ -1,35 +1,25 @@
 """ 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: bucket.py
 # CREATION DATE: 11-10-2025
 # LAST Modified: 7:41:54 02-12-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File in charge of providing a boiled down interface for interracting with an s3 bucket.
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 """
 
 from __future__ import annotations
@@ -158,11 +148,11 @@ class Bucket(metaclass=FinalClass):
         try:
             # Build endpoint URL - ensure it includes protocol scheme
             endpoint_url = CONST.BUCKET_HOST
-            
+
             # Add protocol if not present
             if not endpoint_url.startswith(('http://', 'https://')):
                 endpoint_url = f"http://{endpoint_url}"
-            
+
             # Add port only if specified
             if CONST.BUCKET_PORT:
                 endpoint_url = f"{endpoint_url}:{CONST.BUCKET_PORT}"

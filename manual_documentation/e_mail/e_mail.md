@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,23 +19,23 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: e_mail.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 14:45:38 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: An overview of the e-mail module for the server (smtp protocol).
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # Email Management Module
 
 ## Overview
 
-The `e_mail` module provides a robust email management system for the AsperBackend application. The `MailManagement` class offers a simple yet powerful interface for sending emails with support for attachments, multiple recipients, HTML content, and inline images using SMTP over SSL.
+The `e_mail` module provides a robust email management system for the CatFeeder application. The `MailManagement` class offers a simple yet powerful interface for sending emails with support for attachments, multiple recipients, HTML content, and inline images using SMTP over SSL.
 
 ## Architecture
 
@@ -86,7 +86,7 @@ SENDER_PORT = int(os.getenv("EMAIL_SMTP_PORT", "465"))
 Create a `.env` file with the following variables:
 
 ```bash
-EMAIL_SENDER_ADDRESS=noreply@asperguide.com
+EMAIL_SENDER_ADDRESS=noreply@Cat Feeder.com
 EMAIL_SMTP_HOST=smtp.gmail.com
 EMAIL_SMTP_PORT=465
 EMAIL_API_KEY=your_smtp_password_or_api_key
@@ -105,7 +105,7 @@ mail_manager = MailManagement(debug=True)
 # Send a simple HTML email
 status = mail_manager.send_email(
     receiver="user@example.com",
-    subject="Welcome to AsperGuide",
+    subject="Welcome to Cat Feeder",
     body="<h1>Hello!</h1><p>Welcome to our platform.</p>",
     body_type="html"
 )

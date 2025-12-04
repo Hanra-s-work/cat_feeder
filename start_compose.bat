@@ -1,36 +1,26 @@
 @echo off
 @REM 
-@REM +==== BEGIN AsperBackend =================+
+@REM +==== BEGIN CatFeeder =================+
 @REM LOGO: 
-@REM ..........####...####..........
-@REM ......###.....#.#########......
-@REM ....##........#.###########....
-@REM ...#..........#.############...
-@REM ...#..........#.#####.######...
-@REM ..#.....##....#.###..#...####..
-@REM .#.....#.##...#.##..##########.
-@REM #.....##########....##...######
-@REM #.....#...##..#.##..####.######
-@REM .#...##....##.#.##..###..#####.
-@REM ..#.##......#.#.####...######..
-@REM ..#...........#.#############..
-@REM ..#...........#.#############..
-@REM ...##.........#.############...
-@REM ......#.......#.#########......
-@REM .......#......#.########.......
-@REM .........#####...#####.........
+@REM ..............(..../\\
+@REM ...............)..(.')
+@REM ..............(../..)
+@REM ...............\\(__)|
+@REM Inspired by Joan Stark
+@REM source https://www.asciiart.eu/
+@REM animals/cats
 @REM /STOP
-@REM PROJECT: AsperBackend
+@REM PROJECT: CatFeeder
 @REM FILE: start_compose.bat
 @REM CREATION DATE: 11-10-2025
-@REM LAST Modified: 1:30:2 26-11-2025
+@REM LAST Modified: 3:11:19 04-12-2025
 @REM DESCRIPTION: 
-@REM This is the backend server in charge of making the actual website work.
+@REM This is the project in charge of making the connected cat feeder project work.
 @REM /STOP
-@REM COPYRIGHT: (c) Asperguide
+@REM COPYRIGHT: (c) Cat Feeder
 @REM PURPOSE: Wrapper script that forwards to the actual implementation in docker/utils/start_compose.bat
 @REM // AR
-@REM +==== END AsperBackend =================+
+@REM +==== END CatFeeder =================+
 @REM 
 @REM start_compose.bat - Convenience wrapper for the actual script in docker/utils/
 @REM /**

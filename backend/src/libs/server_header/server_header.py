@@ -1,35 +1,25 @@
 """ 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: server_header.py
 # CREATION DATE: 24-11-2025
 # LAST Modified: 9:46:30 27-11-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The class in charge of building the header for the server (This allows a certain flexibility with regards to the response structure)
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 """
 
 from typing import Dict
@@ -77,13 +67,13 @@ class ServerHeaders(metaclass=FinalClass):
     """
     disp: Disp = initialise_logger(__qualname__, False)
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 5000, app_name: str = "Asperguide", error: int = 84, success: int = 0, debug: bool = False) -> None:
+    def __init__(self, host: str = "0.0.0.0", port: int = 5000, app_name: str = "Cat Feeder", error: int = 84, success: int = 0, debug: bool = False) -> None:
         """Initialize ServerHeaders instance.
 
         Args:
             host: Server host address. Defaults to "0.0.0.0".
             port: Server port number. Defaults to 5000.
-            app_name: Application name for headers. Defaults to "Asperguide".
+            app_name: Application name for headers. Defaults to "Cat Feeder".
             error: Error return code. Defaults to 84.
             success: Success return code. Defaults to 0.
             debug: Enable debug logging. Defaults to False.

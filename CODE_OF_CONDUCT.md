@@ -1,8 +1,31 @@
-# **Asperboard mockup Repository Code of Conduct**
+<!-- 
+-- +==== BEGIN CatFeeder =================+
+-- LOGO: 
+-- ..............(..../\
+-- ...............)..(.')
+-- ..............(../..)
+-- ...............\(__)|
+-- Inspired by Joan Stark
+-- source https://www.asciiart.eu/
+-- animals/cats
+-- /STOP
+-- PROJECT: CatFeeder
+-- FILE: CODE_OF_CONDUCT.md
+-- CREATION DATE: 04-12-2025
+-- LAST Modified: 14:32:36 04-12-2025
+-- DESCRIPTION: 
+-- This is the project in charge of making the connected cat feeder project work.
+-- /STOP
+-- COPYRIGHT: (c) Cat Feeder
+-- PURPOSE: This is the code of conduct to follow within the Cat Feeder repository.
+-- // AR
+-- +==== END CatFeeder =================+
+-->
+# Cat Feeder Repository Code of Conduct
 
 This project and its community are dedicated to providing a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
-We are committed to making participation in the Asperboard mockup repository a positive experience for all contributors. By participating in this project, you agree to abide by the following standards of behavior.
+We are committed to making participation in the Cat Feeder mockup repository a positive experience for all contributors. By participating in this project, you agree to abide by the following standards of behavior.
 
 ## 1. **Respectful Communication**
 
@@ -52,7 +75,7 @@ If you experience or witness behavior that violates this Code of Conduct, we enc
 
 ## 7. **Consequences of Violating the Code of Conduct**
 
-The maintainers of the Asperboard mokup repository reserve the right to take appropriate action if any part of this Code of Conduct is violated. This may include:
+The maintainers of the Cat Feeder mokup repository reserve the right to take appropriate action if any part of this Code of Conduct is violated. This may include:
 
 - A formal warning to the contributor.
 - Temporary or permanent removal from the project or communication channels.
@@ -66,4 +89,4 @@ This Code of Conduct is adapted from the [Contributor Covenant](https://www.cont
 
 ### **By contributing to this project, you agree to abide by this Code of Conduct.**
 
-Thank you for helping make the Asperboard mokup repository a positive and inclusive environment for all!
+Thank you for helping make the Cat Feeder mokup repository a positive and inclusive environment for all!

@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,23 +19,23 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: boilerplates.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 15:29:24 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The overview of the boilerplate classes.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # Boilerplates
 
 ## Overview
 
-The `Boilerplates` module provides standardized, reusable components for request handling and response generation in AsperBackend. It eliminates code duplication by offering three specialized classes that handle common patterns in HTTP APIs: response formatting, request validation, and non-HTTP utilities.
+The `Boilerplates` module provides standardized, reusable components for request handling and response generation in CatFeeder. It eliminates code duplication by offering three specialized classes that handle common patterns in HTTP APIs: response formatting, request validation, and non-HTTP utilities.
 
 ## Core Concept: Standardization
 

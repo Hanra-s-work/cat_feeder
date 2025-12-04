@@ -1,0 +1,107 @@
+' 
+' +==== BEGIN CatFeeder =================+
+' LOGO: 
+' ..............(..../\
+' ...............)..(.')
+' ..............(../..)
+' ...............\(__)|
+' Inspired by Joan Stark
+' source https://www.asciiart.eu/
+' animals/cats
+' /STOP
+' PROJECT: CatFeeder
+' FILE: path_resolution.puml
+' CREATION DATE: 04-12-2025
+' LAST Modified: 8:7:0 04-12-2025
+' DESCRIPTION: 
+' This is the project in charge of making the connected cat feeder project work.
+' /STOP
+' COPYRIGHT: (c) Cat Feeder
+' PURPOSE: An overview of the path resolution logic.
+' // AR
+' +==== END CatFeeder =================+
+' 
+@startuml path_resolution
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title Path Resolution Strategy
+
+start
+
+:Application calls load_config();
+
+if (Custom path provided?) then (yes)
+    :Use custom_path;
+    :config_path = Path(custom_path);
+else (no)
+    if (--config in sys.argv?) then (yes)
+        :Get path from argv;
+        :config_path = sys.argv[--config + 1];
+    else (no)
+        if (CONFIG_FILE env var set?) then (yes)
+            :Get path from env;
+            :config_path = os.environ['CONFIG_FILE'];
+        else (no)
+            :Execute smart search;
+            
+            partition "Smart Search Algorithm" {
+                :Start from cwd and __file__;
+                note right
+                  **Search order changed**:
+                  1. cwd (working directory) FIRST
+                  2. __file__ (module location)
+                  
+                  Prevents incorrect root when
+                  marker names match directories
+                end note
+                
+                repeat
+                    :Check current directory;
+                    :Check parent directories (up to 5 levels);
+                    
+                    repeat
+                        :Look for markers:
+                        - docker-compose.yaml
+                        - requirements.txt
+                        - backend/
+                        - .git
+                        - config.toml
+                        - .env;
+                        
+                        if (Marker found?) then (yes)
+                            :Set project_root;
+                            :Break;
+                        endif
+                    repeat while (More markers?)
+                    
+                repeat while (More search paths?)
+                
+                if (No root found?) then (yes)
+                    :Use cwd as root;
+                endif
+                
+                :Search in project_root;
+                :Recursively check subdirectories (max depth 3);
+                
+                if (config.toml found?) then (yes)
+                    :config_path = found_path;
+                else (no)
+                    :config_path = None;
+                endif
+            }
+        endif
+    endif
+endif
+
+if (config_path exists?) then (yes)
+    :Load and parse file;
+    :Cache result;
+    :Return config dict;
+    stop
+else (no)
+    :Raise FileNotFoundError;
+    stop
+endif
+
+@enduml

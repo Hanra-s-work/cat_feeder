@@ -1,5 +1,5 @@
 """
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO:
 # ..........####...####..........
 # ......###.....#.#########......
@@ -19,17 +19,17 @@
 # .......#......#.########.......
 # .........#####...#####.........
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: runtime_manager.py
 # CREATION DATE: 22-11-2025
 # LAST Modified: 4:44:13 27-11-202525555
 # DESCRIPTION:
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: Provide an ECS-like lookup dictionary with lazy singleton creation.
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 """
 from __future__ import annotations
 from typing import Type, TypeVar, Dict, Any, Union, overload, Optional

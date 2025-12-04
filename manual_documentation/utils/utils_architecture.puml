@@ -1,35 +1,25 @@
 ' 
-' +==== BEGIN AsperBackend =================+
+' +==== BEGIN CatFeeder =================+
 ' LOGO: 
-' ..........####...####..........
-' ......###.....#.#########......
-' ....##........#.###########....
-' ...#..........#.############...
-' ...#..........#.#####.######...
-' ..#.....##....#.###..#...####..
-' .#.....#.##...#.##..##########.
-' #.....##########....##...######
-' #.....#...##..#.##..####.######
-' .#...##....##.#.##..###..#####.
-' ..#.##......#.#.####...######..
-' ..#...........#.#############..
-' ..#...........#.#############..
-' ...##.........#.############...
-' ......#.......#.#########......
-' .......#......#.########.......
-' .........#####...#####.........
+' ..............(..../\
+' ...............)..(.')
+' ..............(../..)
+' ...............\(__)|
+' Inspired by Joan Stark
+' source https://www.asciiart.eu/
+' animals/cats
 ' /STOP
-' PROJECT: AsperBackend
+' PROJECT: CatFeeder
 ' FILE: utils_architecture.puml
 ' CREATION DATE: 02-12-2025
 ' LAST Modified: 13:58:12 02-12-2025
 ' DESCRIPTION: 
-' This is the backend server in charge of making the actual website work.
+' This is the project in charge of making the connected cat feeder project work.
 ' /STOP
-' COPYRIGHT: (c) Asperguide
+' COPYRIGHT: (c) Cat Feeder
 ' PURPOSE: The technical overview of the utils module.
 ' // AR
-' +==== END AsperBackend =================+
+' +==== END CatFeeder =================+
 ' 
 @startuml utils_architecture
 !theme plain

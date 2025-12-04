@@ -1,36 +1,26 @@
 #!/bin/bash
 # 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: start_compose.sh
 # CREATION DATE: 16-10-2025
 # LAST Modified: 18:21:33 16-10-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: This is the readme file of the repository to help explain it's aim and how to use it
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 # 
 #
 # @file start_compose.sh
@@ -41,7 +31,7 @@
 # `docker-compose up --build` as a fallback). The script is intended to be run from
 # the repository root.
 #
-# @author Asperguide
+# @author Cat Feeder
 # @date 2025-10-16
 #
 # Usage:

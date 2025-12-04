@@ -1,36 +1,26 @@
 #!/bin/bash
 # 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: rebuild_from_scratch.sh
 # CREATION DATE: 16-10-2025
 # LAST Modified: 1:21:16 26-11-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: Complete Docker environment rebuild script - stops containers, removes all volumes and cached data, then rebuilds from scratch
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 # 
 #
 # @file rebuild_from_scratch.sh
@@ -46,7 +36,7 @@
 # WARNING: This script is destructive and will delete ALL Docker volumes on your system,
 # not just those related to this project. Use with extreme caution.
 #
-# @author Asperguide
+# @author Cat Feeder
 # @date 2025-10-16
 #
 # Usage:

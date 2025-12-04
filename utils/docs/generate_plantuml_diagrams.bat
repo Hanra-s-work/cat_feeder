@@ -1,36 +1,26 @@
 @echo off
 @REM 
-@REM +==== BEGIN AsperBackend =================+
+@REM +==== BEGIN CatFeeder =================+
 @REM LOGO: 
-@REM ..........####...####..........
-@REM ......###.....#.#########......
-@REM ....##........#.###########....
-@REM ...#..........#.############...
-@REM ...#..........#.#####.######...
-@REM ..#.....##....#.###..#...####..
-@REM .#.....#.##...#.##..##########.
-@REM #.....##########....##...######
-@REM #.....#...##..#.##..####.######
-@REM .#...##....##.#.##..###..#####.
-@REM ..#.##......#.#.####...######..
-@REM ..#...........#.#############..
-@REM ..#...........#.#############..
-@REM ...##.........#.############...
-@REM ......#.......#.#########......
-@REM .......#......#.########.......
-@REM .........#####...#####.........
+@REM ..............(..../\\
+@REM ...............)..(.')
+@REM ..............(../..)
+@REM ...............\\(__)|
+@REM Inspired by Joan Stark
+@REM source https://www.asciiart.eu/
+@REM animals/cats
 @REM /STOP
-@REM PROJECT: AsperBackend
+@REM PROJECT: CatFeeder
 @REM FILE: generate_plantuml_diagrams.bat
 @REM CREATION DATE: 02-12-2025
-@REM LAST Modified: 14:20:17 02-12-2025
+@REM LAST Modified: 3:16:18 04-12-2025
 @REM DESCRIPTION: 
-@REM This is the backend server in charge of making the actual website work.
+@REM This is the project in charge of making the connected cat feeder project work.
 @REM /STOP
-@REM COPYRIGHT: (c) Asperguide
+@REM COPYRIGHT: (c) Cat Feeder
 @REM PURPOSE: The batch file in charge of rendering plantUML diagrams to a more common format such as png, svg, pdf etc
 @REM // AR
-@REM +==== END AsperBackend =================+
+@REM +==== END CatFeeder =================+
 @REM 
 
 setlocal enabledelayedexpansion
@@ -43,7 +33,7 @@ set DOCS_DIR=.
 set SERVER_URL=http://127.0.0.1:%PORT%
 
 echo ================================================================
-echo    PlantUML Diagram Generator - Asperguide Backend
+echo    PlantUML Diagram Generator - Cat Feeder Backend
 echo ================================================================
 echo.
 

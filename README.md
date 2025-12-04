@@ -1,39 +1,29 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
--- ..........####...####..........
--- ......###.....#.#########......
--- ....##........#.###########....
--- ...#..........#.############...
--- ...#..........#.#####.######...
--- ..#.....##....#.###..#...####..
--- .#.....#.##...#.##..##########.
--- #.....##########....##...######
--- #.....#...##..#.##..####.######
--- .#...##....##.#.##..###..#####.
--- ..#.##......#.#.####...######..
--- ..#...........#.#############..
--- ..#...........#.#############..
--- ...##.........#.############...
--- ......#.......#.#########......
--- .......#......#.########.......
--- .........#####...#####.........
+-- ..............(..../\\
+-- ...............)..(.')
+-- ..............(../..)
+-- ...............\\(__)|
+-- Inspired by Joan Stark
+-- source https://www.asciiart.eu/
+-- animals/cats
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: README.md
 -- CREATION DATE: 16-10-2025
--- LAST Modified: 19:8:39 22-11-2025
+-- LAST Modified: 14:25:19 04-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The readme file of the project
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
-# Asperguide backend — Docker Compose helper
+# Cat Feeder — Docker Compose helper
 
- This repository contains the backend for the Asperguide project and helper files to run it via Docker Compose.
+ This repository contains the backend for the Cat Feeder project and helper files to run it via Docker Compose.
 
  This README explains how to start the compose stack, what components are required, which environment files the project uses, and provides simple examples for Linux and Windows.
 
@@ -48,15 +38,45 @@
 
 ## Files of interest
 
-- `start_compose.sh` — POSIX shell script to start/stop the compose stack (Linux/macOS). Now contains Doxygen-style comments.
-- `start_compose.bat` — Windows batch equivalent. Also contains Doxygen-style comments.
-- `docker/dockerfile.backend` — Dockerfile used to build the backend image; now annotated with Doxygen-style header comments.
-- `.env` and `sample.env` — environment variables used by the server and the image build.
-- `docker/.db.env`, `docker/.redis.env` — optional service-specific env files used by the compose config.
+- [`start_compose.sh`](start_compose.sh) — POSIX shell script to start/stop the compose stack (Linux/macOS). Now contains Doxygen-style comments.
+- [`start_compose.bat`](start_compose.bat) — Windows batch equivalent. Also contains Doxygen-style comments.
+- [`docker/dockerfile.backend`](docker/dockerfile.backend) — Dockerfile used to build the backend image; now annotated with Doxygen-style header comments.
+- [`.env`](.env) and [`sample.env`](sample.env) — environment variables used by the server and the image build. Note: if the compose manifest references `.env` (or any other env files), Docker Compose expects them to exist and will fail if a referenced file is missing.
+- [`docker/.db.env`](docker/.db.env), [`docker/.redis.env`](docker/.redis.env) — service-specific env files referenced by the compose config. If the compose manifest references these files and they are missing, `docker compose` may fail to start the stack.
+
+### Generating documentation (Doxygen)
+
+The repository includes Doxygen *generation* scripts and assets in [doxygen_generation/](doxygen_generation/) (this folder contains the Dockerfile, Doxyfile and helper scripts used to produce the documentation). The generated HTML output will be written to [documentation/](documentation/) by the generator. Handwritten/manual docs are maintained in [manual_documentation/](manual_documentation/).
+
+See [`manual_documentation/QUICK_START.md`](./manual_documentation/QUICK_START.md) for the full quickstart. Key steps summarized here:
+
+```bash
+# Make the generator scripts executable (one-time)
+chmod +x doxygen_generation/generate_docs.sh doxygen_generation/make_documentation.sh
+
+# Recommended: pull the prebuilt Doxygen image first (fast, ~3-4 minutes):
+docker pull hanralatalliard/doxygen:latest || true
+
+# Generate the docs (run from repository root). The script will attempt to pull the
+# prebuilt image and will only build locally if necessary:
+./doxygen_generation/generate_docs.sh
+
+# Serve the generated HTML locally (preferred using Docker httpd):
+docker run --rm --name Cat Feeder_docs -p 8080:80 \
+ -v "$(pwd)/documentation/html":/usr/local/apache2/htdocs/:ro \
+ httpd:2.4
+# Open http://localhost:8080
+
+# Notes:
+# - If Docker requires root on your machine, prefix commands with `sudo`.
+# - Building the Docker image locally may trigger a full LaTeX build; compiling
+#   LaTeX/PDF artifacts from source can take several hours (~4h). Prefer pulling
+#   the prebuilt image and build locally only as a last resort.
+```
 
 ## Environment variables
 
-### LAST Modified: 15:43:1 16-10-2025Important variables used at runtime include
+### Important variables used at runtime include
 
 - DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE — database connection
 - REDIS_PASSWORD, REDIS_SOCKET — redis connection
@@ -64,7 +84,7 @@
 - DEBUG — whether to launch the server in debug mode
 - LOG_SERVER_DATA, LOG_PATH, LOG_DATA — logging configuration
 
- When running with Docker Compose, the compose file will pick up `.env` from the repository root and the additional files under `docker/` if the compose manifest references them.
+ When running with Docker Compose, the compose file will pick up `.env` from the repository root and any additional env files referenced by the compose manifest (for example `docker/.db.env` or `docker/.redis.env`). If a referenced env file is missing, Docker Compose may fail. The included `start_compose.sh` script will create reasonable default env files (`.env`, `docker/.db.env`, `docker/.redis.env`) when first run to help avoid this problem.
 
 ## How to start the Docker Compose stack
 

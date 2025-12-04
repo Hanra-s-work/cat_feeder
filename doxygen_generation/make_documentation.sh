@@ -1,10 +1,28 @@
 #!/bin/bash
-##
-## EPITECH PROJECT, 2024
-## B-OOP-400-PAR-4-1-raytracer-harleen.singh-kaur
-## File description:
-## make_documentation.sh
-##
+# 
+# +==== BEGIN CatFeeder =================+
+# LOGO: 
+# ..............(..../\
+# ...............)..(.')
+# ..............(../..)
+# ...............\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
+# /STOP
+# PROJECT: CatFeeder
+# FILE: make_documentation.sh
+# CREATION DATE: 04-12-2025
+# LAST Modified: 14:38:49 04-12-2025
+# DESCRIPTION: 
+# This is the project in charge of making the connected cat feeder project work.
+# /STOP
+# COPYRIGHT: (c) Cat Feeder
+# PURPOSE: File in charge of running doxygen on the container using an internally (bash) provided doxyfile as reference.
+# // AR
+# +==== END CatFeeder =================+
+# 
+
 
 # Go to the root of the repository
 cd ../../
@@ -15,14 +33,14 @@ NO="NO"
 
 # Global info about the project
 
-PROJECT_NAME="asperbackend"
+PROJECT_NAME="catfeeder"
 PROJECT_VERSION="1.0"
 
 # Files to include in scan
 FILES_TO_INCLUDE_IN_SCAN="*.cpp *.h *.hpp *.h++ *.py *.js"
 
 # Folders to exclude
-FOLDERS_TO_EXCLUDE="server_env docker/db/data docker/redis/data node_modules .git .github .vscode bonus"
+FOLDERS_TO_EXCLUDE="server_env docker/db/data docker/redis/data docker/bucket/data node_modules .git .github .vscode bonus"
 
 # headerfiles include
 INCLUDE_PATH="./include"

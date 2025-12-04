@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,31 +19,31 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: 00_ARCHITECTURE.md
 -- CREATION DATE: 02-12-2025
--- LAST Modified: 13:57:39 02-12-2025
+-- LAST Modified: 12:3:16 04-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: A brief overview of the projects architecture.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
-# Asperguide Backend Architecture
+# Cat Feeder Backend Architecture
 
 **Version:** 1.0  
 **Last Updated:** December 2, 2025
 
 ## Overview
 
-The Asperguide Backend is a FastAPI-based RESTful API server designed for the Asperguide platform. It follows a **layered architecture** with clear separation of concerns, featuring centralized service management, Redis-backed caching, and MySQL for persistent storage.
+The Cat Feeder Backend is a FastAPI-based RESTful API server designed for the Cat Feeder platform. It follows a **layered architecture** with clear separation of concerns, featuring centralized service management, Redis-backed caching, and MySQL for persistent storage.
 
-**Key Characteristics:**
+- **Key Characteristics:**
 
 - **Framework**: FastAPI (Python 3.12+)
-- **Database**: MySQL with SQLAlchemy
+- **Database**: MySQL (project-specific overlay / client)
 - **Caching**: Redis
 - **Storage**: MinIO/S3-compatible object storage
 - **Background Tasks**: APScheduler
@@ -78,7 +78,7 @@ def main():
     server = Server(
         host="0.0.0.0",
         port=5000,
-        app_name="Asperguide"
+        app_name="Cat Feeder"
     )
     server.main()
 ```
@@ -407,30 +407,32 @@ sql.update_data_in_table("users", ...)
 | **Cache** | Redis | 6.0+ | Query caching |
 | **Object Storage** | MinIO | Latest | S3-compatible storage |
 | **Scheduler** | APScheduler | 3.x | Background tasks |
-| **ORM** | SQLAlchemy | 2.x | Database abstraction |
-| **Validation** | Pydantic | 2.x | Data validation |
+| **ORM / DB client** | MySQL client (project overlay) | n/a | Project-specific database overlay (uses MySQL client) |
+| **Validation** | Pydantic (where used) | 2.x | Data validation (optional, used where applicable) |
 
 ### Python Libraries
 
 ```python
 # Web & API
-fastapi>=0.100.0
-uvicorn[standard]>=0.23.0
-pydantic>=2.0.0
+fastapi[all] ==0.123.5
+uvicorn ==0.38.0
 
 # Database
-mysql-connector-python
-sqlalchemy>=2.0.0
+# pydantic may be used for validation in some modules; it's optional
+mysql-connector-python ==9.5.0
 redis>=4.5.0
 
 # Object Storage
-boto3
-botocore
+boto3 ==1.42.2
+botocore ==1.42.2
+
 
 # Authentication
-python-jose[cryptography]
-passlib[bcrypt]
-python-multipart
+# NOTE: No JOSE/JWT library (e.g. `python-jose`) is included in the
+# backend `requirements` files. If you implement JWT handling with a
+# third-party library, add it to the appropriate `requirements.*.txt`.
+python-multipart == 0.0.20
+bcrypt==5.0.0
 
 # Background Tasks
 apscheduler>=3.10.0
@@ -454,43 +456,56 @@ display-tty>=1.3.5
 ### Environment Variables
 
 ```bash
-# Server
-SERVER_HOST=0.0.0.0
-SERVER_PORT=5000
+# Server / Container
+PORT=5000
+HOST=0.0.0.0
+LAUNCH_SERVER_ON_BOOT=true
 DEBUG=false
+DEBUG_MODE=false        # allow tty to container (when true)
+LAUNCH_FILE=./src       # file/folder to start when container boots
 
 # Database
-SQL_HOST=localhost
-SQL_PORT=3306
-SQL_USERNAME=asperguide
-SQL_PASSWORD=secure_password
-SQL_DATABASE=asperguide_db
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=Cat Feeder
+DB_PASSWORD=secure_password
+DB_DATABASE=Cat Feeder_db
 
 # Redis
-REDIS_SOCKET_PATH=/var/run/redis/redis.sock
+REDIS_SOCKET=/var/run/redis/redis.sock
 REDIS_PASSWORD=redis_password
 
-# MinIO/S3
-BUCKET_ENDPOINT=localhost:9000
-BUCKET_ACCESS_KEY=minioadmin
-BUCKET_SECRET_KEY=minioadmin
-BUCKET_SECURE=false
+# MinIO / S3 (Bucket)
+BUCKET_HOST=localhost
+BUCKET_PORT=9000
+BUCKET_USER=minioadmin
+BUCKET_PASSWORD=minioadmin
 
-# OAuth
-OAUTH_SECRET_KEY=your_secret_key_here
-OAUTH_ALGORITHM=HS256
-OAUTH_TOKEN_EXPIRE_MINUTES=30
+# OAuth / Docs OAuth2
+REDIRECT_URI=http://localhost:5000/_docs/oauth2-redirect
+DOCS_OAUTH2_AUTHORIZATION_URL=                     # optional: oauth2 auth endpoint
+DOCS_OAUTH2_TOKEN_URL=                             # optional: oauth2 token endpoint
 
-# Email
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=465
-SMTP_USERNAME=your_email@gmail.com
-SMTP_PASSWORD=app_password
+# Email (sender)
+SENDER_ADDRESS=your_email@gmail.com
+SENDER_KEY=16-character-auth-key
+SENDER_HOST=smtp.gmail.com
+SENDER_PORT=465
 
-# Background Tasks
-ENABLE_CRONS=true
-DB_CLEANUP_INTERVAL=3600  # 1 hour
-TOKEN_RENEWAL_INTERVAL=86400  # 24 hours
+# Documentation feature toggles (enable/disable)
+ENABLE_SWAGGER=true
+ENABLE_REDOC=false
+ENABLE_EDITOR=false
+ENABLE_SCALAR=false
+ENABLE_RAPIDOC=false
+ENABLE_RAPIPDF=false
+ENABLE_EXPLORER=false
+ENABLE_ELEMENTS=false
+
+
+# Container cache directories
+PIP_CACHE_DIR=/pip-cache
+XDG_CACHE_HOME=/pip-cache
 ```
 
 ### Configuration Files
@@ -701,7 +716,7 @@ pytest tests/api/test_users.py
 
 ```bash
 # Clone repository
-git clone https://github.com/Asperguide/back-end.git
+git clone https://github.com/Cat Feeder/back-end.git
 cd back-end
 
 # Create virtual environment
@@ -726,7 +741,7 @@ python -m backend.src
 
 ```bash
 # Build Docker image
-docker build -f docker/dockerfile.backend -t asperguide-backend .
+docker build -f docker/dockerfile.backend -t Cat Feeder-backend .
 
 # Run with docker-compose
 docker-compose -f docker-compose.yaml up -d

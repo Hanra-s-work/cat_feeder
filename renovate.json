@@ -1,9 +1,48 @@
+/* 
+* +==== BEGIN CatFeeder =================+
+* LOGO: 
+* ..............(..../\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: renovate.json
+* CREATION DATE: 04-12-2025
+* LAST Modified: 14:24:6 04-12-2025
+* DESCRIPTION: 
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: The json configuration for the renovate bot which is in charge of keeping the dependencies used up to date.
+* // AR
+* +==== END CatFeeder =================+
+*/
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
   ],
   "baseBranches": [
-    "dev"
+    "main"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchPackageNames": [
+        "tomli"
+      ],
+      "matchPaths": [
+        "backend/deps/backend/requirements.config.txt"
+      ],
+      "matchCurrentVersion": "^={0,2}\\s*2\\.0\\.1$",
+      "enabled": false,
+      "description": "Ignore tomli updates for the Python < 3.8 entry (pin 2.0.1)."
+    }
   ]
 }

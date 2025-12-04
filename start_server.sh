@@ -1,39 +1,30 @@
 #!/bin/bash
 # 
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO: 
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........##.##...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: start_server.sh
 # CREATION DATE: 28-09-2025
-# LAST Modified: 0:31:58 26-11-2025
+# LAST Modified: 14:21:56 04-12-2025
 # DESCRIPTION: 
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The server starter
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 # 
 SYSTEM_ENV_LOCATION=${1:-"$(pwd)"}
 SYSTEM_ENV_NAME=${2:-"server_env"}
+shift 2
 if [[ -f "${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME}/bin/activate" ]]; then
     . ${SYSTEM_ENV_LOCATION}/${SYSTEM_ENV_NAME}/bin/activate
 elif [[ -f "./server_env/bin/activate" ]]; then
@@ -51,6 +42,6 @@ fi
 python3 ./backend/src/ \
     --host 0.0.0.0 \
     --port 5001 \
-    --debug
+    --debug $@
 
 deactivate

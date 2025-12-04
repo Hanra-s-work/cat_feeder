@@ -1,42 +1,32 @@
 #
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: docker-compose.yaml
 # CREATION DATE: 10-10-2025
-# LAST Modified: 6:44:10 02-12-2025
+# LAST Modified: 14:29:26 04-12-2025
 # DESCRIPTION:
 # This is the docker compose of the project, it allows the server to spin up and have access to all the other ressources it needs.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The docker compose to spin up the server with it's required environement
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 #
-name: local-asperguide
+name: local-cat-feeder
 
 services:
   database:
     image: mysql:lts
-    container_name: local-asperguide-database
+    container_name: local-cat-feeder-database
     tty: false
     cpus: 2
     mem_limit: 2g
@@ -62,7 +52,7 @@ services:
 
   db-cache:
     image: redis:8.4.0
-    container_name: local-asperguide-db-cache
+    container_name: local-cat-feeder-db-cache
     tty: false
     cpus: 1
     mem_limit: 160m
@@ -92,7 +82,7 @@ services:
 
   bucket:
     image: minio/minio:latest
-    container_name: local-asperguide-bucket
+    container_name: local-cat-feeder-bucket
     cpus: 1
     mem_limit: 1g
     env_file:
@@ -102,8 +92,8 @@ services:
       - /bin/bash
       - -c
       - |
-        mkdir -p /data/$${MINIO_DEFAULT_BUCKET:-asperguide-local}
-        echo "expected default bucket location in data: $${MINIO_DEFAULT_BUCKET:-asperguide-local}"
+        mkdir -p /data/$${MINIO_DEFAULT_BUCKET:-cat-feeder-local}
+        echo "expected default bucket location in data: $${MINIO_DEFAULT_BUCKET:-cat-feeder-local}"
         echo "contens of /data: $(ls /data)"
         exec minio server /data --console-address ":$${MINIO_CONSOLE_PORT:-9001}"
     ports:
@@ -131,8 +121,8 @@ services:
     build:
       context: .
       dockerfile: docker/dockerfile.backend
-    image: local-asperguide-backend-image
-    container_name: local-asperguide-backend-container
+    image: local-cat-feeder-backend-image
+    container_name: local-cat-feeder-backend-container
     cpus: 2.0
     mem_limit: 2g
     tty: false
@@ -173,9 +163,9 @@ volumes:
       o: bind
       device: ./docker/db/data
     labels:
-      com.asperguide_database.description: "Asperguide Database Data"
-      com.asperguide_database.department: "IT/DB"
-      com.asperguide_database.role: "Volume in charge of storing the database cache so that the database persists after the container gets removed."
+      com.cat-feeder_database.description: "cat-feeder Database Data"
+      com.cat-feeder_database.department: "IT/DB"
+      com.cat-feeder_database.role: "Volume in charge of storing the database cache so that the database persists after the container gets removed."
 
   database-initialisation-data:
     name: "database-initialisation-data"
@@ -185,14 +175,14 @@ volumes:
       o: bind
       device: ./docker/db/sql
     labels:
-      com.asperguide_database.description: "Asperguide Database Data"
-      com.asperguide_database.department: "IT/DB"
-      com.asperguide_database.role: "Volume in charge of storing the database cache so that the database persists after the container gets removed."
+      com.cat-feeder_database.description: "cat-feeder Database Data"
+      com.cat-feeder_database.department: "IT/DB"
+      com.cat-feeder_database.role: "Volume in charge of storing the database cache so that the database persists after the container gets removed."
 
   redis-sock:
     name: "redis-sock"
     labels:
-      com.redis-sock.description: "Asperguide Redis socket"
+      com.redis-sock.description: "cat-feeder Redis socket"
       com.redis-sock.department: "IT/Network"
       com.redis-sock.role: "The redis socket for the connection between the backend and the redis instance."
     driver: local
@@ -205,7 +195,7 @@ volumes:
       o: bind
       device: ./docker/redis/data
     labels:
-      com.redis-data.description: "Asperguide Redis peristent data"
+      com.redis-data.description: "cat-feeder Redis peristent data"
       com.redis-data.department: "IT/DB"
       com.redis-data.role: "The redis persistent cache between container reboots"
 
@@ -217,9 +207,9 @@ volumes:
       o: bind
       device: ./backend
     labels:
-      com.asperguide_data.description: "Asperguide Server Data"
-      com.asperguide_data.department: "IT/Ai"
-      com.asperguide_data.role: "Volume in charge of storing the server data so that it persists after the container gets removed."
+      com.cat-feeder_data.description: "cat-feeder Server Data"
+      com.cat-feeder_data.department: "IT/Ai"
+      com.cat-feeder_data.role: "Volume in charge of storing the server data so that it persists after the container gets removed."
 
   bucket-data:
     name: "bucket-data"
@@ -229,9 +219,9 @@ volumes:
       o: bind
       device: "./docker/bucket/data"
     labels:
-      com.asperguide_data.description: "Asperguide Minio Data"
-      com.asperguide_data.department: "IT/DB"
-      com.asperguide_data.role: "Volume in charge of allowing the minio container (imitating the cellar storage from Clever Cloud) to persist it's data between runs."
+      com.cat-feeder_data.description: "cat-feeder Minio Data"
+      com.cat-feeder_data.department: "IT/DB"
+      com.cat-feeder_data.role: "Volume in charge of allowing the minio container (imitating the cellar storage from Clever Cloud) to persist it's data between runs."
 
 networks:
   db-to-back:
@@ -239,7 +229,7 @@ networks:
     attachable: true
     driver: "bridge"
     labels:
-      com.db-to-back.description: "Asperguide Database To Backend network."
+      com.db-to-back.description: "cat-feeder Database To Backend network."
       com.db-to-back.department: "IT/Networking"
       com.db-to-back.role: "Network in charge of conneting the database instance with the backend instance so that it is not exposed to the internet and only the backend is."
 
@@ -248,6 +238,6 @@ networks:
     attachable: true
     driver: "bridge"
     labels:
-      com.db-to-back.description: "Asperguide bucket To Backend network."
+      com.db-to-back.description: "cat-feeder bucket To Backend network."
       com.db-to-back.department: "IT/Networking"
       com.db-to-back.role: "Network in charge of conneting the bucket instance with the backend instance so that it is not exposed to the internet and only the backend is."

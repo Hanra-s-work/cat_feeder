@@ -1,0 +1,88 @@
+' 
+' +==== BEGIN CatFeeder =================+
+' LOGO: 
+' ..............(..../\
+' ...............)..(.')
+' ..............(../..)
+' ...............\(__)|
+' Inspired by Joan Stark
+' source https://www.asciiart.eu/
+' animals/cats
+' /STOP
+' PROJECT: CatFeeder
+' FILE: config_architecture.puml
+' CREATION DATE: 04-12-2025
+' LAST Modified: 8:7:10 04-12-2025
+' DESCRIPTION: 
+' This is the project in charge of making the connected cat feeder project work.
+' /STOP
+' COPYRIGHT: (c) Cat Feeder
+' PURPOSE: An overview of the class architectures.
+' // AR
+' +==== END CatFeeder =================+
+' 
+@startuml config_architecture
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam componentStyle rectangle
+
+title Configuration Module Architecture
+
+package "backend/src/config/" {
+    [__init__.py] as init
+    [toml_loader.py] as toml
+    [env_loader.py] as env
+}
+
+package "Application Code" {
+    [constants.py] as constants
+    [server_main.py] as server
+    [services] as services
+}
+
+package "File System" {
+    database "config.toml" as config_file
+    database ".env" as env_file
+    folder "Project Root" as root
+}
+
+package "Python stdlib/packages" {
+    [tomllib/tomli] as tomli
+    [pathlib] as pathlib
+    [display_tty] as logger
+}
+
+init ..> toml : exports
+init ..> env : exports
+
+toml --> tomli : uses
+toml --> pathlib : uses
+toml --> logger : uses
+toml ..> config_file : loads
+
+env --> pathlib : uses
+env --> logger : uses
+env ..> env_file : loads
+
+constants --> init : imports
+server --> init : imports
+services --> init : imports
+
+toml ..> root : searches for
+env ..> root : searches for
+
+note right of toml
+  **Singleton Pattern**
+  - Caches config.toml data
+  - Smart path resolution
+  - Thread-safe initialization
+end note
+
+note right of env
+  **Singleton Pattern**
+  - Caches .env variables
+  - Merges with os.environ
+  - Quote handling
+end note
+
+@enduml

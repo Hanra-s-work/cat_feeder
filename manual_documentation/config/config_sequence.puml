@@ -1,0 +1,122 @@
+' 
+' +==== BEGIN CatFeeder =================+
+' LOGO: 
+' ..............(..../\
+' ...............)..(.')
+' ..............(../..)
+' ...............\(__)|
+' Inspired by Joan Stark
+' source https://www.asciiart.eu/
+' animals/cats
+' /STOP
+' PROJECT: CatFeeder
+' FILE: config_sequence.puml
+' CREATION DATE: 04-12-2025
+' LAST Modified: 8:6:56 04-12-2025
+' DESCRIPTION: 
+' This is the project in charge of making the connected cat feeder project work.
+' /STOP
+' COPYRIGHT: (c) Cat Feeder
+' PURPOSE: A few sequence examples for the config folders.
+' // AR
+' +==== END CatFeeder =================+
+' 
+@startuml config_sequence
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title Configuration Loading Sequence
+
+actor Application
+participant "TOMLLoader" as toml_loader
+participant "EnvLoader" as env_loader
+participant "File System" as fs
+participant "tomli/tomllib" as toml
+participant "Cache" as cache
+
+== Active Loading (EnvLoader) ==
+Application -> env_loader: EnvLoader()
+activate env_loader
+note right: __init__ actively loads .env
+env_loader -> env_loader: load_env_file()
+activate env_loader
+env_loader -> fs: Find .env (cwd first)
+fs --> env_loader: .env path
+env_loader -> fs: Read .env
+fs --> env_loader: File contents
+env_loader -> env_loader: Parse and merge with os.environ
+deactivate env_loader
+env_loader --> Application: EnvLoader instance
+deactivate env_loader
+
+== Lazy Loading (TOMLLoader) ==
+Application -> toml_loader: load_toml()
+activate toml_loader
+
+toml_loader -> cache: Check _config_toml
+activate cache
+cache --> toml_loader: None (not cached)
+deactivate cache
+
+toml_loader -> toml_loader: _find_project_root()
+activate toml_loader
+
+toml_loader -> fs: Check for markers\n(cwd first, then __file__)
+activate fs
+fs --> toml_loader: Project root path
+deactivate fs
+
+deactivate toml_loader
+
+toml_loader -> toml_loader: Check sys.argv for --config
+activate toml_loader
+toml_loader --> toml_loader: No custom path
+deactivate toml_loader
+
+toml_loader -> toml_loader: Check ENV['CONFIG_FILE']
+activate toml_loader
+toml_loader --> toml_loader: No env var
+deactivate toml_loader
+
+toml_loader -> toml_loader: _find_file('config.toml')
+activate toml_loader
+
+toml_loader -> fs: Search project_root/config.toml
+activate fs
+fs --> toml_loader: File found
+deactivate fs
+
+deactivate toml_loader
+
+toml_loader -> fs: open(config_path, 'rb')
+activate fs
+fs --> toml_loader: File handle
+deactivate fs
+
+toml_loader -> toml: load(file_handle)
+activate toml
+toml --> toml_loader: Parsed dict
+deactivate toml
+
+toml_loader -> cache: Store _config_toml
+activate cache
+cache --> toml_loader: Cached
+deactivate cache
+
+toml_loader --> Application: Config dict
+deactivate toml_loader
+
+== Subsequent Call (Cached) ==
+
+Application -> toml_loader: load_toml()
+activate toml_loader
+
+toml_loader -> cache: Check _config_toml
+activate cache
+cache --> toml_loader: Cached dict
+deactivate cache
+
+toml_loader --> Application: Config dict (cached)
+deactivate toml_loader
+
+@enduml

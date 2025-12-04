@@ -1,35 +1,25 @@
 ' 
-' +==== BEGIN AsperBackend =================+
+' +==== BEGIN CatFeeder =================+
 ' LOGO: 
-' ..........####...####..........
-' ......###.....#.#########......
-' ....##........#.###########....
-' ...#..........#.############...
-' ...#..........#.#####.######...
-' ..#.....##....#.###..#...####..
-' .#.....#.##...#.##..##########.
-' #.....##########....##...######
-' #.....#...##..#.##..####.######
-' .#...##....##.#.##..###..#####.
-' ..#.##......#.#.####...######..
-' ..#...........#.#############..
-' ..#...........#.#############..
-' ...##.........#.############...
-' ......#.......#.#########......
-' .......#......#.########.......
-' .........#####...#####.........
+' ..............(..../\
+' ...............)..(.')
+' ..............(../..)
+' ...............\(__)|
+' Inspired by Joan Stark
+' source https://www.asciiart.eu/
+' animals/cats
 ' /STOP
-' PROJECT: AsperBackend
+' PROJECT: CatFeeder
 ' FILE: request_flow.puml
 ' CREATION DATE: 02-12-2025
 ' LAST Modified: 13:44:24 02-12-2025
 ' DESCRIPTION: 
-' This is the backend server in charge of making the actual website work.
+' This is the project in charge of making the connected cat feeder project work.
 ' /STOP
-' COPYRIGHT: (c) Asperguide
+' COPYRIGHT: (c) Cat Feeder
 ' PURPOSE: An overview of the path that might be traveled by some http requests.
 ' // AR
-' +==== END AsperBackend =================+
+' +==== END CatFeeder =================+
 ' 
 @startuml request_flow
 !theme plain
@@ -37,7 +27,7 @@
 skinparam backgroundColor #FEFEFE
 skinparam sequenceMessageAlign center
 
-title Asperguide Backend - HTTP Request Flow Through System Layers
+title Cat Feeder Backend - HTTP Request Flow Through System Layers
 
 actor "Client" as CLIENT
 participant "Uvicorn\nASGI Server" as UVICORN

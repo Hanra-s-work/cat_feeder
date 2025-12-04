@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,23 +19,23 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: project_structure.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 14:34:17 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: An overview of the whole project architectureas well as some flags and the __main__.py files.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # Project Structure Documentation
 
 ## Overview
 
-This document explains the Asperguide backend project structure, including entry points, initialization files, asset organization, and dependency management.
+This document explains the Cat Feeder backend project structure, including entry points, initialization files, asset organization, and dependency management.
 
 **Root Directory**: `backend/`
 
@@ -50,7 +50,7 @@ backend/
 ├── requirements.dev.txt     # Development dependencies
 ├── assets/                  # Static assets
 │   ├── icon/                # Application icons
-│   │   └── asperguide/      # Asperguide branding
+│   │   └── Cat Feeder/      # Cat Feeder branding
 │   └── js/                  # JavaScript files
 │       └── rapipdf.min.js   # RapiDoc PDF plugin
 ├── deps/                    # Dependency specifications
@@ -160,7 +160,7 @@ python backend/src/server_main.py --host=0.0.0.0 --port=5000
 **Typical Content**:
 
 ```python
-"""Asperguide Backend Package"""
+"""Cat Feeder Backend Package"""
 __version__ = "1.0.0"
 ```
 
@@ -263,7 +263,7 @@ from backend.src.libs.core import RuntimeManager
 
 **Purpose**: Store static files served by the application or used in documentation
 
-#### `assets/icon/asperguide/`
+#### `assets/icon/Cat Feeder/`
 
 **Purpose**: Application branding and icons
 
@@ -282,7 +282,7 @@ from fastapi.staticfiles import StaticFiles
 app.mount("/static/icons", StaticFiles(directory="assets/icon"), name="icons")
 ```
 
-**Access**: `http://localhost:5000/static/icons/asperguide/logo.png`
+**Access**: `http://localhost:5000/static/icons/Cat Feeder/logo.png`
 
 ---
 
@@ -330,7 +330,7 @@ Each file contains dependencies for a specific module:
 | `requirements.audio.txt` | Audio processing | pydub, ffmpeg-python |
 | `requirements.config.txt` | Configuration | python-dotenv, toml |
 | `requirements.cron.txt` | Background tasks | apscheduler |
-| `requirements.database.txt` | SQL operations | mysql-connector-python, sqlalchemy |
+| `requirements.database.txt` | SQL operations | mysql-connector-python, project-specific DB overlay |
 | `requirements.http.txt` | Web framework | fastapi, uvicorn, pydantic |
 | `requirements.image.txt` | Image processing | Pillow |
 | `requirements.internet.txt` | HTTP clients | httpx, requests |
@@ -441,7 +441,7 @@ debug = false
 [database]
 host = "localhost"
 port = 3306
-name = "asperguide_db"
+name = "Cat Feeder_db"
 
 [redis]
 socket_path = "/var/run/redis/redis.sock"

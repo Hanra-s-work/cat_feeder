@@ -1,35 +1,25 @@
 ' 
-' +==== BEGIN AsperBackend =================+
+' +==== BEGIN CatFeeder =================+
 ' LOGO: 
-' ..........####...####..........
-' ......###.....#.#########......
-' ....##........#.###########....
-' ...#..........#.############...
-' ...#..........#.#####.######...
-' ..#.....##....#.###..#...####..
-' .#.....#.##...#.##..##########.
-' #.....##########....##...######
-' #.....#...##..#.##..####.######
-' .#...##....##.#.##..###..#####.
-' ..#.##......#.#.####...######..
-' ..#...........#.#############..
-' ..#...........#.#############..
-' ...##.........#.############...
-' ......#.......#.#########......
-' .......#......#.########.......
-' .........#####...#####.........
+' ..............(..../\
+' ...............)..(.')
+' ..............(../..)
+' ...............\(__)|
+' Inspired by Joan Stark
+' source https://www.asciiart.eu/
+' animals/cats
 ' /STOP
-' PROJECT: AsperBackend
+' PROJECT: CatFeeder
 ' FILE: system_architecture.puml
 ' CREATION DATE: 02-12-2025
 ' LAST Modified: 13:41:55 02-12-2025
 ' DESCRIPTION: 
-' This is the backend server in charge of making the actual website work.
+' This is the project in charge of making the connected cat feeder project work.
 ' /STOP
-' COPYRIGHT: (c) Asperguide
+' COPYRIGHT: (c) Cat Feeder
 ' PURPOSE: The overview of the system architecture for the backend program.
 ' // AR
-' +==== END AsperBackend =================+
+' +==== END CatFeeder =================+
 ' 
 @startuml system_architecture
 !theme plain
@@ -39,7 +29,7 @@ skinparam componentStyle rectangle
 skinparam packageStyle rectangle
 skinparam linetype ortho
 
-title Asperguide Backend - Complete System Architecture
+title Cat Feeder Backend - Complete System Architecture
 
 ' ============================================================
 ' EXTERNAL LAYER

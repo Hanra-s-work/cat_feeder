@@ -23,7 +23,7 @@ ENV LANG=en_US.UTF-8 \
     c_reset="\033[0m"   \
     init_aliases=/etc/my_alias
 
-# Define aliases
+# LAST Modified: 9:19:40 04-12-2025
 RUN echo -e "${c_cyan}Creating aliases${c_reset}" \
     && alias_bash="my_alias_creator.sh" \
     && alias_file="/etc/my_alias" \
@@ -121,6 +121,8 @@ RUN cecho "${c_cyan}Installing texlive ...${c_reset}" \
     && zcat < install-tl-unx.tar.gz | tar xf - \
     && cd install-tl-*/ \
     && perl ./install-tl --no-interaction \
+    && cd /tmp \
+    && rm -rf install-tl-* install-tl-unx.tar.gz \
     && cecho "${c_green}Texlive installed successfully${c_reset}"
 
 
@@ -143,6 +145,8 @@ RUN cecho "${c_cyan}Installing Ghostscript and GhostPDL (cached downloads)...${c
     && ./configure \
     && make -j$(nproc) \
     && make install \
+    && cd /tmp \
+    && rm -rf /tmp/ghostscript_installation /tmp/downloads \
     && cecho "${c_green}Ghostscript and GhostPDL installed successfully${c_reset}"
 
 # Install doxygen from source
@@ -161,7 +165,8 @@ RUN cecho "${c_cyan}Installing doxygen from source ...${c_reset}" \
     && cmake -Dbuild_doc=YES .. \
     && make docs \
     && make install  \
-    && cd ../../.. \
+    && cd /tmp \
+    && rm -rf /tmp/doxygen_installation \
     && cecho "${c_green}Doxygen installed successfully${c_reset}"
 
 # Install PlantUML

@@ -1,36 +1,36 @@
 @echo off
 @REM 
-@REM +==== BEGIN AsperBackend =================+
+@REM +==== BEGIN CatFeeder =================+
 @REM LOGO: 
-@REM ..........####...####..........
-@REM ......###.....#.#########......
-@REM ....##........#.###########....
-@REM ...#..........#.############...
-@REM ...#..........#.#####.######...
-@REM ..#.....##....#.###..#...####..
-@REM .#.....#.##...#.##..##########.
-@REM #.....##########....##...######
-@REM #.....#...##..#.##..####.######
-@REM .#...##....##.#.##..###..#####.
-@REM ..#.##......#.#.####...######..
-@REM ..#...........#.#############..
-@REM ..#...........#.#############..
-@REM ...##.........#.############...
-@REM ......#.......#.#########......
-@REM .......#......#.########.......
-@REM .........#####...#####.........
+@REM ..............(..../\\
+@REM ...............)..(.')
+@REM ..............(../..)
+@REM ...............\\(__)|
+@REM Inspired by Joan Stark
+@REM source https://www.asciiart.eu/
+@REM animals/cats
+@REM 
+@REM 
+@REM 
+@REM 
+@REM 
+@REM 
+@REM 
+@REM 
+@REM 
+@REM 
 @REM /STOP
-@REM PROJECT: AsperBackend
+@REM PROJECT: CatFeeder
 @REM FILE: rebuild_from_scratch.bat
 @REM CREATION DATE: 26-11-2025
 @REM LAST Modified: 1:26:32 26-11-2025
 @REM DESCRIPTION: 
-@REM This is the backend server in charge of making the actual website work.
+@REM This is the project in charge of making the connected cat feeder project work.
 @REM /STOP
-@REM COPYRIGHT: (c) Asperguide
+@REM COPYRIGHT: (c) Cat Feeder
 @REM PURPOSE: Complete Docker environment rebuild script - stops containers, removes all volumes and cached data, then rebuilds from scratch (Windows version)
 @REM // AR
-@REM +==== END AsperBackend =================+
+@REM +==== END CatFeeder =================+
 @REM 
 @REM rebuild_from_scratch.bat - Windows batch equivalent of rebuild_from_scratch.sh
 @REM /**

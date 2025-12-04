@@ -1,35 +1,25 @@
 ' 
-' +==== BEGIN AsperBackend =================+
+' +==== BEGIN CatFeeder =================+
 ' LOGO: 
-' ..........####...####..........
-' ......###.....#.#########......
-' ....##........#.###########....
-' ...#..........#.############...
-' ...#..........#.#####.######...
-' ..#.....##....#.###..#...####..
-' .#.....#.##...#.##..##########.
-' #.....##########....##...######
-' #.....#...##..#.##..####.######
-' .#...##....##.#.##..###..#####.
-' ..#.##......#.#.####...######..
-' ..#...........#.#############..
-' ..#...........#.#############..
-' ...##.........#.############...
-' ......#.......#.#########......
-' .......#......#.########.......
-' .........#####...#####.........
+' ..............(..../\
+' ...............)..(.')
+' ..............(../..)
+' ...............\(__)|
+' Inspired by Joan Stark
+' source https://www.asciiart.eu/
+' animals/cats
 ' /STOP
-' PROJECT: AsperBackend
+' PROJECT: CatFeeder
 ' FILE: server_initialization.puml
 ' CREATION DATE: 02-12-2025
 ' LAST Modified: 14:28:44 02-12-2025
 ' DESCRIPTION: 
-' This is the backend server in charge of making the actual website work.
+' This is the project in charge of making the connected cat feeder project work.
 ' /STOP
-' COPYRIGHT: (c) Asperguide
+' COPYRIGHT: (c) Cat Feeder
 ' PURPOSE: The steps called when the server starts up.
 ' // AR
-' +==== END AsperBackend =================+
+' +==== END CatFeeder =================+
 ' 
 @startuml server_initialization
 !theme plain
@@ -58,7 +48,7 @@ note right of Server
     Parameters:
     - host: "0.0.0.0"
     - port: 5000
-    - app_name: "Asperguide"
+    - app_name: "Cat Feeder"
     - debug: False
     - success: 0
     - error: 84

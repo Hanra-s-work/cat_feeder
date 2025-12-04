@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,23 +19,23 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: fffamily.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 14:42:48 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The overview of the module in charge of downloading ff family dependencies that can later be used by the server.
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # FFmpeg Family Module
 
 ## Overview
 
-The `fffamily` module provides automated FFmpeg binary management for the AsperBackend application. It handles downloading, extracting, and configuring FFmpeg, FFprobe, and FFplay binaries across different operating systems (Windows, Linux, macOS) and architectures, eliminating the need for manual installation.
+The `fffamily` module provides automated FFmpeg binary management for the CatFeeder application. It handles downloading, extracting, and configuring FFmpeg, FFprobe, and FFplay binaries across different operating systems (Windows, Linux, macOS) and architectures, eliminating the need for manual installation.
 
 ## Architecture
 

@@ -1,5 +1,5 @@
 <!-- 
--- +==== BEGIN AsperBackend =================+
+-- +==== BEGIN CatFeeder =================+
 -- LOGO: 
 -- ..........####...####..........
 -- ......###.....#.#########......
@@ -19,23 +19,23 @@
 -- .......#......#.########.......
 -- .........#####...#####.........
 -- /STOP
--- PROJECT: AsperBackend
+-- PROJECT: CatFeeder
 -- FILE: server_main.md
 -- CREATION DATE: 02-12-2025
 -- LAST Modified: 14:33:20 02-12-2025
 -- DESCRIPTION: 
--- This is the backend server in charge of making the actual website work.
+-- This is the project in charge of making the connected cat feeder project work.
 -- /STOP
--- COPYRIGHT: (c) Asperguide
+-- COPYRIGHT: (c) Cat Feeder
 -- PURPOSE: The structure of the very first class initialised and called by the program (it is in charge of processing input arguments)
 -- // AR
--- +==== END AsperBackend =================+
+-- +==== END CatFeeder =================+
 -->
 # Server Main Entry Point
 
 ## Overview
 
-**server_main.py** is the primary entry point for running the Asperguide backend server in standalone mode. It provides command-line argument parsing and bootstraps the Server class.
+**server_main.py** is the primary entry point for running the Cat Feeder backend server in standalone mode. It provides command-line argument parsing and bootstraps the Server class.
 
 **Location**: `backend/src/server_main.py`
 
@@ -58,7 +58,7 @@ class Main(metaclass=FinalClass):
         self.port: int = 5000
         self.success: int = success
         self.error: int = error
-        self.app_name: str = "Asperguide"
+        self.app_name: str = "Cat Feeder"
         self.debug: bool = False
     
     def process_args(self) -> None:

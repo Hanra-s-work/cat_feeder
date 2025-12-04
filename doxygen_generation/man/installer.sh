@@ -1,7 +1,7 @@
 #!/bin/bash
 ##
 ## EPITECH PROJECT, 2025
-## Asper Guide - Backend
+## Cat Feeder - Backend
 ## File description:
 ## installer.sh
 ##
@@ -115,21 +115,21 @@ function create_homepage_man {
     decho "MAN_FOLDER='$4'" >&2
     local FILE_COUNT=$(count_files_in_man_folder "$4")
     local MAN_FILES=$(get_files_in_man_folder "$4")
-    local HOMEPAGE="${M_COMMENT} Manpage for Asper Guide - Backend project
+    local HOMEPAGE="${M_COMMENT} Manpage for Cat Feeder - project
 ${M_COMMENT} Contact: Henry Letellier ${EMAIL}.
-.TH Asper Guide - Backend ${SC_QUOTE}Asperguide${SC_QUOTE} 6 ${SC_QUOTE}September 2025${SC_QUOTE} ${SC_QUOTE}Version 1.0${SC_QUOTE} ${SC_QUOTE}Asper Guide - Backend Manual${SC_QUOTE}
+.TH Cat Feeder ${SC_QUOTE}Cat Feeder${SC_QUOTE} 4 ${SC_QUOTE}December 2025${SC_QUOTE} ${SC_QUOTE}Version 1.0${SC_QUOTE} ${SC_QUOTE}Cat Feeder - Manual${SC_QUOTE}
 .PP
 .SH NAME
-Asper${SC_SPACE}Header ${SC_BACKSLASH}-${SC_SPACE}Welcome${SC_SPACE}to${SC_SPACE}Asper${SC_SPACE}Header!
+Cat${SC_SPACE}Feeder ${SC_BACKSLASH}-${SC_SPACE}Welcome${SC_SPACE}to${SC_SPACE}Cat${SC_SPACE}Feeder!
 .PP
 .SH SYNOPSIS
 .nf
-.BI Asper${SC_SPACE}Header${SC_SPACE}${SC_TAB}${SC_TAB}${SC_SPACE}${SC_SPACE}${SC_SPACE}${SC_SPACE}-${SC_SPACE}${MSI_RESET}${SC_SPACE}https://asperguide\\&.github\\&.io/back-end/
-.BI Asper${SC_SPACE}Header${SC_SPACE}documentation${SC_SPACE}-${SC_SPACE}${MSI_RESET}${SC_SPACE}https://asperguide\\&.github\\&.io/back-end/
+.BI Cat${SC_SPACE}Feeder${SC_SPACE}${SC_TAB}${SC_TAB}${SC_SPACE}${SC_SPACE}${SC_SPACE}${SC_SPACE}-${SC_SPACE}${MSI_RESET}${SC_SPACE}https://Cat Feeder\\&.github\\&.io/back-end/
+.BI Cat${SC_SPACE}Feeder${SC_SPACE}documentation${SC_SPACE}-${SC_SPACE}${MSI_RESET}${SC_SPACE}https://Cat Feeder\\&.github\\&.io/back-end/
 .fi
 .SH DESCRIPTION
 .nf
-.BI ${MSI_RESET}The${SC_SPACE}Asper${SC_SPACE}Header${SC_SPACE}project${SC_SPACE}is${SC_SPACE}an${SC_SPACE}extension${SC_SPACE}that${SC_SPACE}aims${SC_SPACE}to${SC_SPACE}help${SC_SPACE}you${SC_SPACE}add${SC_SPACE}header${SC_SPACE}comments${SC_SPACE}to${SC_SPACE}your${SC_SPACE}files.
+.BI ${MSI_RESET}The${SC_SPACE}Cat${SC_SPACE}Feeder${SC_SPACE}project${SC_SPACE}is${SC_SPACE}an${SC_SPACE}extension${SC_SPACE}that${SC_SPACE}aims${SC_SPACE}to${SC_SPACE}help${SC_SPACE}you${SC_SPACE}add${SC_SPACE}Feeder${SC_SPACE}comments${SC_SPACE}to${SC_SPACE}your${SC_SPACE}files.
 .BI ${MSI_RESET}
 .BI ${MSI_RESET}For${SC_SPACE}more${SC_SPACE}information${SC_SPACE}please${SC_SPACE}refer${SC_SPACE}to${SC_SPACE}the${SC_SPACE}website${SC_SPACE}or${SC_SPACE}the${SC_SPACE}documentation${SC_SPACE}pages${SC_SPACE}linked${SC_SPACE}bellow.
 .fi
@@ -143,7 +143,7 @@ Written by (c) Henry Letellier.
 .PP
 .SH COPYRIGHT
 .nf
-.BI ${MSI_RESET}This${SC_SPACE}is${SC_SPACE}a${SC_SPACE}project${SC_SPACE}that${SC_SPACE}was${SC_SPACE}created${SC_SPACE}in${SC_SPACE}the${SC_SPACE}scope${SC_SPACE}of${SC_SPACE}the${SC_SPACE}Asperguide${SC_SPACE}project.
+.BI ${MSI_RESET}This${SC_SPACE}is${SC_SPACE}a${SC_SPACE}project${SC_SPACE}that${SC_SPACE}was${SC_SPACE}created${SC_SPACE}in${SC_SPACE}the${SC_SPACE}scope${SC_SPACE}of${SC_SPACE}the${SC_SPACE}Cat Feeder${SC_SPACE}project.
 .BI ${MSI_RESET}It${SC_SPACE}is${SC_SPACE}provided${SC_SPACE}as${SC_SPACE}if${SC_SPACE}and${SC_SPACE}without${SC_SPACE}any${SC_SPACE}warranty.
 .BI ${MSI_RESET}Use${SC_SPACE}at${SC_SPACE}your${SC_SPACE}own${SC_SPACE}risk.
 .fi
@@ -163,9 +163,9 @@ Written by (c) Henry Letellier.
 .PP
 .SH PROJECT RESSOURCES
 .nf
-.BI ${MSI_RESET}Website:${SC_SPACE}https://asperguide\\&.github\\&.io/back-end/
-.BI ${MSI_RESET}Source${SC_SPACE}code${SC_SPACE}(Github):${SC_SPACE}https://github\\&.com/Asperguide/back-end
-.BI ${MSI_RESET}Documentation:${SC_SPACE}https://asperguide\\&.github\\&.io/back-end/
+.BI ${MSI_RESET}Website:${SC_SPACE}https://hanra-s-work\\&.github\\&.io/cat_feeder/
+.BI ${MSI_RESET}Source${SC_SPACE}code${SC_SPACE}(Github):${SC_SPACE}https://github\\&.com/Hanra-s-work/cat_feeder
+.BI ${MSI_RESET}Documentation:${SC_SPACE}https://hanra-s-work\\&.github\\&.io/back-end/
 .fi
 .PP
 .SH DISCLAIMER
@@ -191,8 +191,8 @@ $MAN_FILES
 
 function update_man_paths {
     MAN_DEST="$1"
-    # Update the shell man paths to include the Asper Guide - Backend folder
-    echo "Updating the shell man paths to include the Asper Guide - Backend folder"
+    # Update the shell man paths to include the Cat Feeder - Backend folder
+    echo "Updating the shell man paths to include the Cat Feeder - Backend folder"
     export MANPATH="/usr/local/man:/usr/local/share/man:/usr/share/man:$MAN_DEST:$MANPATH"
     SHELL_PATHS=("/etc/bash.bashrc" "/etc/bashrc" "/etc/profile" "/etc/zsh/zshenv" "/etc/zshrc" "/etc/fish/config.fish")
 
@@ -206,7 +206,7 @@ function update_man_paths {
             decho "MANPATH is already present in '$i' not adding"
         fi
     done
-    echo "Updated the shell man paths to include the Asper Guide - Backend folder"
+    echo "Updated the shell man paths to include the Cat Feeder - Backend folder"
 }
 
 function add_required_mans {
@@ -241,7 +241,7 @@ function update_man_db {
         return
     fi
     if grep -qF "$MY_MAN_PATH" "$DESTINATION"; then
-        echo "The man paths for Asper Guide - Backend are correct"
+        echo "The man paths for Cat Feeder - Backend are correct"
         return
     fi
     echo "#" >>"$DESTINATION"
@@ -301,7 +301,7 @@ fi
 # Define the installation directory for man pages
 UPDATE_DB_FILE=$TRUE
 MAN_DIR="/usr/share/man/"
-MAN_PROG_DIR="Asper_Header"
+MAN_PROG_DIR="Cat_Feeder"
 MAN_DEST="${MAN_DIR}${MAN_PROG_DIR}"
 MAN_LEVEL=6
 MAN_SHORTCUT_HOME="${MAN_DIR}man${MAN_LEVEL}"
@@ -337,7 +337,7 @@ if [ $STATUS -ne 0 ]; then
     echo "This operation failed, please re-run this program with -d or do the operation manually"
     exit $STATUS
 fi
-decho "Removed '$MAN_DEST' and '$MAN_DIR/Asper Guide - Backend.3' if they existed"
+decho "Removed '$MAN_DEST' and '$MAN_DIR/Cat Feeder - Backend.3' if they existed"
 echo "Previous entries, if present, have been removed"
 
 # Create the directory structure for your project's man pages
@@ -382,7 +382,7 @@ fi
 echo "Homepage has been generated"
 
 echo "Adding required man links"
-add_required_mans "$MAN_SHORTCUT_HOME" "$MAN_DEST" "Asper Guide - Backend.6"
+add_required_mans "$MAN_SHORTCUT_HOME" "$MAN_DEST" "Cat Feeder - Backend.6"
 echo "Added required man links"
 
 if [ "$UPDATE_DB_FILE" = "$TRUE" ]; then
@@ -395,7 +395,7 @@ fi
 
 update_database
 
-echo "Installation complete. You can now use 'man Asper Guide - Backend' to access the manual page."
+echo "Installation complete. You can now use 'man Cat Feeder - Backend' to access the manual page."
 echo "Please relaunch any terminal instances you have for the full effect of the new man pages to be applied"
 
 echo "(C) Created by Henry Letellier"

@@ -1,5 +1,5 @@
 """
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO:
 # ..........####...####..........
 # ......###.....#.#########......
@@ -19,14 +19,14 @@
 # .......#......#.########.......
 # .........#####...#####.........
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: http_constants.py
 # CREATION DATE: 19-11-2025
 # LAST Modified: 16:33:2 30-11-2025
 # DESCRIPTION:
-# This is the backend server in charge of making the actual website work.
+# This is the project in charge of making the connected cat feeder project work.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE:
 # File containing the constants that are used by the http codes class.
 # Central definitions for HTTP-related constants:
@@ -42,7 +42,7 @@
 # - Easy to maintain
 # /STOP
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 """
 
 from __future__ import annotations

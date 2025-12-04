@@ -1,5 +1,5 @@
 """
-# +==== BEGIN AsperBackend =================+
+# +==== BEGIN CatFeeder =================+
 # LOGO:
 # ..........####...####..........
 # ......###.....#.#########......
@@ -19,17 +19,17 @@
 # .......#......#.########.......
 # .........#####...#####.........
 # /STOP
-# PROJECT: AsperBackend
+# PROJECT: CatFeeder
 # FILE: sql_injection.py
 # CREATION DATE: 11-10-2025
 # LAST Modified: 3:51:42 25-11-2025
 # DESCRIPTION:
 # SQL injection detection module for backend connectors.
 # /STOP
-# COPYRIGHT: (c) Asperguide
+# COPYRIGHT: (c) Cat Feeder
 # PURPOSE: Detect, log, and prevent SQL injection attempts.
 # // AR
-# +==== END AsperBackend =================+
+# +==== END CatFeeder =================+
 """
 
 import re
