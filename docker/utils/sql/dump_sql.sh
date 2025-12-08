@@ -13,7 +13,7 @@
 # PROJECT: CatFeeder
 # FILE: dump_sql.sh
 # CREATION DATE: 08-12-2025
-# LAST Modified: 2:24:51 08-12-2025
+# LAST Modified: 3:12:52 08-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -127,6 +127,7 @@ if [ $? -ne 0 ]; then
     echo "Partial dump saved to: $savefile.error.sql (for inspection)"
     exit $STATUS
 fi
+
 echo "Data dumped to: $savefile.sql"
 
 echo "When displayed, press the Q key to exit."

@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: constants.py
 # CREATION DATE: 11-10-2025
-' LAST Modified: 8:5:28 04-12-2025
+# LAST Modified: 3:56:22 08-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -242,10 +242,10 @@ USER_INFO_ADMIN_NODE: str = "admin"
 
 # The path to the server icon
 ICON_PATH: str = str(
-    ASSETS_DIRECTORY / "icon" / "Cat Feeder" / "favicon.ico"
+    ASSETS_DIRECTORY / "icon" / "cat_feeder" / "favicon.ico"
 )
 
 # Path to the png version of the icon
 PNG_ICON_PATH: str = str(
-    ASSETS_DIRECTORY / "icon" / "Cat Feeder" / "logo_256x256.png"
+    ASSETS_DIRECTORY / "icon" / "cat_feeder" / "logo_256x256.png"
 )
