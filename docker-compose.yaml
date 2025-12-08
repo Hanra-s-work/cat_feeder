@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: docker-compose.yaml
 # CREATION DATE: 10-10-2025
-# LAST Modified: 14:29:26 04-12-2025
+# LAST Modified: 19:12:18 07-12-2025
 # DESCRIPTION:
 # This is the docker compose of the project, it allows the server to spin up and have access to all the other ressources it needs.
 # /STOP
@@ -156,7 +156,7 @@ services:
 
 volumes:
   database-data:
-    name: "database-data"
+    name: "local-catfeeder-database-data"
     driver: local
     driver_opts:
       type: none
@@ -168,7 +168,7 @@ volumes:
       com.cat-feeder_database.role: "Volume in charge of storing the database cache so that the database persists after the container gets removed."
 
   database-initialisation-data:
-    name: "database-initialisation-data"
+    name: "local-catfeeder-database-initialisation-data"
     driver: local
     driver_opts:
       type: none
@@ -180,7 +180,7 @@ volumes:
       com.cat-feeder_database.role: "Volume in charge of storing the database cache so that the database persists after the container gets removed."
 
   redis-sock:
-    name: "redis-sock"
+    name: "local-catfeeder-redis-sock"
     labels:
       com.redis-sock.description: "cat-feeder Redis socket"
       com.redis-sock.department: "IT/Network"
@@ -188,7 +188,7 @@ volumes:
     driver: local
 
   redis-data:
-    name: "redis-data"
+    name: "local-catfeeder-redis-data"
     driver: local
     driver_opts:
       type: none
@@ -200,7 +200,7 @@ volumes:
       com.redis-data.role: "The redis persistent cache between container reboots"
 
   server-data:
-    name: "server-data"
+    name: "local-catfeeder-server-data"
     driver: local
     driver_opts:
       type: none
@@ -212,7 +212,7 @@ volumes:
       com.cat-feeder_data.role: "Volume in charge of storing the server data so that it persists after the container gets removed."
 
   bucket-data:
-    name: "bucket-data"
+    name: "local-catfeeder-bucket-data"
     driver: local
     driver_opts:
       type: none
