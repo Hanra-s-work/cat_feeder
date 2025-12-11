@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: test_http_codes_wrapper.py
 # CREATION DATE: 11-12-2025
-# LAST Modified: 4:43:30 11-12-2025
+# LAST Modified: 5:9:16 11-12-2025
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -25,8 +25,10 @@ from fastapi.responses import (
     Response, FileResponse, HTMLResponse, JSONResponse,
     PlainTextResponse, RedirectResponse, StreamingResponse
 )
-import io
+
+import re
 import os
+import io
 import sys
 import pytest
 
@@ -205,8 +207,6 @@ def test_wrapper_methods_match_source_definitions(hc):
         ).parents[2] / 'src' / 'libs' / 'http_codes' / 'http_codes.py'
     text = src_path.read_text()
 
-    import re
-
     # The wrappers are defined in `http_codes.py` between lines 274 and 1471
     # (1-indexed). Read that slice exactly to avoid accidental matches
     # elsewhere in the file.
@@ -216,16 +216,15 @@ def test_wrapper_methods_match_source_definitions(hc):
     # slice is 1-indexed in description: lines 274..1471 inclusive -> indices 273..1471
     sliced = "\n".join(text_lines[273:1471])
 
-    import re
-
     # Match: def name(...): ... return self.send_message_on_status(status=NNN, ...)
     # Also handle positional form: return self.send_message_on_status(NNN, ...)
     pattern = re.compile(
         r"def\s+(?P<name>\w+)\s*\([^)]*\):\s*.*?return\s+self\.send_message_on_status\(\s*(?:status\s*=\s*(?P<kw>\d{3})|(?P<pos>\d{3}))",
         re.S,
     )
-    found = {m.group('name'): int(m.group('kw') or m.group('pos'))
-             for m in pattern.finditer(sliced)}
+    found = {}
+    for m in pattern.finditer(sliced):
+        found[m.group('name')] = int(m.group('kw') or m.group('pos'))
 
     # For each found wrapper, call it and assert returned status matches
     for name, expected in found.items():
@@ -237,6 +236,15 @@ def test_wrapper_methods_match_source_definitions(hc):
             continue
         # Some wrappers accept positional args; calling with no args should use defaults
         resp = func()
+        assert isinstance(resp, (
+            Response,
+            FileResponse,
+            HTMLResponse,
+            JSONResponse,
+            PlainTextResponse,
+            RedirectResponse,
+            StreamingResponse
+        ))
         assert hasattr(resp, 'status_code')
         assert resp.status_code == expected, f"{name} returned {resp.status_code}, expected {expected}"
 
@@ -274,7 +282,6 @@ def test_explicit_wrappers_from_the_class_and_make_sure_that_they_return_the_exp
     returning the expected numeric codes.
     """
     expected = {
-
         "send_continue": 100,
         "switching_protocols": 101,
         "processing": 102,
