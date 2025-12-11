@@ -9,6 +9,7 @@ name: doxygen_generator
 #          1.0.6 # The flow will trigger the push method after the initial trigger if it had been triggered by a tag.
 #          1.0.7 # The flow does not need to trigger the push method due to how tags work.
 #          1.0.8 # The webpage update section of the flow will only run when triggered on the default branch (name provided by github)
+#          1.0.9 # Add a step to try and reclaim disk space by removing unused build tools
 
 on:
   push:
@@ -67,6 +68,19 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Free up disk space
+        run: |
+          echo "Removing pre-installed software to free space..."
+          sudo rm -rf /usr/share/dotnet # Remove .NET
+          sudo rm -rf /opt/ghc          # Remove Haskell
+          sudo rm -rf "/usr/local/share/boost" # Remove Boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY" # Clear tool cache
+          sudo apt-get purge -y manpages-dev manpages
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          docker system prune -a -f
+          echo "Disk space after cleanup:"
+          df -h
       - name: Fetch doxygen docker
         run: |
           docker pull ${{env.DOCKER_NAME}}
