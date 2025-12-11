@@ -22,7 +22,7 @@
 # PROJECT: CatFeeder
 # FILE: sql_injection.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:51:42 25-11-2025
+# LAST Modified: 4:57:17 11-12-2025
 # DESCRIPTION:
 # SQL injection detection module for backend connectors.
 # /STOP
@@ -298,6 +298,21 @@ class SQLInjection:
             return False
         if self.base64_key in string:
             return not self._is_base64(string)
+        # If the string looks like a normal email address (single '@' and
+        # a simple local@domain structure), treat it as safe for symbol
+        # checks. This avoids flagging valid emails like 'my.real@email.com'
+        # because the single '@' is a valid email character and not an SQL
+        # variable. We use a conservative email regex to reduce false-negatives.
+        # If the string contains an e-mail address anywhere inside it,
+        # treat it as safe for symbol checks (avoid flagging the single
+        # '@' character inside payloads like "email='user@host.tld'").
+        if isinstance(string, str) and "@" in string:
+            # Use a looser pattern and `search` so embedded e-mails are
+            # detected even when the string contains additional text.
+            email_re = re.compile(
+                r"[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}", re.IGNORECASE)
+            if email_re.search(string):
+                return False
         return self._scan_compiled(string, self.regex_map[self.symbols_key], "check_if_symbol_sql_injection")
 
     def check_if_command_sql_injection(self, string: Union[Union[str, None, int, float], Sequence[Union[str, None, int, float]]]) -> bool:
