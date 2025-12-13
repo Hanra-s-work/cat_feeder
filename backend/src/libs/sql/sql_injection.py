@@ -12,7 +12,7 @@
 # #.....#...##..#.##..####.######
 # .#...##....##.#.##..###..#####.
 # ..#.##......#.#.####...######..
-# LAST Modified: 7:35:6 13-12-2025
+# LAST Modified: 17:39:13 13-12-2025
 # ...##.........#.############...
 # ......#.......#.#########......
 # .......#......#.########.......
@@ -285,7 +285,7 @@ class SQLInjection:
         """Return True if string is purely numeric."""
         return bool(re.fullmatch(r'\d+(\.\d+)?', s))
 
-    def _extract_email_candidate(self, raw: str) -> Optional[str]:
+    def _extract_email_candidate(self, raw: str, function: str = "_extract_email_candidate") -> Optional[str]:
         """Extract and return the e-mail candidate from raw string.
 
         Handles optional ``key=value`` wrappers and surrounding quotes.
@@ -298,24 +298,36 @@ class SQLInjection:
                 (missing '@' or contains whitespace).
         """
         if not isinstance(raw, str) or "@" not in raw:
+            self.disp.log_debug("No @'s in string", function)
             return None
 
         s = raw.strip()
         m_kv = re.match(r"^\s*([^\s=]+)\s*=\s*(.+)$", s)
-        candidate = m_kv.group(2).strip() if m_kv else s
+        self.disp.log_debug(f"s='{s}', m_kv='{m_kv}'", function)
+        if m_kv:
+            candidate = m_kv.group(2).strip()
+        else:
+            candidate = s
+        self.disp.log_debug(f"candidate='{candidate}'", function)
 
         if (
             (candidate.startswith("'") and candidate.endswith("'"))
             or (candidate.startswith('"') and candidate.endswith('"'))
         ):
+            self.disp.log_debug(
+                "' or \" found at beginning and end of string, stripping.",
+                function
+            )
             candidate = candidate[1:-1]
 
         if re.search(r"\s", candidate):
+            self.disp.log_debug(
+                "string found in candidate, returning None", function)
             return None
 
         return candidate
 
-    def _is_email(self, raw: str) -> Optional[str]:
+    def _is_email(self, raw: str, function: str = "_is_email") -> Optional[str]:
         """Check if the provided text is an e-mail and return normalized value.
 
         This accepts either a plain e-mail or a `key=value` pair where the
@@ -330,14 +342,19 @@ class SQLInjection:
         Returns:
             Optional[str]: Normalized email string if valid, None otherwise.
         """
-        candidate = self._extract_email_candidate(raw)
+        candidate = self._extract_email_candidate(
+            raw,
+            f"{function}:_extract_email_candidate"
+        )
         if candidate is None:
+            self.disp.log_debug("Candidate is none, returning none", function)
             return None
 
         email_re: re.Pattern = self.regex_map[self.e_mail_key]
         # require the raw token to fully match the email pattern
         # this prevents trailing SQL from being accepted
         if not email_re.fullmatch(raw):
+            self.disp.log_debug("fullmatch failed, returning None", function)
             return None
 
         # At this point, our regex has validated the email and confirmed
@@ -345,11 +362,15 @@ class SQLInjection:
 
         # prefer the external validator when available; return normalized value
         if validate_email and EmailNotValidError:
+            self.disp.log_debug(
+                "validate_email and EmailNotValidError are present", function)
             try:
                 res = validate_email(candidate, check_deliverability=False)
+                self.disp.log_debug(f"res: {res}", function)
                 # Use normalized (newer) or email/ascii_email (deprecated fallback)
                 norm = getattr(res, "normalized", None) or getattr(res, "email", None) or getattr(
                     res, "ascii_email", None) or candidate
+                self.disp.log_debug(f"norm={norm}", function)
                 return norm
             except EmailNotValidError:
                 # email_validator rejected it, but our regex accepted it
@@ -357,6 +378,7 @@ class SQLInjection:
                 pass
 
         # fallback: candidate matched the regex fullmatch and is acceptable
+        self.disp.log_debug(f"candidate={candidate}", function)
         return candidate
 
     # ============================== CHECKERS ============================== #
@@ -382,6 +404,7 @@ class SQLInjection:
                     return True
             return False
         raw = str(string)
+        self.disp.log_debug(f"raw: '{raw}'")
         norm_email = self._is_email(raw)
         if norm_email:
             self.disp.log_debug("E-mail found")
@@ -391,7 +414,13 @@ class SQLInjection:
             return False
         if self.base64_key in string:
             return not self._is_base64(string)
-        return self._scan_compiled(string, self.regex_map[self.symbols_key], "check_if_symbol_sql_injection:_scan_compiled")
+        final = self._scan_compiled(
+            string,
+            self.regex_map[self.symbols_key],
+            "check_if_symbol_sql_injection:_scan_compiled"
+        )
+        self.disp.log_debug(f"Final response={final}")
+        return final
 
     def check_if_command_sql_injection(self, string: Union[Union[str, None, int, float], Sequence[Union[str, None, int, float]]]) -> bool:
         """Detect SQL keywords in the input.
@@ -417,6 +446,7 @@ class SQLInjection:
         if string is None:
             return False
         raw = str(string)
+        self.disp.log_debug(f"raw: '{raw}'")
         norm_email = self._is_email(raw)
         if norm_email:
             self.disp.log_debug("E-mail found")
@@ -426,7 +456,13 @@ class SQLInjection:
             return False
         if self.base64_key in string:
             return not self._is_base64(string)
-        return self._scan_compiled(string, self.regex_map[self.keywords_key], "check_if_command_sql_injection:_scan_compiled")
+        final = self._scan_compiled(
+            string,
+            self.regex_map[self.keywords_key],
+            "check_if_command_sql_injection:_scan_compiled"
+        )
+        self.disp.log_debug(f"Final response={final}")
+        return final
 
     def check_if_logic_gate_sql_injection(self, string: Union[Union[str, None, int, float], Sequence[Union[str, None, int, float]]]) -> bool:
         """Detect logical operators (AND/OR/NOT) in the input.
@@ -448,6 +484,7 @@ class SQLInjection:
                     return True
             return False
         raw = str(string)
+        self.disp.log_debug(f"raw: '{raw}'")
         norm_email = self._is_email(raw)
         if norm_email:
             self.disp.log_debug("E-mail found")
@@ -457,7 +494,13 @@ class SQLInjection:
             return False
         if self.base64_key in string:
             return not self._is_base64(string)
-        return self._scan_compiled(string, self.regex_map[self.logic_gates_key], "check_if_logic_gate_sql_injection:_scan_compiled")
+        final = self._scan_compiled(
+            string,
+            self.regex_map[self.logic_gates_key],
+            "check_if_logic_gate_sql_injection:_scan_compiled"
+        )
+        self.disp.log_debug(f"Final response={final}")
+        return final
 
     def check_if_symbol_and_command_injection(self, string: Union[Union[str, None, int, float], Sequence[Union[str, None, int, float]]]) -> bool:
         """Combined check for symbol- or keyword-based injection patterns.
@@ -526,6 +569,7 @@ class SQLInjection:
                     return True
             return False
         raw = str(string)
+        self.disp.log_debug(f"raw: '{raw}'")
         norm_email = self._is_email(raw)
         if norm_email:
             self.disp.log_debug("E-mail found")
@@ -535,7 +579,10 @@ class SQLInjection:
             return False
         if self.base64_key in string:
             return not self._is_base64(string)
-        return self._scan_compiled(string, self.regex_map['all'], "check_if_sql_injection:_scan_compiled")
+        final = self._scan_compiled(
+            string, self.regex_map['all'], "check_if_sql_injection:_scan_compiled")
+        self.disp.log_debug(f"Final response={final}")
+        return final
 
     def check_if_injections_in_strings(self, array_of_strings: Union[Union[str, None, int, float], Sequence[Union[str, None, int, float]], Sequence[Sequence[Union[str, None, int, float]]]]) -> bool:
         """Scan an array (possibly nested) of strings for injection patterns.

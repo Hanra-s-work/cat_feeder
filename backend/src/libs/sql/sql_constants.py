@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: sql_constants.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 13:4:38 13-11-2025
+# LAST Modified: 18:25:31 13-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -42,40 +42,40 @@ UNWANTED_ARGUMENTS = [
 
 # Keywords considered risky for SQL sanitization.
 RISKY_KEYWORDS: List[str] = [
-    "add", "all", "alter", "analyze", "and", "as", "asc", "asensitive", "before", "between",
-    "bigint", "binary", "blob", "both", "by", "call", "cascade", "case", "change", "char",
-    "character", "check", "collate", "column", "condition", "constraint", "continue",
-    "convert", "create", "cross", "current_date", "current_time", "current_timestamp",
-    "cursor", "database", "databases", "day_hour", "day_microsecond", "day_minute",
-    "day_second", "dec", "decimal", "declare", "default", "delayed", "delete", "desc",
-    "describe", "deterministic", "distinct", "distinctrow", "div", "double", "drop",
-    "dual", "each", "else", "elseif", "enclosed", "escaped", "exists", "exit", "explain",
-    "false", "fetch", "float", "for", "force", "foreign", "from", "fulltext", "general",
-    "grant", "group", "having", "high_priority", "hour_microsecond", "hour_minute",
-    "hour_second", "if", "ignore", "in", "index", "infile", "inner", "inout",
-    "insensitive", "insert", "int", "integer", "interval", "into", "is", "iterate", "join",
-    "key", "keys", "kill", "leading", "leave", "left", "like", "limit", "linear", "lines",
-    "load", "localtime", "localtimestamp", "lock", "long", "longblob", "longtext", "loop",
-    "low_priority", "master_ssl_verify_server_cert", "match", "maxvalue", "mediumblob",
-    "mediumint", "mediumtext", "middleint", "minute_microsecond", "minute_second", "mod",
-    "modifies", "natural", "not", "no_write_to_binlog", "null", "numeric", "on", "optimize",
-    "option", "optionally", "or", "order", "out", "outer", "outfile", "precision", "primary",
-    "procedure", "purge", "range", "read", "reads", "read_write", "real", "references",
-    "regexp", "release", "rename", "repeat", "replace", "require", "resignal", "restrict",
-    "return", "revoke", "right", "rlike", "schema", "schemas", "second_microsecond",
-    "select", "sensitive", "separator", "set", "show", "signal", "smallint", "spatial",
-    "specific", "sql", "sqlexception", "sqlstate", "sqlwarning", "sql_big_result",
-    "sql_calc_found_rows", "sql_small_result", "ssl", "starting", "stored", "straight_join",
-    "table", "terminated", "then", "tinyblob", "tinyint", "tinytext", "to", "trailing",
-    "trigger", "true", "undo", "union", "unique", "unlock", "unsigned", "update", "usage",
-    "use", "using", "utc_date", "utc_time", "utc_timestamp", "values", "varbinary",
-    "varchar", "varcharacter", "varying", "virtual", "when", "where", "while", "with",
-    "write", "xor", "year_month", "zerofill"
+    'add', 'all', 'alter', 'analyze', 'as', 'asc', 'asensitive', 'before',
+    'bigint', 'binary', 'blob', 'by', 'call', 'cascade', 'case', 'change', 'char',
+    'character', 'check', 'collate', 'column', 'condition', 'constraint', 'continue',
+    'convert', 'create', 'cross', 'cursor', 'database', 'databases', 'day_hour',
+    'day_microsecond', 'day_minute', 'day_second', 'dec', 'decimal', 'declare', 'default',
+    'delayed', 'delete', 'desc', 'describe', 'deterministic', 'distinctrow', 'div', 'double', 'drop',
+    'dual', 'each', 'else', 'elseif', 'exit', 'explain',
+    'fetch', 'float', 'for', 'foreign', 'from', 'fulltext', 'general',
+    'grant', 'group', 'high_priority', 'hour_microsecond', 'hour_minute',
+    'hour_second', 'if', 'ignore', 'index', 'infile', 'inner', 'inout',
+    'insensitive', 'insert', 'int', 'integer', 'interval', 'into', 'iterate',
+    'key', 'keys', 'kill', 'leave', 'left', 'linear', 'lines',
+    'load', 'localtime', 'localtimestamp', 'lock', 'long', 'longblob', 'longtext', 'loop',
+    'low_priority', 'master_ssl_verify_server_cert', 'match', 'maxvalue', 'mediumblob',
+    'mediumint', 'mediumtext', 'middleint', 'minute_microsecond', 'minute_second',
+    'modifies', 'natural', 'no_write_to_binlog', 'numeric', 'on', 'optimize',
+    'option', 'optionally', 'order', 'out', 'outer', 'outfile', 'precision', 'primary',
+    'procedure', 'purge', 'range', 'read', 'reads', 'read_write', 'real', 'references',
+    'release', 'rename', 'repeat', 'replace', 'require', 'resignal', 'restrict',
+    'return', 'revoke', 'right', 'schema', 'schemas', 'second_microsecond',
+    'select', 'sensitive', 'separator', 'set', 'show', 'signal', 'smallint', 'spatial',
+    'specific', 'sql', 'sqlexception', 'sqlstate', 'sqlwarning', 'sql_big_result',
+    'sql_calc_found_rows', 'sql_small_result', 'ssl', 'straight_join',
+    'table', 'then', 'tinyblob', 'tinyint', 'tinytext', 'to',
+    'trigger', 'undo', 'unique', 'unlock', 'update', 'usage',
+    'use', 'using', 'values', 'varbinary', 'varchar', 'varcharacter',
+    'when', 'where', 'while', 'with', 'write', 'year_month'
 ]
 
 # Logical gates used in SQL queries.
 KEYWORD_LOGIC_GATES: List[str] = [
-    'and', 'or', 'not', 'xor', 'between', 'in', 'is', 'like', 'regexp', 'rlike', 'null', 'true', 'false', 'exists',
+    'and', 'or', 'not', 'xor', 'between', 'in', 'is', 'like', 'regexp', 'rlike',
+    # 'null',
+    'true', 'false', 'exists',
     'distinct', 'limit', 'having', 'join', 'union', 'current_date', 'current_time', 'current_timestamp', 'utc_date',
     'utc_time', 'utc_timestamp', 'mod', 'if'
 ]

@@ -72,10 +72,19 @@ BoilerplateNonHTTP = _mod_non.BoilerplateNonHTTP
 
 
 def test_build_response_body_logged_in_and_not_logged_in():
+    """Test response body construction with logged-in state detection.
+    
+    Verifies that build_response_body correctly includes title, message,
+    resp/error fields, and sets logged_in status based on token validity.
+    """
     # register server headers and a boilerplate non-http that returns True
     RI.register(ServerHeaders, ServerHeaders())
 
     class MockBPNH(BoilerplateNonHTTP):
+        """Mock BoilerplateNonHTTP with controlled token validation.
+        
+        Returns True when validating the token 'good', False otherwise.
+        """
         def is_token_correct(self, token: str) -> bool:
             return token == 'good'
 
@@ -99,6 +108,12 @@ def test_build_response_body_logged_in_and_not_logged_in():
 
 
 def test_response_helpers_return_hci_wrappers():
+    """Test that all response helper methods return proper HTTP code identifiers.
+    
+    Verifies that convenience methods like invalid_token, no_access_token,
+    etc. return tuples starting with the appropriate HTTP code identifier
+    string that can be used to generate HTTP responses.
+    """
     RI.register(ServerHeaders, ServerHeaders())
     RI.register(BoilerplateNonHTTP, BoilerplateNonHTTP())
     RI.register(SQL, SQL())

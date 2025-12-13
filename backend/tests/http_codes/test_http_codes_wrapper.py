@@ -53,10 +53,21 @@ except ImportError:
 
 @pytest.fixture()
 def hc():
+    """Create and return an HttpCodes instance for testing.
+
+    Returns:
+        HttpCodes: A configured HTTP codes wrapper for generating responses.
+    """
     return HttpCodes()
 
 
 def test_check_data_type_various(hc):
+    """Test _check_data_type with various input types and formats.
+
+    Verifies that the method correctly handles None values, HttpDataTypes
+    enum members, case-insensitive key names, raw MIME strings, and raises
+    TypeError for invalid inputs like integers.
+    """
     # None -> text/plain
     assert hc._check_data_type(None) == "text/plain"
 
@@ -76,6 +87,11 @@ def test_check_data_type_various(hc):
 
 
 def test_check_header(hc):
+    """Test _check_header validates and returns header dictionaries.
+
+    Verifies that None returns empty dict, valid dicts are returned as-is,
+    and non-mapping types raise TypeError.
+    """
     assert hc._check_header(None) == {}
     d = {"X-Test": "1"}
     assert hc._check_header(d) == {"X-Test": "1"}
@@ -85,6 +101,11 @@ def test_check_header(hc):
 
 
 def test_process_data_content(hc, tmp_path):
+    """Test _process_data_content with different content types and formats.
+
+    Verifies handling of None values, bytes, file-like objects, JSON types
+    (dict), streaming generators, and fallback stringification for other types.
+    """
     # None -> empty string
     assert hc._process_data_content(None, "application/json") == ""
 
@@ -109,6 +130,13 @@ def test_process_data_content(hc, tmp_path):
 
 
 def test_send_message_on_status_packaging_and_headers(hc, tmp_path):
+    """Test send_message_on_status creates correct Response subclasses.
+
+    Verifies that different content_type values produce the appropriate
+    FastAPI Response subclass (JSONResponse, HTMLResponse, PlainTextResponse,
+    RedirectResponse, FileResponse) with correct status codes, media types,
+    and custom headers.
+    """
     # JSONResponse using key name
     resp = hc.send_message_on_status(
         200, content={"ok": True}, content_type="json", headers={"X-A": "1"})
@@ -159,6 +187,12 @@ def test_send_message_on_status_packaging_and_headers(hc, tmp_path):
 
 
 def test_streaming_response(hc):
+    """Test that streaming with file MIME types raises TypeError.
+
+    Verifies that providing a generator with application/octet-stream
+    (considered a file MIME in this implementation) raises TypeError
+    because FileResponse expects a file path string, not a generator.
+    """
     # Provide a generator and STREAM mime
     def gen():
         yield b"a"
@@ -173,6 +207,11 @@ def test_streaming_response(hc):
 
 
 def test_httpdatatypes_basic():
+    """Test HttpDataTypes enum provides correct key-value mappings.
+
+    Verifies that well-known keys like 'json' exist in the enum dictionary
+    and that from_key() returns the correct enum member for known keys.
+    """
     # Ensure some well-known keys exist and resolve correctly
     d = HttpDataTypes.get_dict()
     assert "json" in d
@@ -184,6 +223,12 @@ def test_httpdatatypes_basic():
 
 
 def test_all_authorised_statuses_send(hc):
+    """Test that all authorized HTTP status codes are accepted.
+
+    Iterates through all status codes in AUTHORISED_STATUSES and verifies
+    that send_message_on_status accepts them and returns JSONResponse
+    objects with the correct status code.
+    """
     # Iterate all authorised statuses and ensure send_message_on_status accepts them
     for status in CONST.AUTHORISED_STATUSES:
         resp = hc.send_message_on_status(
@@ -194,9 +239,15 @@ def test_all_authorised_statuses_send(hc):
 
 
 def test_wrapper_methods_match_source_definitions(hc):
-    """
-    Ensure each public wrapper method in `HttpCodes` returns the HTTP
-    status code that the source implements. We parse the source file to
+    """Test that HTTP code wrapper methods return their documented status codes.
+
+    Parses the source file to extract the status code used by each wrapper
+    method's send_message_on_status call, then verifies that calling the
+    wrapper actually returns a Response with that status code. This ensures
+    wrapper methods match their implementation.
+
+    The test specifically examines the wrapper methods section of the source
+    file (lines 274-1471) to avoid false matches elsewhere.
     extract the expected `status=` integer used in the `send_message_on_status` call.
     """
     src_path = Path(hc.__class__.__module__.replace(
@@ -250,6 +301,11 @@ def test_wrapper_methods_match_source_definitions(hc):
 
 
 def test_response_class_variants(hc, tmp_path):
+    """Test different response class variants based on content type.
+
+    Verifies that RedirectResponse is created for redirect content_type
+    and FileResponse is created when providing file paths with file MIME types.
+    """
     # RedirectResponse via redirect content_type
     resp = hc.moved_permanently(
         content="https://example.com", content_type="redirect")
@@ -264,6 +320,13 @@ def test_response_class_variants(hc, tmp_path):
 
 
 def test_streaming_unreachable_branch(hc):
+    """Test that StreamingResponse branch is unreachable with file MIME types.
+
+    Verifies that the StreamingResponse code path is shadowed by file MIME
+    type handling (octet-stream is classified as file), so attempting to
+    send a generator with octet-stream raises TypeError instead of creating
+    a StreamingResponse.
+    """
     # StreamingResponse branch is shadowed by file mime types (octet-stream is file),
     # therefore trying to send a generator with octet-stream should raise TypeError
     def gen():
@@ -275,11 +338,16 @@ def test_streaming_unreachable_branch(hc):
 
 
 def test_explicit_wrappers_from_the_class_and_make_sure_that_they_return_the_expected_statuses(hc):
-    """
-    Explicitly check a representative set of wrapper methods return the
-    conventional HTTP status codes. This ensures common and rebinding
-    methods (e.g., `success`, `internal_server_error`, `im_a_teapot`) are
-    returning the expected numeric codes.
+    """Test explicit wrapper methods return conventional HTTP status codes.
+
+    Explicitly validates a comprehensive set of HTTP status code wrapper
+    methods including informational (1xx), success (2xx), redirect (3xx),
+    client error (4xx), and server error (5xx) responses. This ensures
+    common methods like success(), not_found(), im_a_teapot(), and
+    internal_server_error() return their expected numeric codes.
+
+    The test covers 60+ wrapper methods spanning the full HTTP status
+    code spectrum to ensure comprehensive coverage of the API surface.
     """
     expected = {
         "send_continue": 100,

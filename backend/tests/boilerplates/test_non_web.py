@@ -72,6 +72,11 @@ BoilerplateNonHTTP = _mod.BoilerplateNonHTTP
 
 
 def test_check_date_valid_and_invalid():
+    """Test date validation with various formats and invalid dates.
+    
+    Verifies that check_date accepts valid DD/MM/YYYY dates and rejects
+    invalid dates (impossible dates like 32/01) and alternative formats.
+    """
     RI.register(SQL, SQL())
     bn = BoilerplateNonHTTP()
     assert bn.check_date('01/01/2020') is True
@@ -81,6 +86,12 @@ def test_check_date_valid_and_invalid():
 
 
 def test_generate_check_token_sizes_and_format():
+    """Test token generation with different sizes and format validation.
+    
+    Verifies that generate_check_token produces tokens with the correct
+    number of segments (leading number + token elements) based on the
+    requested token_size parameter.
+    """
     RI.register(SQL, SQL())
     bn = BoilerplateNonHTTP()
     short = bn.generate_check_token(1)
@@ -95,6 +106,11 @@ def test_generate_check_token_sizes_and_format():
 
 
 def test_set_lifespan_returns_offset_datetime():
+    """Test that set_lifespan returns future datetime with correct offset.
+    
+    Verifies that the method returns a datetime object in the future
+    that is offset by approximately the requested number of seconds.
+    """
     RI.register(SQL, SQL())
     bn = BoilerplateNonHTTP()
     now = datetime.now()
@@ -105,6 +121,12 @@ def test_set_lifespan_returns_offset_datetime():
 
 
 def test_generate_token_unique_and_uuid_format():
+    """Test token generation produces UUID-like formatted strings.
+    
+    Verifies that generate_token produces string tokens containing
+    hyphens (UUID format indicators) and ensures SQL is registered
+    to check for token uniqueness.
+    """
     # Ensure SQL is registered and returns integer (meaning token not found)
     sql = SQL()
     RI.register(SQL, sql)
@@ -115,6 +137,11 @@ def test_generate_token_unique_and_uuid_format():
 
 
 def test_is_token_correct_updates_and_returns_true():
+    """Test token validation and expiration checking.
+    
+    Verifies that is_token_correct properly validates tokens and updates
+    their last access time, returning True for valid unexpired tokens.
+    """
     sql = SQL()
     sql.update_return = 0
     RI.register(SQL, sql)

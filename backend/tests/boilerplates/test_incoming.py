@@ -101,6 +101,11 @@ BoilerplateNonHTTP = _mod_non.BoilerplateNonHTTP
 
 
 class FakeRequest:
+    """Mock FastAPI Request object for testing.
+    
+    Simulates request attributes including mapping, headers, JSON body,
+    and form data to test BoilerplateIncoming without real HTTP requests.
+    """
     def __init__(self, mapping=None, headers=None, json_body=None, form_body=None):
         self._mapping = mapping or {}
         self.headers = headers or {}
@@ -121,6 +126,11 @@ class FakeRequest:
 
 
 class MockBPNH(BoilerplateNonHTTP):
+    """Mock BoilerplateNonHTTP with controlled token validation behavior.
+    
+    Returns True for token validation when token equals 'valid', and
+    provides predictable token generation and lifespan setting for tests.
+    """
     def __init__(self):
         super().__init__()
 
@@ -135,6 +145,12 @@ class MockBPNH(BoilerplateNonHTTP):
 
 
 def test_get_body_json_and_form():
+    """Test that get_body correctly extracts JSON and form data from requests.
+    
+    Verifies that the method can handle both JSON payloads and multipart
+    form data including file uploads, properly extracting and formatting
+    file content with metadata.
+    """
     RI.register(SQL, SQL())
     bi = BoilerplateIncoming()
     # JSON body
@@ -166,6 +182,11 @@ def test_get_body_json_and_form():
 
 
 def test_get_token_if_present_variants():
+    """Test token extraction from various header formats.
+    
+    Verifies that tokens can be extracted from X-Token headers, Bearer
+    Authorization headers, and returns None when no token is present.
+    """
     RI.register(SQL, SQL())
     bi = BoilerplateIncoming()
     # present in headers (mapping-based lookup can vary depending on request wrapper)
@@ -180,6 +201,11 @@ def test_get_token_if_present_variants():
 
 
 def test_log_user_in_and_out_flow():
+    """Test complete user login and logout flow.
+    
+    Verifies that log_user_in generates and stores authentication tokens
+    correctly, and that log_user_out properly invalidates tokens.
+    """
     sql = SQL()
     sql.insert_return = 0
     sql.remove_return = 0
