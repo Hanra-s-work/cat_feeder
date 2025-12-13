@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: sql_sanitisation_functions.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:52:35 25-11-2025
+# LAST Modified: 7:34:46 11-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -289,11 +289,11 @@ class SQLSanitiseFunctions:
             )
             return self.error
         if len(table_content) == 0:
-            self.disp.log_error(
+            self.disp.log_warning(
                 "There is no table content.",
                 "_beautify_table"
             )
-            return self.error
+            return []
         column_length = len(column_names)
         for i in table_content:
             cell_length = len(i)
