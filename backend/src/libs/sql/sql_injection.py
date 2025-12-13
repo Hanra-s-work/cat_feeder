@@ -13,7 +13,6 @@
 # .#...##....##.#.##..###..#####.
 # ..#.##......#.#.####...######..
 # ..#...........#.#############..
-# ..#...........#.#############..
 # ...##.........#.############...
 # ......#.......#.#########......
 # .......#......#.########.......
@@ -22,7 +21,7 @@
 # PROJECT: CatFeeder
 # FILE: sql_injection.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 4:57:17 11-12-2025
+# LAST Modified: 3:7:44 13-12-2025
 # DESCRIPTION:
 # SQL injection detection module for backend connectors.
 # /STOP
@@ -36,6 +35,11 @@ import re
 import base64
 import binascii
 from typing import Union, List, Dict, Any, Callable, Sequence, overload
+try:
+    from email_validator import validate_email, EmailNotValidError
+except ImportError:
+    EmailNotValidError = None
+    validate_email = None
 
 from display_tty import Disp, initialise_logger
 
@@ -79,6 +83,7 @@ class SQLInjection:
         self.symbols_key: str = "symbols"
         self.keywords_key: str = "keywords"
         self.logic_gates_key: str = "logic_gates"
+        self.e_mail_key: str = "e-mails"
         # ------------------ Injection checking related data  ------------------
         _base_symbols: List[str] = [
             ';', '--', '/*', '*/',
@@ -103,6 +108,15 @@ class SQLInjection:
             self.symbols_key: self._compile_patterns(self.symbols),
             self.keywords_key: self._compile_patterns(self.keywords),
             self.logic_gates_key: self._compile_patterns(self.logic_gates),
+            # RFC 5322 atom allowed specials set, combined with \w to allow
+            # Unicode letters/digits (RFC 6530). This pattern accepts either
+            # a quoted-string local-part (with escaped chars) or a dot-atom.
+            # It also allows an optional `key=value` prefix and optional
+            # surrounding single/double quotes.
+            self.e_mail_key: re.compile(
+                r"^\s*(?:[^\s=]+\s*=\s*)?['\"]?(?P<local>(?:\"(?:\\.|[^\\\"])+\"|(?:[\w!#$%&'*+/=?^`{|}~-]+(?:\.[\w!#$%&'*+/=?^`{|}~-]+)*)))@(?P<domain>(?:[\w-]+\.)+[\w-]{2,})['\"]?\s*$",
+                re.UNICODE | re.IGNORECASE,
+            )
         }
         # ------- Create an instance containing all the sanitised checks -------
         self.all: List[str] = []
@@ -270,6 +284,65 @@ class SQLInjection:
         """Return True if string is purely numeric."""
         return bool(re.fullmatch(r'\d+(\.\d+)?', s))
 
+    def _is_email(self, string: str, parent_function: str = "_is_email") -> bool:
+        """Check if the provided text is an e-mail or not.
+
+        Args:
+            string (str): The input to check
+            parent_function (str, optional): The name of the parent function, usefull if you wish to 'hide' the usage of this function. Defaults to "_is_email".
+
+        Returns:
+            bool: True if it is an e-mail, False otherwise.
+        """
+        if not isinstance(string, str) or "@" not in string:
+            return False
+
+        # Use a cleaned candidate value: trim, handle key=value, strip surrounding quotes
+        s = string.strip()
+        m_kv = re.match(r"^\s*([^\s=]+)\s*=\s*(.+)$", s)
+        if m_kv:
+            candidate = m_kv.group(2).strip()
+        else:
+            candidate = s
+
+        if (
+            candidate.startswith("'") and candidate.endswith("'")
+        ) or (
+            candidate.startswith('"') and candidate.endswith('"')
+        ):
+            candidate = candidate[1:-1]
+
+        # Reject if candidate contains whitespace (simple sanity check)
+        if re.search(r"\s", candidate):
+            return False
+
+        # Prefer the robust validator when available (supports unicode, RFC rules)
+        if validate_email and EmailNotValidError:
+            try:
+                validate_email(candidate, check_deliverability=False)
+                self.disp.log_debug(
+                    f"Treating as plain e-mail: {candidate}",
+                    parent_function
+                )
+                return True
+            except EmailNotValidError:
+                return False
+        else:
+            self.disp.log_warning(
+                "email_validator module not available, defaulting to internal regex checking.",
+                parent_function
+            )
+
+        # Fallback to the precompiled ASCII regex stored in regex_map
+        email_full_re: re.Pattern = self.regex_map[self.e_mail_key]
+        if email_full_re.match(candidate):
+            self.disp.log_debug(
+                f"Treating as plain e-mail (fallback): {candidate}",
+                parent_function
+            )
+            return True
+        return False
+
     # ============================== CHECKERS ============================== #
 
     def check_if_symbol_sql_injection(self, string: Union[Union[str, None, int, float], Sequence[Union[str, None, int, float]]]) -> bool:
@@ -293,27 +366,15 @@ class SQLInjection:
                 if self.check_if_symbol_sql_injection(i):
                     return True
             return False
+        if self._is_email(str(string), "check_if_symbol_sql_injection:_is_email"):
+            self.disp.log_debug("E-mail found")
+            return False
         string = self._sanitize_usr_input(str(string))
         if self._is_numeric(string):
             return False
         if self.base64_key in string:
             return not self._is_base64(string)
-        # If the string looks like a normal email address (single '@' and
-        # a simple local@domain structure), treat it as safe for symbol
-        # checks. This avoids flagging valid emails like 'my.real@email.com'
-        # because the single '@' is a valid email character and not an SQL
-        # variable. We use a conservative email regex to reduce false-negatives.
-        # If the string contains an e-mail address anywhere inside it,
-        # treat it as safe for symbol checks (avoid flagging the single
-        # '@' character inside payloads like "email='user@host.tld'").
-        if isinstance(string, str) and "@" in string:
-            # Use a looser pattern and `search` so embedded e-mails are
-            # detected even when the string contains additional text.
-            email_re = re.compile(
-                r"[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}", re.IGNORECASE)
-            if email_re.search(string):
-                return False
-        return self._scan_compiled(string, self.regex_map[self.symbols_key], "check_if_symbol_sql_injection")
+        return self._scan_compiled(string, self.regex_map[self.symbols_key], "check_if_symbol_sql_injection:_scan_compiled")
 
     def check_if_command_sql_injection(self, string: Union[Union[str, None, int, float], Sequence[Union[str, None, int, float]]]) -> bool:
         """Detect SQL keywords in the input.
@@ -338,12 +399,15 @@ class SQLInjection:
             return False
         if string is None:
             return False
+        if self._is_email(str(string), "check_if_command_sql_injection:_is_email"):
+            self.disp.log_debug("E-mail found")
+            return False
         string = self._sanitize_usr_input(str(string))
         if self._is_numeric(string):
             return False
         if self.base64_key in string:
             return not self._is_base64(string)
-        return self._scan_compiled(string, self.regex_map[self.keywords_key], "check_if_command_sql_injection")
+        return self._scan_compiled(string, self.regex_map[self.keywords_key], "check_if_command_sql_injection:_scan_compiled")
 
     def check_if_logic_gate_sql_injection(self, string: Union[Union[str, None, int, float], Sequence[Union[str, None, int, float]]]) -> bool:
         """Detect logical operators (AND/OR/NOT) in the input.
@@ -364,12 +428,15 @@ class SQLInjection:
                 if self.check_if_logic_gate_sql_injection(i):
                     return True
             return False
+        if self._is_email(str(string), "check_if_command_sql_injection:_is_email"):
+            self.disp.log_debug("E-mail found")
+            return False
         string = self._sanitize_usr_input(str(string))
         if self._is_numeric(string):
             return False
         if self.base64_key in string:
             return not self._is_base64(string)
-        return self._scan_compiled(string, self.regex_map[self.logic_gates_key], "check_if_logic_gate_sql_injection")
+        return self._scan_compiled(string, self.regex_map[self.logic_gates_key], "check_if_logic_gate_sql_injection:_scan_compiled")
 
     def check_if_symbol_and_command_injection(self, string: Union[Union[str, None, int, float], Sequence[Union[str, None, int, float]]]) -> bool:
         """Combined check for symbol- or keyword-based injection patterns.
@@ -438,12 +505,15 @@ class SQLInjection:
                 if self.check_if_sql_injection(i):
                     return True
             return False
+        if self._is_email(str(string), "check_if_sql_injection:_is_email"):
+            self.disp.log_debug("E-mail found")
+            return False
         string = self._sanitize_usr_input(str(string))
         if self._is_numeric(string):
             return False
         if self.base64_key in string:
             return not self._is_base64(string)
-        return self._scan_compiled(string, self.regex_map['all'], "check_if_sql_injection")
+        return self._scan_compiled(string, self.regex_map['all'], "check_if_sql_injection:_scan_compiled")
 
     def check_if_injections_in_strings(self, array_of_strings: Union[Union[str, None, int, float], Sequence[Union[str, None, int, float]], Sequence[Sequence[Union[str, None, int, float]]]]) -> bool:
         """Scan an array (possibly nested) of strings for injection patterns.
