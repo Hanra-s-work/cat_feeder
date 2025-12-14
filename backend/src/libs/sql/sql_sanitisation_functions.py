@@ -268,7 +268,9 @@ class SQLSanitiseFunctions:
             tmp = str(cell)
         if ";base" not in tmp:
             self.disp.log_debug(f"result = {tmp}", title)
-        return f"\"{str(tmp)}\""
+        # Return raw value for parameterized queries (%s placeholders)
+        # The MySQL driver handles escaping automatically
+        return tmp
 
     def beautify_table(self, column_names: List[str], table_content: List[List[Any]]) -> Union[List[Dict[str, Any]], int]:
         """Convert raw table rows to a list of dictionaries keyed by column.
