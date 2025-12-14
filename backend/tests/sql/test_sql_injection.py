@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: test_sql_injection.py
 # CREATION DATE: 11-12-2025
-# LAST Modified: 19:39:25 14-12-2025
+# LAST Modified: 21:1:52 14-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -23,7 +23,12 @@ r"""
 """
 import pytest
 
-from libs.sql.sql_injection import SQLInjection
+try:
+    # Import path when running from project root
+    from libs.sql.sql_injection import SQLInjection
+except ImportError:
+    # Import path when running from backend directory
+    from src.libs.sql.sql_injection import SQLInjection
 
 
 @pytest.fixture
@@ -381,3 +386,47 @@ def test_all_injection_check(injector):
     assert injector.check_if_sql_injection("SELECT * FROM users") is True
     assert injector.check_if_sql_injection("user@example.com") is False
     assert injector.check_if_sql_injection("'; DROP TABLE users--") is True
+
+
+# ==================== UUID TOKEN TESTS ====================
+
+
+def test_uuid_token_not_flagged(injector):
+    """Test that UUID tokens are not flagged as SQL injection.
+
+    UUIDs (with hyphens) are commonly used for session tokens, API keys,
+    and unique identifiers. These should not be flagged despite containing
+    hyphens which might resemble SQL comment markers in other contexts.
+    """
+    uuid = "949ebf40-e87e-4705-ace1-7a48e3eddef4"
+    assert injector.check_if_symbol_sql_injection(uuid) is False
+    assert injector.check_if_command_sql_injection(uuid) is False
+    assert injector.check_if_logic_gate_sql_injection(uuid) is False
+    assert injector.check_if_sql_injection(uuid) is False
+
+
+def test_raw_where_clause_with_quotes_flagged(injector):
+    """Test that raw WHERE clauses containing quotes are flagged.
+
+    When WHERE clause strings are pre-formatted with quotes (e.g.,
+    "column='value'"), the quotes trigger symbol injection detection.
+    This is correct behavior - WHERE clauses should be built using
+    parameterized queries or by checking column/value separately.
+    """
+    # Pre-formatted WHERE clause with quotes should be flagged
+    where_clause = "token='949ebf40-e87e-4705-ace1-7a48e3eddef4'"
+    assert injector.check_if_symbol_sql_injection(where_clause) is True
+
+
+def test_where_clause_components_separately_not_flagged(injector):
+    """Test that WHERE clause components checked separately are not flagged.
+
+    Column names and values should be validated individually before being
+    combined into a WHERE clause. When checked separately, legitimate
+    values (like UUIDs) should pass validation.
+    """
+    column = "token"
+    value = "949ebf40-e87e-4705-ace1-7a48e3eddef4"
+
+    assert injector.check_if_sql_injection(column) is False
+    assert injector.check_if_sql_injection(value) is False
