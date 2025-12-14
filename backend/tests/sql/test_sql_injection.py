@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: test_sql_injection.py
 # CREATION DATE: 11-12-2025
-# LAST Modified: 7:36:38 13-12-2025
+# LAST Modified: 19:39:25 14-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -29,7 +29,7 @@ from libs.sql.sql_injection import SQLInjection
 @pytest.fixture
 def injector():
     """Create and return an SQLInjection instance for testing.
-    
+
     Returns:
         SQLInjection: A configured SQL injection detector with debug mode disabled.
     """
@@ -147,7 +147,7 @@ def test_unicode_email_not_flagged(injector):
 
 def test_email_with_trailing_sql_flagged(injector):
     """Test that email-like strings with trailing SQL are flagged as injection.
-    
+
     This is a critical security test. Attackers may try to bypass email
     validation by appending SQL commands after a valid email address.
     The fullmatch requirement prevents this bypass technique.
@@ -160,7 +160,7 @@ def test_email_with_trailing_sql_flagged(injector):
 
 def test_sql_injection_with_at_symbol_flagged(injector):
     """Test that SQL injection attempts containing @ are still flagged.
-    
+
     Attackers may try to disguise SQL injection by including @ symbols
     to make the payload look like an email. The checker must detect
     SQL keywords and symbols regardless of @ presence.
@@ -173,7 +173,7 @@ def test_sql_injection_with_at_symbol_flagged(injector):
 
 def test_invalid_email_domain_flagged(injector):
     """Test that emails with invalid top-level domains are flagged.
-    
+
     Email addresses must have a valid TLD (at least 2 characters).
     Strings that look like emails but have invalid domains should
     be flagged as potential injection attempts.
@@ -187,7 +187,7 @@ def test_invalid_email_domain_flagged(injector):
 
 def test_extract_email_candidate_plain(injector):
     """Test _extract_email_candidate with plain email address.
-    
+
     Verifies that the helper correctly extracts an unmodified email
     when no quotes or key=value wrappers are present.
     """
@@ -197,7 +197,7 @@ def test_extract_email_candidate_plain(injector):
 
 def test_extract_email_candidate_quoted(injector):
     """Test _extract_email_candidate strips surrounding quotes.
-    
+
     Verifies that both single and double quotes are properly removed
     from email addresses during extraction.
     """
@@ -209,7 +209,7 @@ def test_extract_email_candidate_quoted(injector):
 
 def test_extract_email_candidate_key_value(injector):
     """Test _extract_email_candidate handles key=value format.
-    
+
     Verifies that the helper correctly extracts the email value from
     key=value pairs commonly found in form data and query parameters.
     """
@@ -219,7 +219,7 @@ def test_extract_email_candidate_key_value(injector):
 
 def test_extract_email_candidate_no_at(injector):
     """Test _extract_email_candidate returns None for strings without @.
-    
+
     Strings without the @ symbol cannot be valid email addresses and
     should be rejected early in the extraction process.
     """
@@ -229,7 +229,7 @@ def test_extract_email_candidate_no_at(injector):
 
 def test_extract_email_candidate_with_whitespace(injector):
     """Test _extract_email_candidate rejects strings with internal whitespace.
-    
+
     Email addresses cannot contain spaces. Strings with whitespace should
     be rejected to prevent injection attempts that use spaces to separate
     email-like tokens from SQL commands.
@@ -240,7 +240,7 @@ def test_extract_email_candidate_with_whitespace(injector):
 
 def test_validate_and_normalize_email_valid(injector):
     """Test _is_email with valid email addresses.
-    
+
     Verifies that valid email addresses are accepted and a normalized
     version is returned. The normalized form may differ from the input
     but should still be a valid email containing @.
@@ -252,7 +252,7 @@ def test_validate_and_normalize_email_valid(injector):
 
 def test_validate_and_normalize_email_with_trailing_sql(injector):
     """Test _is_email rejects emails with trailing SQL commands.
-    
+
     This verifies the fullmatch requirement: the entire input must be
     exactly an email address with no trailing content. This prevents
     attackers from bypassing validation with payloads like
@@ -265,7 +265,7 @@ def test_validate_and_normalize_email_with_trailing_sql(injector):
 
 def test_validate_and_normalize_email_key_value(injector):
     """Test _is_email with key=value format.
-    
+
     Verifies that the validator correctly handles email addresses wrapped
     in key=value syntax and returns a normalized email value.
     """
@@ -275,7 +275,7 @@ def test_validate_and_normalize_email_key_value(injector):
 
 def test_validate_and_normalize_email_invalid_domain(injector):
     """Test _is_email rejects emails with invalid domain names.
-    
+
     Email addresses must have valid domain names with proper TLDs.
     The validator should return None for addresses with invalid domains
     like single-word domains without extensions.
@@ -289,7 +289,7 @@ def test_validate_and_normalize_email_invalid_domain(injector):
 
 def test_numeric_values_not_flagged(injector):
     """Test that numeric values are not flagged as SQL injection.
-    
+
     Pure numeric values (integers and floats) cannot be SQL injection
     attempts and should be allowed without triggering false positives.
     """
@@ -300,7 +300,7 @@ def test_numeric_values_not_flagged(injector):
 
 def test_none_values_not_flagged(injector):
     """Test that None values are not flagged as SQL injection.
-    
+
     None/null values are legitimate in many contexts and should be
     handled gracefully without raising injection alerts.
     """
@@ -310,7 +310,7 @@ def test_none_values_not_flagged(injector):
 
 def test_list_with_injection_flagged(injector):
     """Test that lists containing injection attempts are properly flagged.
-    
+
     When scanning arrays of strings, even a single malicious element
     should cause the entire list to be flagged. However, lists with
     only safe values (including valid emails) should pass validation.
@@ -323,7 +323,7 @@ def test_list_with_injection_flagged(injector):
 
 def test_nested_list_with_injection_flagged(injector):
     """Test that nested lists containing injection attempts are flagged.
-    
+
     The checker must recursively scan nested data structures to detect
     injection attempts at any level of nesting.
     """
@@ -336,7 +336,7 @@ def test_nested_list_with_injection_flagged(injector):
 
 def test_logic_gates_flagged(injector):
     """Test that SQL logical operators are detected as injection attempts.
-    
+
     Logic gates (OR, AND, NOT) are commonly used in SQL injection attacks
     to manipulate query conditions. These should be flagged when found
     in user input.
@@ -348,7 +348,7 @@ def test_logic_gates_flagged(injector):
 
 def test_email_not_flagged_by_logic_gate_check(injector):
     """Test that emails are not flagged by logic gate detection.
-    
+
     Valid email addresses should pass all injection checks including
     the logic gate scanner, even though they contain the @ symbol.
     """
@@ -361,7 +361,7 @@ def test_email_not_flagged_by_logic_gate_check(injector):
 
 def test_combined_symbol_and_command(injector):
     """Test combined symbol and command injection detection.
-    
+
     Verifies that the combined checker correctly flags inputs containing
     both SQL symbols and keywords, while still allowing valid emails.
     """
@@ -373,7 +373,7 @@ def test_combined_symbol_and_command(injector):
 
 def test_all_injection_check(injector):
     """Test comprehensive SQL injection detection across all check types.
-    
+
     The check_if_sql_injection method combines symbol, keyword, and logic
     gate detection. It should catch various injection patterns while
     correctly allowing legitimate values like emails and safe strings.
