@@ -34,21 +34,17 @@ import pytest
 
 from pathlib import Path
 
-# The project's import formatter may move imports to the top; to be robust
-# we try importing the package normally and on ImportError we adjust
-# sys.path and retry. This prevents the formatter from breaking test
-# collection when running a single file under pytest.
+# Flexible import pattern matching SQL tests approach
+# conftest.py sets up sys.path, try libs first (works from backend/),
+# fall back to src.libs (works from project root)
 try:
-    from src.libs.http_codes import HttpCodes, HttpDataTypes
-    import src.libs.http_codes.http_constants as CONST
+    from libs.http_codes.http_codes import HttpCodes
+    from libs.http_codes.http_constants import DataTypes as HttpDataTypes
+    from libs.http_codes import http_constants as CONST
 except ImportError:
-    _here = Path(__file__).resolve()
-    repo_root = _here.parents[2]
-    src_dir = repo_root / 'src'
-    sys.path.insert(0, str(repo_root))
-    sys.path.insert(0, str(src_dir))
-    from src.libs.http_codes import HttpCodes, HttpDataTypes
-    import src.libs.http_codes.http_constants as CONST
+    from src.libs.http_codes.http_codes import HttpCodes
+    from src.libs.http_codes.http_constants import DataTypes as HttpDataTypes
+    from src.libs.http_codes import http_constants as CONST
 
 
 @pytest.fixture()
