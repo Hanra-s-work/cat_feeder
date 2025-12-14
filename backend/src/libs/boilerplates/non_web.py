@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: incoming.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:34:10 25-11-2025
+# LAST Modified: 9:22:37 11-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -22,17 +22,21 @@
 # +==== END CatFeeder =================+
 """
 
-
+from typing import TYPE_CHECKING, Union, List, Optional, Dict, Any
 import re
 import uuid
 from random import randint
 from datetime import datetime, timedelta
+from fastapi import Response
 
 from display_tty import Disp, initialise_logger
 
 from ..core.runtime_manager import RuntimeManager, RI
 from ..utils import constants as CONST
 from ..sql.sql_manager import SQL
+
+if TYPE_CHECKING:
+    from .responses import BoilerplateResponses
 
 
 class BoilerplateNonHTTP:
@@ -54,6 +58,8 @@ class BoilerplateNonHTTP:
         self.runtime_manager: RuntimeManager = RI
         # -------------------------- Shared instances --------------------------
         self.database_link: SQL = RI.get(SQL)
+        self.boilerplate_responses: Optional[BoilerplateResponses] = RI.get_if_exists(
+            "BoilerplateResponses", None)
         self.disp.log_debug("Initialised")
 
     def pause(self) -> str:
@@ -227,6 +233,125 @@ class BoilerplateNonHTTP:
         ) == self.error:
             return self.error
         return self.success
+
+    def get_user_id_from_token(self, title: str, token: str) -> Optional[Union[str, Response]]:
+        """_summary_
+            The function in charge of getting the user id based of the provided content.
+
+        Args:
+            title (str): _description_: The title of the endpoint calling it
+            token (str): _description_: The token of the user account
+
+        Returns:
+            Optional[Union[str, Response]]: _description_: Returns as string id if success, otherwise, a pre-made response for the endpoint.
+        """
+        function_title = "get_user_id_from_token"
+        usr_id_node: str = "user_id"
+        self.boilerplate_responses: Optional[BoilerplateResponses] = RI.get_if_exists(
+            "BoilerplateResponses", self.boilerplate_responses)
+        if not self.boilerplate_responses:
+            return None
+        self.disp.log_debug(
+            f"Getting user id based on {token}", function_title
+        )
+        current_user_raw: Union[int, List[Dict[str, Any]]] = self.database_link.get_data_from_table(
+            table=CONST.TAB_CONNECTIONS,
+            column="*",
+            where=f"token='{token}'",
+            beautify=True
+        )
+        if isinstance(current_user_raw, int):
+            return self.boilerplate_responses.user_not_found(title, token)
+        current_user: List[Dict[str, Any]] = []
+        self.disp.log_debug(f"current_user = {current_user}", function_title)
+        if current_user == self.error:
+            return self.boilerplate_responses.user_not_found(title, token)
+        self.disp.log_debug(
+            f"user_length = {len(current_user)}", function_title
+        )
+        if len(current_user) == 0 or len(current_user) > 1:
+            return self.boilerplate_responses.user_not_found(title, token)
+        self.disp.log_debug(
+            f"current_user[0] = {current_user[0]}", function_title
+        )
+        if usr_id_node not in current_user[0]:
+            return self.boilerplate_responses.user_not_found(title, token)
+        msg = "str(current_user[0]["
+        msg += f"{usr_id_node}]) = {str(current_user[0][usr_id_node])}"
+        self.disp.log_debug(msg, function_title)
+        return str(current_user[0][usr_id_node])
+
+    def update_user_data(self, title: str, usr_id: str, line_content: List[Optional[Union[str, int, float]]]) -> Optional[Union[int, Response]]:
+        """_summary_
+            Update the account information based on the provided line.
+
+        Args:
+            title (str): _description_: This is the title of the endpoint
+            usr_id (str): _description_: This is the id of the user that needs to be updated
+            line_content (List[str]): _description_: The content of the line to be edited.
+
+        Returns:
+            Union[int, Response]: _description_
+        """
+        self.boilerplate_responses: Optional[BoilerplateResponses] = RI.get_if_exists(
+            "BoilerplateResponses", self.boilerplate_responses)
+        if not self.boilerplate_responses:
+            return None
+        self.disp.log_debug(f"Compile line_content: {line_content}.", title)
+        columns_raw: Union[int, List[str]] = self.database_link.get_table_column_names(
+            CONST.TAB_ACCOUNTS
+        )
+        if isinstance(columns_raw, int):
+            return columns_raw
+        columns: List[str] = columns_raw
+        self.disp.log_debug(f"Removing id from columns: {columns}.", title)
+        columns.pop(0)
+        status = self.database_link.update_data_in_table(
+            table=CONST.TAB_ACCOUNTS,
+            data=line_content,
+            column=columns,
+            where=f"id='{usr_id}'"
+        )
+        if status == self.error:
+            return self.boilerplate_responses.internal_server_error(title, usr_id)
+        return self.success
+
+    def remove_user_from_tables(self, where: str, tables: List[str]) -> Union[int, Dict[str, int]]:
+        """_summary_
+            Remove the user from the provided tables.
+
+        Args:
+            where (str): _description_: The id of the user to remove
+            tables (List[str]): _description_: The tables to remove the user from
+
+        Returns:
+            int: _description_: The status of the operation
+        """
+        title = "remove_user_from_tables"
+        if not isinstance(tables, (List, tuple, str)):
+            self.disp.log_error(
+                f"Expected tables to be of type list but got {type(tables)}",
+                title
+            )
+            return self.error
+        if isinstance(tables, str):
+            self.disp.log_warning(
+                "Tables is of type str, converting to list[str].", title
+            )
+            tables = [tables]
+        deletion_status = {}
+        for table in tables:
+            status = self.database_link.remove_data_from_table(
+                table=table,
+                where=where
+            )
+            deletion_status[str(table)] = status
+            if status == self.error:
+                self.disp.log_warning(
+                    f"Failed to remove data from table: {table}",
+                    title
+                )
+        return deletion_status
 
     def hide_api_key(self, api_key: str) -> str:
         """_summary_

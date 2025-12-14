@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: constants.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:56:22 08-12-2025
+# LAST Modified: 19:53:0 14-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -22,7 +22,7 @@
 # +==== END CatFeeder =================+
 """
 
-from typing import List
+from typing import List, Tuple, Any
 from pathlib import Path
 
 from display_tty import Disp, initialise_logger
@@ -249,3 +249,32 @@ ICON_PATH: str = str(
 PNG_ICON_PATH: str = str(
     ASSETS_DIRECTORY / "icon" / "cat_feeder" / "logo_256x256.png"
 )
+
+# Columns to ignore
+TABLE_COLUMNS_TO_IGNORE: Tuple = ("id", "creation_date", "edit_date")
+
+
+def clean_list(input: List[Any], items: Tuple[Any, Any], disp: Disp) -> List[Any]:
+    """Function in charge of popping items from a list if they are present.
+
+    Args:
+        input (List[Any]): The list to check.
+        items (Tuple[Any, Any]): The items to remove.
+        disp (Disp): The logging function.
+
+    Returns:
+        List[Any]: _description_
+    """
+    to_pop = []
+    for index, item in enumerate(input):
+        if item in items:
+            to_pop.append(index)
+            disp.log_debug(f"index to pop: {index}, item: {item}")
+    max_length = len(to_pop)
+    while max_length > 0:
+        node = to_pop[max_length-1]
+        node_value = input.pop(node)
+        disp.log_debug(f"Popped item[{max_length-1}] = {node} -> {node_value}")
+        max_length -= 1
+    disp.log_debug(f"final list: {input}")
+    return input

@@ -12,12 +12,16 @@
 # PROJECT: CatFeeder
 # FILE: user_endpoints.py
 # CREATION DATE: 19-11-2025
-# LAST Modified: 12:8:15 30-11-2025
+# LAST Modified: 20:2:31 14-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
-# PURPOSE: The endpoints used for tracking the user requirements.
+# PURPOSE: 
+# The endpoints used for tracking the user requirements.
+# User-related HTTP endpoint implementations.
+# This module provides the :class:`UserEndpoints` class used by the CatFeeder backend to handle login, registration, password reset, profile management, email verification and session/logout endpoints.
+# /STOP
 # // AR
 # +==== END CatFeeder =================+
 """
@@ -27,17 +31,21 @@ from fastapi import Request, Response
 from ...core import RuntimeManager, RI
 from ...utils import constants as CONST, PasswordHandling
 from ...e_mail import MailManagement
-from ...http_codes import HCI, HTTP_DEFAULT_TYPE
+from ...http_codes import HCI, HttpDataTypes, HTTP_DEFAULT_TYPE
 
 if TYPE_CHECKING:
-    from typing import List, Dict
+    from typing import List, Dict, Any, Optional, Union
     from ...sql import SQL
     from ...server_header import ServerHeaders
     from ...boilerplates import BoilerplateIncoming, BoilerplateResponses, BoilerplateNonHTTP
 
 
 class UserEndpoints:
-    """_summary_
+    """Handle user-related HTTP endpoints.
+
+    The class implements endpoints for authentication, registration,
+    password reset, profile management, email verification and session
+    management used by the CatFeeder backend.
     """
 
     disp: Disp = initialise_logger(__qualname__, False)
@@ -88,11 +96,18 @@ class UserEndpoints:
         self.disp.log_debug("Initialised")
 
     async def post_login(self, request: Request) -> Response:
-        """_summary_
-            The endpoint allowing a user to log into the server.
+        """Log in a user.
+
+        Validate provided credentials and return an authentication token on
+        success. Produces a suitable HTTP response for success, unauthorized
+        or error cases.
+
+        Args:
+            request: The incoming FastAPI request containing JSON with
+                ``email`` and ``password``.
 
         Returns:
-            Response: _description_: The data to send back to the user as a response.
+            Response: A FastAPI response with the result body and status.
         """
         title = "Login"
         request_body = await self.boilerplate_incoming_initialised.get_body(request)
@@ -133,26 +148,31 @@ class UserEndpoints:
         return HCI.success(content=body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
 
     async def post_register(self, request: Request) -> Response:
-        """_summary_
+        """Register a new user account.
+
+        Create a new account from provided ``email`` and ``password`` and
+        automatically log the user in on success.
 
         Args:
-            request (Request): _description_
+            request: The incoming FastAPI request with required fields.
 
         Returns:
-            Response: _description_
+            Response: A FastAPI response indicating success or a suitable
+            error code (e.g. conflict if the email already exists).
         """
         title = "Register"
         request_body = await self.boilerplate_incoming_initialised.get_body(request)
         self.disp.log_debug(f"Request body: {request_body}", title)
-        if not request_body or not all(key in request_body for key in ("email", "password")):
+        if not request_body or ("email" not in request_body and "password" not in request_body):
             return self.boilerplate_responses_initialised.bad_request(title)
         email: str = request_body["email"]
-        password = request_body["password"]
-        if not email or email == "" or not password or password == "":
+        password: str = request_body["password"]
+        if not (email and password):
             return self.boilerplate_responses_initialised.bad_request(title)
         user_info = self.database_link.get_data_from_table(
-            CONST.TAB_ACCOUNTS, "*", f"email='{email}'")
-        if isinstance(user_info, int) is False:
+            CONST.TAB_ACCOUNTS, "*", f"email='{email}'"
+        )
+        if isinstance(user_info, int):
             node = self.boilerplate_responses_initialised.build_response_body(
                 title=title,
                 message="Email already exist.",
@@ -165,9 +185,11 @@ class UserEndpoints:
             password)
         username = email.split('@')[0]
         self.disp.log_debug(f"Username = {username}", title)
-        admin = str(int(False))
+        admin = int(False)
         favicon = "NULL"
-        data = [username, email, hashed_password, "local", favicon, admin]
+        data: List[Union[str, int, float, None]] = [
+            username, email, hashed_password, "local", favicon, admin
+        ]
         self.disp.log_debug(f"Data list = {data}", title)
         column = self.database_link.get_table_column_names(
             CONST.TAB_ACCOUNTS
@@ -175,19 +197,22 @@ class UserEndpoints:
         self.disp.log_debug(f"Column = {column}", title)
         if isinstance(column, int):
             return self.boilerplate_responses_initialised.internal_server_error(title)
-        column.pop(0)
-        self.disp.log_debug(f"Column after id pop = {column}", title)
+        column = CONST.clean_list(
+            column,
+            CONST.TABLE_COLUMNS_TO_IGNORE,
+            self.disp
+        )
         if self.database_link.insert_data_into_table(CONST.TAB_ACCOUNTS, data, column) == self.error:
             return self.boilerplate_responses_initialised.internal_server_error(title)
-        data = self.boilerplate_incoming_initialised.log_user_in(
+        login_data = self.boilerplate_incoming_initialised.log_user_in(
             email
         )
-        if data["status"] == self.error:
+        if login_data["status"] == self.error:
             body = self.boilerplate_responses_initialised.build_response_body(
                 title=title,
                 message="Login failed.",
                 resp="error",
-                token=data["token"],
+                token=login_data["token"],
                 error=True
             )
             return HCI.forbidden(content=body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
@@ -195,10 +220,10 @@ class UserEndpoints:
             title=title,
             message=f"Welcome {username}",
             resp="success",
-            token=data["token"],
+            token=login_data["token"],
             error=False
         )
-        body["token"] = data["token"]
+        body["token"] = login_data["token"]
         return HCI.success(
             content=body,
             content_type=HTTP_DEFAULT_TYPE,
@@ -206,7 +231,18 @@ class UserEndpoints:
         )
 
     async def post_send_email_verification(self, request: Request) -> Response:
-        """_summary_
+        """Send an email verification code to a user.
+
+        Generate and store a verification code for the provided email and
+        send it via the configured mail management subsystem.
+
+        Args:
+            request: The incoming FastAPI request containing the ``email``
+                field.
+
+        Returns:
+            Response: A FastAPI response indicating whether the email was
+            sent successfully or an error occurred.
         """
         title = "Send e-mail verification"
         request_body = await self.boilerplate_incoming_initialised.get_body(request)
@@ -220,10 +256,12 @@ class UserEndpoints:
             where=f"email='{email}'",
             beautify=True
         )
+        if isinstance(data, int):
+            return self.boilerplate_responses_initialised.bad_request(title)
         self.disp.log_debug(f"user query = {data}", title)
         if data == self.error or len(data) == 0:
             return self.boilerplate_responses_initialised.bad_request(title)
-        email_subject = "[AREA] Verification code"
+        email_subject = "[Cat Feeder] Verification code"
         code = self.boilerplate_non_http_initialised.generate_check_token(
             CONST.CHECK_TOKEN_SIZE
         )
@@ -238,9 +276,15 @@ class UserEndpoints:
         new_node['code'] = code
         tab_column = self.database_link.get_table_column_names(
             CONST.TAB_VERIFICATION)
+        if isinstance(tab_column, int):
+            return self.boilerplate_responses_initialised.bad_request(title)
         if tab_column == self.error or len(tab_column) == 0:
             return self.boilerplate_responses_initialised.internal_server_error(title)
-        tab_column.pop(0)
+        tab_column = CONST.clean_list(
+            tab_column,
+            CONST.TABLE_COLUMNS_TO_IGNORE,
+            self.disp
+        )
         self.database_link.remove_data_from_table(
             CONST.TAB_VERIFICATION,
             f"term='{email}'"
@@ -281,8 +325,15 @@ class UserEndpoints:
         return HCI.success(body)
 
     async def put_reset_password(self, request: Request) -> Response:
-        """_summary_
-            The function in charge of resetting the user's password.
+        """Reset a user's password using a verification code.
+
+        Validates the provided code for the email and updates the account password to the supplied new password on success.
+
+        Args:
+            request: The incoming FastAPI request containing ``email``, ``code`` and ``password``.
+
+        Returns:
+            Response: A FastAPI response indicating success or an error such as invalid verification code.
         """
         title = "Reset password"
         request_body = await self.boilerplate_incoming_initialised.get_body(request)
@@ -301,9 +352,14 @@ class UserEndpoints:
         )
         self.disp.log_debug(f"Current codes: {current_codes}", title)
         nodes_of_interest = []
-        if current_codes == self.error or len(current_codes) == 0:
+        if isinstance(current_codes, int) and current_codes == self.error:
             return self.boilerplate_responses_initialised.internal_server_error(title)
-        for user in current_codes:
+        current_codes_list = []
+        if isinstance(current_codes, list):
+            current_codes_list: List[Dict[str, Any]] = current_codes
+        if len(current_codes_list) == 0:
+            return self.boilerplate_responses_initialised.internal_server_error(title)
+        for user in current_codes_list:
             if user.get("term") == body_email and user.get("definition") == body_code:
                 verified_user = user
                 nodes_of_interest.append(user)
@@ -338,19 +394,26 @@ class UserEndpoints:
         return HCI.success(response_body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
 
     async def put_user(self, request: Request) -> Response:
-        """_summary_
-            Endpoint allowing the user to update it's account data.
+        """Replace a user's account information.
+
+        Requires a valid authentication token. Replaces username, email and
+        password with the submitted values.
 
         Args:
-            request (Request): _description_
+            request (Request): The incoming FastAPI request with ``username``,
+                ``email`` and ``password`` fields and authentication token.
 
         Returns:
-            Response: _description_
+            Response: A FastAPI response indicating update success or an
+            appropriate error response.
         """
         title = "Put user"
-        token: str = self.boilerplate_incoming_initialised.get_token_if_present(
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
             request
         )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
         token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
             token
         )
@@ -367,17 +430,22 @@ class UserEndpoints:
         usr_id = self.boilerplate_non_http_initialised.get_user_id_from_token(
             title, token
         )
-        if isinstance(usr_id, Response) is True:
+        if not usr_id:
+            return self.boilerplate_responses_initialised.internal_server_error(title, token)
+        if isinstance(usr_id, Response):
             return usr_id
-        user_profile: List[Dict[str]] = self.database_link.get_data_from_table(
+        user_profile_raw: Union[int, List[Dict[str, Any]]] = self.database_link.get_data_from_table(
             table=CONST.TAB_ACCOUNTS,
             column="*",
             where=f"id='{usr_id}'",
         )
+        if isinstance(user_profile_raw, int):
+            return self.boilerplate_responses_initialised.internal_server_error(title, token)
+        user_profile: List[Dict[str, Any]] = user_profile_raw
         self.disp.log_debug(f"User profile = {user_profile}", title)
         if user_profile == self.error or len(user_profile) == 0:
             return self.boilerplate_responses_initialised.user_not_found(title, token)
-        data: List[str] = [
+        data: List[Optional[Union[str, int, float]]] = [
             body_username,
             body_email,
             self.password_handling_initialised.hash_password(body_password),
@@ -388,31 +456,39 @@ class UserEndpoints:
         status = self.boilerplate_non_http_initialised.update_user_data(
             title, usr_id, data
         )
-        if isinstance(status, Response) is True:
+        if isinstance(status, Response):
             return status
-        data = self.boilerplate_responses_initialised.build_response_body(
+        if not status:
+            return self.boilerplate_responses_initialised.internal_server_error(title, token)
+        data_response = self.boilerplate_responses_initialised.build_response_body(
             title=title,
             message="The account information has been updated.",
             resp="success",
             token=token,
             error=False
         )
-        return HCI.success(content=data, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
+        return HCI.success(content=data_response, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
 
     async def patch_user(self, request: Request) -> Response:
-        """_summary_
-            Endpoint allowing the user to update it's account data.
+        """Partially update a user's account information.
+
+        Only fields present in the request body are updated. Requires a
+        valid authentication token.
 
         Args:
-            request (Request): _description_
+            request (Request): The incoming FastAPI request which may include any of
+                ``username``, ``email`` or ``password``.
 
         Returns:
-            Response: _description_
+            Response: A FastAPI response indicating the update result.
         """
         title = "Patch user"
-        token: str = self.boilerplate_incoming_initialised.get_token_if_present(
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
             request
         )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
         token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
             token
         )
@@ -421,21 +497,26 @@ class UserEndpoints:
             return self.boilerplate_responses_initialised.unauthorized(title, token)
         request_body = await self.boilerplate_incoming_initialised.get_body(request)
         self.disp.log_debug(f"Request body: {request_body}", title)
-        body_username: str = request_body.get("username")
-        body_email: str = request_body.get("email")
-        body_password: str = request_body.get("password")
+        body_username: str = request_body.get("username", "")
+        body_email: str = request_body.get("email", "")
+        body_password: str = request_body.get("password", "")
         usr_id = self.boilerplate_non_http_initialised.get_user_id_from_token(
             title, token
         )
-        if isinstance(usr_id, Response) is True:
+        if isinstance(usr_id, Response):
             return usr_id
-        user_profile: List[Dict[str]] = self.database_link.get_data_from_table(
+        if not usr_id:
+            return self.boilerplate_responses_initialised.user_not_found(title, token)
+        user_profile_raw: Union[int, List[Dict[str, Any]]] = self.database_link.get_data_from_table(
             table=CONST.TAB_ACCOUNTS,
             column="*",
             where=f"id='{usr_id}'",
         )
+        if isinstance(user_profile_raw, int) or user_profile_raw == self.error:
+            return self.boilerplate_responses_initialised.user_not_found(title, token)
+        user_profile: List[Dict[str, Any]] = user_profile_raw
         self.disp.log_debug(f"User profile = {user_profile}", title)
-        if user_profile == self.error or len(user_profile) == 0:
+        if len(user_profile) == 0:
             return self.boilerplate_responses_initialised.user_not_found(title, token)
         email: str = user_profile[0]["email"]
         username: str = user_profile[0]["username"]
@@ -455,7 +536,7 @@ class UserEndpoints:
                 body_password
             )
             self.disp.log_debug(f"password is now: {password}", title)
-        data: List[str] = [
+        data: List[Union[str, int, float, None]] = [
             username, email, password,
             user_profile[0]["method"], user_profile[0]["favicon"],
             str(user_profile[0]["admin"])
@@ -463,31 +544,37 @@ class UserEndpoints:
         status = self.boilerplate_non_http_initialised.update_user_data(
             title, usr_id, data
         )
-        if isinstance(status, Response) is True:
+        if isinstance(status, int) or not status:
+            return self.boilerplate_responses_initialised.update_failed(title, token)
+        if isinstance(status, Response):
             return status
-        data = self.boilerplate_responses_initialised.build_response_body(
+        data_response = self.boilerplate_responses_initialised.build_response_body(
             title=title,
             message="The account information has been updated.",
             resp="success",
             token=token,
             error=False
         )
-        return HCI.success(content=data, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
+        return HCI.success(content=data_response, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
 
     async def get_user(self, request: Request) -> Response:
-        """_summary_
-            Endpoint allowing the user to get it's account data.
+        """Return the authenticated user's profile data.
+
+        Sensitive or banned fields are removed from the returned profile.
 
         Args:
-            request (Request): _description_
+            request (Request): The incoming FastAPI request carrying an auth token.
 
         Returns:
-            Response: _description_
+            Response: A FastAPI response with the user profile on success.
         """
         title = "Get user"
-        token: str = self.boilerplate_incoming_initialised.get_token_if_present(
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
             request
         )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
         token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
             token
         )
@@ -498,13 +585,16 @@ class UserEndpoints:
             title, token
         )
         self.disp.log_debug(f"user_id = {usr_id}", title)
-        if isinstance(usr_id, Response) is True:
+        if isinstance(usr_id, Response):
             return usr_id
-        user_profile: List[Dict[str]] = self.database_link.get_data_from_table(
+        user_profile_raw: Union[int, List[Dict[str, Any]]] = self.database_link.get_data_from_table(
             table=CONST.TAB_ACCOUNTS,
             column="*",
             where=f"id='{usr_id}'",
         )
+        if isinstance(user_profile_raw, int):
+            return self.boilerplate_responses_initialised.internal_server_error(title, token)
+        user_profile: List[Dict[str, Any]] = user_profile_raw
         self.disp.log_debug(f"User profile = {user_profile}", title)
         if user_profile == self.error or len(user_profile) == 0:
             return self.boilerplate_responses_initialised.user_not_found(title, token)
@@ -518,27 +608,33 @@ class UserEndpoints:
             )
         data = self.boilerplate_responses_initialised.build_response_body(
             title=title,
-            message=new_profile,
-            resp="success",
+            message="success",
+            resp=new_profile,
             token=token,
             error=False
         )
         return HCI.success(content=data, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
 
     async def delete_user(self, request: Request) -> Response:
-        """_summary_
-            Endpoint allowing the user to delete it's account.
+        """Delete the authenticated user's account and related data.
+
+        Removes the user record and cleans up related tables (services,
+        actions, connections, OAuth sessions). Requires a valid auth token.
 
         Args:
-            request (Request): _description_
+            request (Request): The incoming FastAPI request containing the auth token.
 
         Returns:
-            Response: _description_
+            Response: A FastAPI response indicating deletion success or an
+            internal server error if cleanup fails.
         """
         title = "Delete user"
-        token: str = self.boilerplate_incoming_initialised.get_token_if_present(
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
             request
         )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
         token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
             token
         )
@@ -549,18 +645,32 @@ class UserEndpoints:
             title, token
         )
         self.disp.log_debug(f"user_id = {usr_id}", title)
-        if isinstance(usr_id, Response) is True:
+        if isinstance(usr_id, Response):
             return usr_id
-        user_profile: List[Dict[str]] = self.database_link.get_data_from_table(
+        user_profile_raw: Union[int, List[Dict[str, Any]]] = self.database_link.get_data_from_table(
             table=CONST.TAB_ACCOUNTS,
             column="*",
             where=f"id='{usr_id}'",
         )
+        if isinstance(user_profile_raw, int):
+            return self.boilerplate_responses_initialised.internal_server_error(title, token)
+        user_profile: List[Dict[str, Any]] = user_profile_raw
         self.disp.log_debug(f"User profile = {user_profile}", title)
         if user_profile == self.error or len(user_profile) == 0:
             return self.boilerplate_responses_initialised.user_not_found(title, token)
+        self.disp.log_warning("-------------------------------------")
+        self.disp.log_warning("-------------------------------------")
+        self.disp.log_warning("-------------------------------------")
+        self.disp.log_warning("-------------------------------------")
+        self.disp.log_warning(
+            "Check table section and make sure that it is up to date."
+        )
+        self.disp.log_warning("-------------------------------------")
+        self.disp.log_warning("-------------------------------------")
+        self.disp.log_warning("-------------------------------------")
+        self.disp.log_warning("-------------------------------------")
         tables_of_interest = [
-            CONST.TAB_USER_SERVICES, CONST.TAB_ACTIONS,
+            CONST.TAB_ACTIONS,
             CONST.TAB_CONNECTIONS, CONST.TAB_ACTIVE_OAUTHS
         ]
         removal_status = self.boilerplate_non_http_initialised.remove_user_from_tables(
@@ -583,38 +693,57 @@ class UserEndpoints:
         return HCI.success(content=data, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
 
     async def put_user_favicon(self, request: Request) -> Response:
-        """_summary_
-            Endpoint allowing the user to update it's favicon.
+        """Update the authenticated user's favicon.
 
         Args:
-            request (Request): _description_
+            request (Request): The incoming FastAPI request containing the favicon payload.
 
         Returns:
-            Response: _description_
+            Response: A FastAPI response indicating the result.
         """
+        return HCI.service_unavailable("This function needs to be implemented", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+
+    async def get_user_favicon(self, request: Request) -> Response:
+        """Get the authenticated user's favicon.
+
+        Args:
+            request (Request): The incoming FastAPI request containing the favicon payload.
+
+        Returns:
+            Response: A FastAPI response indicating the result.
+        """
+        return HCI.service_unavailable("This function needs to be implemented", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
 
     async def delete_user_favicon(self, request: Request) -> Response:
-        """_summary_
-            Endpoint allowing the user to delete it's favicon.
+        """Delete the authenticated user's favicon.
 
         Args:
-            request (Request): _description_
+            request (Request): The incoming FastAPI request containing the auth token.
 
         Returns:
-            Response: _description_
+            Response: A FastAPI response indicating the result.
         """
+        return HCI.service_unavailable("This function needs to be implemented", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
 
     async def post_logout(self, request: Request) -> Response:
-        """_summary_
-            The endpoint allowing a user to log out of the server.
+        """Log out the current user by removing the session token.
+
+        Requires a valid token; removes the connection record associated with the token and returns an appropriate response.
+
+        Args:
+            request: The incoming FastAPI request carrying the auth token.
 
         Returns:
-            Response: _description_: The data to send back to the user as a response.
+            Response: A FastAPI response indicating logout success or an
+            internal server error.
         """
         title = "Logout"
-        token: str = self.boilerplate_incoming_initialised.get_token_if_present(
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
             request
         )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
         token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
             token
         )
@@ -637,19 +766,23 @@ class UserEndpoints:
         return HCI.success(content=data, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
 
     async def get_user_id(self, request: Request) -> Response:
-        """_summary_
-            This is an endpoint that will allow the user to query it's id.
+        """Return the numerical id of the authenticated user.
+
+        Validates the provided token and returns the user id in the response body.
 
         Args:
-            request (Request): _description_
+            request (Request): The incoming FastAPI request containing the auth token.
 
         Returns:
-            Response: _description_
+            Response: A FastAPI response with the user's id on success.
         """
         title = "Get user id"
-        token: str = self.boilerplate_incoming_initialised.get_token_if_present(
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
             request
         )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
         token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
             token
         )
@@ -660,7 +793,9 @@ class UserEndpoints:
             title, token
         )
         self.disp.log_debug(f"user_id = {usr_id}", title)
-        if isinstance(usr_id, Response) is True:
+        if usr_id == self.error or isinstance(usr_id, list) and len(usr_id) == 0:
+            return self.boilerplate_responses_initialised.user_not_found(title, token)
+        if isinstance(usr_id, Response):
             return usr_id
         data = self.boilerplate_responses_initialised.build_response_body(
             title=title,

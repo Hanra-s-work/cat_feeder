@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,8 +12,8 @@
 # PROJECT: CatFeeder
 # FILE: responses.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 9:49:51 27-11-2025
-# DESCRIPTION: 
+# LAST Modified: 9:22:35 11-12-2025
+# DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
@@ -22,7 +22,7 @@
 # +==== END CatFeeder =================+
 """
 
-from typing import Union, Dict, Any, Optional
+from typing import Union, Dict, Any, Optional, List
 from fastapi import Response
 from display_tty import Disp, initialise_logger
 from .non_web import BoilerplateNonHTTP
@@ -281,6 +281,41 @@ class BoilerplateResponses(FinalSingleton):
             error=True
         )
         return HCI.internal_server_error(content=body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
+
+    def update_failed(self, title: str, token: Union[str, None] = None) -> Response:
+        """Return an HTTP 500 (Internal Server Error) response for update failures.
+
+        This function is intended as a catch-all for unexpected server-side
+        failures that occur during update operations (for example: database
+        errors, unhandled exceptions, or other transient errors). It returns an
+        HTTP 500 response via `HCI.internal_server_error(...)` with a short
+        `resp` token ("update_failed") and a user-friendly message.
+
+        When the failure reason is known and predictable, prefer a more
+        specific HTTP status code (use the corresponding helper on this class):
+        - Validation / malformed input: `bad_request` (HTTP 400) or an `unprocessable_entity`/validation helper (HTTP 422) if present.
+        - Conflict (concurrent edit): use a 409 Conflict response (implement a `update_conflict` helper if you need this commonly).
+        - Authentication/authorization: `unauthorized` (401) or `insuffisant_rights`/`forbidden` (403) as appropriate.
+
+        Args:
+            title (str): The title of the called endpoint (used in the response body).
+            token (Optional[str]): User token to allow `build_response_body` to include logged-in status information.
+
+        Returns:
+                Response: The HTTP response produced by `HCI.internal_server_error(content=body, content_type=..., headers=...)`.
+        """
+        body = self.build_response_body(
+            title=title,
+            message="The server failed to update the requested content.",
+            resp="update_failed",
+            token=token,
+            error=True,
+        )
+        return HCI.internal_server_error(
+            content=body,
+            content_type=HTTP_DEFAULT_TYPE,
+            headers=self.server_headers_initialised.for_json(),
+        )
 
     def unauthorized(self, title: str, token: Union[str, None] = None) -> Response:
         """_summary_

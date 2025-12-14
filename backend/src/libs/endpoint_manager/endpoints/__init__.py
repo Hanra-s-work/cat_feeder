@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: __init__.py
 # CREATION DATE: 21-11-2025
-# LAST Modified: 12:20:21 30-11-2025
+# LAST Modified: 4:44:26 08-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -25,10 +25,12 @@
 """
 
 from .bonus import Bonus
+from .cat_endpoints import CatEndpoints
 from .user_endpoints import UserEndpoints
 from .testing_endpoints import TestingEndpoints
 __all__ = [
     "Bonus",
+    "CatEndpoints",
     "UserEndpoints",
     "TestingEndpoints"
 ]

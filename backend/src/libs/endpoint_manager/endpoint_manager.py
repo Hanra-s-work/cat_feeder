@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 7:50:36 02-12-20255
+# LAST Modified: 9:29:20 11-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -25,6 +25,8 @@ from typing import Optional
 from display_tty import Disp, initialise_logger
 from . import endpoint_constants as ENDPOINT_CONST
 from .endpoints import Bonus
+from .endpoints import CatEndpoints
+from .endpoints import UserEndpoints
 from .endpoints import TestingEndpoints
 from ..path_manager import PathManager
 from ..core import FinalClass
@@ -69,6 +71,16 @@ class EndpointManager(metaclass=FinalClass):
         )
         self.disp.update_disp_debug(self.debug)
         # ------------------- Initialize endpoints sub-classes ------------------
+        self.user: UserEndpoints = UserEndpoints(
+            success=self.success,
+            error=self.error,
+            debug=self.debug
+        )
+        self.cat: CatEndpoints = CatEndpoints(
+            success=self.success,
+            error=self.error,
+            debug=self.debug
+        )
         self.bonus: Bonus = Bonus(
             success=success,
             error=error,
@@ -79,6 +91,13 @@ class EndpointManager(metaclass=FinalClass):
             error=self.error,
             debug=self.debug
         )
+        # ------------------------- Endpoint Prefixing -------------------------
+        self.api_str: str = "/api"
+        self.v1_str: str = f"{self.api_str}/v1"
+        self.oauth_str: str = f"{self.v1_str}/oauth"
+        self.test_endpoint: str = "/testing"
+        self.sql_endpoint: str = f"{self.test_endpoint}/sql"
+        self.bucket_endpoint: str = f"{self.test_endpoint}/bucket"
         self.disp.log_debug("Initialised")
 
     def _retrieve_path_manager(self) -> Optional[PathManager]:
@@ -97,6 +116,65 @@ class EndpointManager(metaclass=FinalClass):
             err_msg: str = "PathManager could not be found"
             self.disp.log_critical(err_msg)
             raise RuntimeError(err_msg)
+
+        # User Endpoints
+        # |- connection
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/register", self.user.post_register, ["POST"]
+        )
+
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/login", self.user.post_login, ["POST"]
+        )
+
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/logout", self.user.post_logout, ["POST"]
+        )
+
+        # |- e-mail verification
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/send_email_verification", self.user.post_send_email_verification,
+            ["POST"]
+        )
+
+        # |- password reset
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/reset_password", self.user.put_reset_password,
+            ["PUT"]
+        )
+
+        # |- user update
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/user", self.user.put_user, ["PUT"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/user", self.user.patch_user, ["PATCH"]
+        )
+
+        # |- info querying
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/user", self.user.get_user, ["GET"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/user_id", self.user.get_user_id, ["GET"]
+        )
+
+        # |- user removal
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/user", self.user.delete_user, ["DELETE"]
+        )
+
+        # |- user favicon handling
+        # self.paths_initialised.add_path(
+        #     f"{self.v1_str}/user_favicon", self.user.put_user_favicon, "PUT"
+        # )
+        # self.paths_initialised.add_path(
+        #     f"{self.v1_str}/user_favicon", self.user.delete_user_favicon, "GET"
+        # )
+        # self.paths_initialised.add_path(
+        #     f"{self.v1_str}/user_favicon", self.user.delete_user_favicon, "DELETE"
+        # )
+
         # Bonus routes
         self.paths_initialised.add_path(
             "", self.bonus.get_welcome, [
@@ -109,10 +187,10 @@ class EndpointManager(metaclass=FinalClass):
             ]
         )
         self.paths_initialised.add_path(
-            "/api/v1/", self.bonus.get_welcome, "GET"
+            f"{self.v1_str}/", self.bonus.get_welcome, "GET"
         )
         self.paths_initialised.add_path(
-            "/api/v1/stop", self.bonus.post_stop_server, "PUT"
+            f"{self.v1_str}/stop", self.bonus.post_stop_server, "PUT"
         )
 
         # Health check endpoint
@@ -139,83 +217,84 @@ class EndpointManager(metaclass=FinalClass):
             self.disp.log_error("OAuth Authentication is missing")
             raise RuntimeError("Token validation service unavailable")
         self.paths_initialised.add_path(
-            "/api/v1/oauth/login", self.oauth_authentication_initialised.oauth_login, "POST"
+            f"{self.oauth_str}/login", self.oauth_authentication_initialised.oauth_login, "POST"
         )
         self.paths_initialised.add_path(
-            "/api/v1/oauth/callback", self.oauth_authentication_initialised.oauth_callback, "POST"
+            f"{self.oauth_str}/callback", self.oauth_authentication_initialised.oauth_callback, "POST"
         )
         self.paths_initialised.add_path(
-            "/api/v1/oauth/{provider}", self.oauth_authentication_initialised.add_oauth_provider, "POST"
+            f"{self.oauth_str}/" + "{provider}",
+            self.oauth_authentication_initialised.add_oauth_provider, "POST"
         )
         self.paths_initialised.add_path(
-            "/api/v1/oauth/{provider}", self.oauth_authentication_initialised.update_oauth_provider_data, "PUT"
+            f"{self.oauth_str}/" + "{provider}",
+            self.oauth_authentication_initialised.update_oauth_provider_data, "PUT"
         )
         self.paths_initialised.add_path(
-            "/api/v1/oauth/{provider}", self.oauth_authentication_initialised.patch_oauth_provider_data, "PATCH"
+            f"{self.oauth_str}/" + "{provider}",
+            self.oauth_authentication_initialised.patch_oauth_provider_data, "PATCH"
         )
         self.paths_initialised.add_path(
-            "/api/v1/oauth/{provider}", self.oauth_authentication_initialised.delete_oauth_provider, "DELETE"
+            f"{self.oauth_str}/" + "{provider}",
+            self.oauth_authentication_initialised.delete_oauth_provider, "DELETE"
         )
 
         # Testing endpoints (only if enabled in configuration)
         if ENDPOINT_CONST.TEST_ENABLE_TESTING_ENDPOINTS:
-            test_endpoint: str = "/testing"
-            sql_endpoint: str = f"{test_endpoint}/sql"
-            bucket_endpoint: str = f"{test_endpoint}/bucket"
             self.disp.log_debug("Testing endpoints enabled")
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/tables", self.testing_endpoints.get_tables, "GET"
+                f"{self.sql_endpoint}/tables", self.testing_endpoints.get_tables, "GET"
             )
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/table/columns", self.testing_endpoints.get_table_columns, "GET"
+                f"{self.sql_endpoint}/table/columns", self.testing_endpoints.get_table_columns, "GET"
             )
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/table/describe", self.testing_endpoints.describe_table, "GET"
+                f"{self.sql_endpoint}/table/describe", self.testing_endpoints.describe_table, "GET"
             )
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/table/size", self.testing_endpoints.get_table_size, "GET"
+                f"{self.sql_endpoint}/table/size", self.testing_endpoints.get_table_size, "GET"
             )
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/version", self.testing_endpoints.get_database_version, "GET"
+                f"{self.sql_endpoint}/version", self.testing_endpoints.get_database_version, "GET"
             )
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/connected", self.testing_endpoints.test_sql_connection, "GET"
+                f"{self.sql_endpoint}/connected", self.testing_endpoints.test_sql_connection, "GET"
             )
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/triggers", self.testing_endpoints.get_triggers, "GET"
+                f"{self.sql_endpoint}/triggers", self.testing_endpoints.get_triggers, "GET"
             )
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/triggers/names", self.testing_endpoints.get_trigger_names, "GET"
+                f"{self.sql_endpoint}/triggers/names", self.testing_endpoints.get_trigger_names, "GET"
             )
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/datetime/now", self.testing_endpoints.get_current_datetime, "GET"
+                f"{self.sql_endpoint}/datetime/now", self.testing_endpoints.get_current_datetime, "GET"
             )
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/datetime/today", self.testing_endpoints.get_current_date, "GET"
+                f"{self.sql_endpoint}/datetime/today", self.testing_endpoints.get_current_date, "GET"
             )
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/datetime/to-string", self.testing_endpoints.convert_datetime_to_string, "GET"
+                f"{self.sql_endpoint}/datetime/to-string", self.testing_endpoints.convert_datetime_to_string, "GET"
             )
             self.paths_initialised.add_path(
-                f"{sql_endpoint}/datetime/from-string", self.testing_endpoints.convert_string_to_datetime, "GET"
+                f"{self.sql_endpoint}/datetime/from-string", self.testing_endpoints.convert_string_to_datetime, "GET"
             )
             self.paths_initialised.add_path(
-                f"{bucket_endpoint}/buckets", self.testing_endpoints.get_buckets, "GET"
+                f"{self.bucket_endpoint}/buckets", self.testing_endpoints.get_buckets, "GET"
             )
             self.paths_initialised.add_path(
-                f"{bucket_endpoint}/connected", self.testing_endpoints.test_bucket_connection, "GET"
+                f"{self.bucket_endpoint}/connected", self.testing_endpoints.test_bucket_connection, "GET"
             )
             self.paths_initialised.add_path(
-                f"{bucket_endpoint}/files", self.testing_endpoints.get_bucket_files, "GET"
+                f"{self.bucket_endpoint}/files", self.testing_endpoints.get_bucket_files, "GET"
             )
             self.paths_initialised.add_path(
-                f"{bucket_endpoint}/files/info", self.testing_endpoints.get_bucket_file_info, "GET"
+                f"{self.bucket_endpoint}/files/info", self.testing_endpoints.get_bucket_file_info, "GET"
             )
             self.paths_initialised.add_path(
-                f"{bucket_endpoint}/create", self.testing_endpoints.create_test_bucket, "POST"
+                f"{self.bucket_endpoint}/create", self.testing_endpoints.create_test_bucket, "POST"
             )
             self.paths_initialised.add_path(
-                f"{bucket_endpoint}/delete", self.testing_endpoints.delete_test_bucket, "DELETE"
+                f"{self.bucket_endpoint}/delete", self.testing_endpoints.delete_test_bucket, "DELETE"
             )
         else:
             self.disp.log_debug("Testing endpoints disabled")

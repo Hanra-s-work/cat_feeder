@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: incoming.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 20:37:25 26-11-2025
+# LAST Modified: 20:32:9 14-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -129,7 +129,13 @@ class BoilerplateIncoming:
         table_columns = self.database_link.get_table_column_names(
             CONST.TAB_CONNECTIONS
         )
-        table_columns.pop(0)
+        if isinstance(table_columns, int):
+            return self.error
+        table_columns = CONST.clean_list(
+            table_columns,
+            CONST.TABLE_COLUMNS_TO_IGNORE,
+            self.disp
+        )
         self.disp.log_debug(
             f"table_columns = {table_columns}", title
         )
@@ -186,7 +192,7 @@ class BoilerplateIncoming:
         try:
             uid = str(int(usr_id[0][0]))
             self.disp.log_debug(f"uid = {uid}", title)
-        except ValueError:
+        except (ValueError, IndexError):
             data['status'] = self.error
             return data
         usr_data = [token, uid, lifespan]
