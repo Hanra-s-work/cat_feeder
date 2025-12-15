@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: sql_cache_orchestrator.py
 # CREATION DATE: 18-11-2025
-# LAST Modified: 3:51:0 25-11-2025
+# LAST Modified: 2:39:21 15-12-2025
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -434,9 +434,9 @@ class SQLCacheOrchestrator:
         column: Union[str, List[str]],
         where: Union[str, List[str]] = "",
         beautify: Literal[False] = False,
-    ) -> Union[int, List[Tuple[Any, Any]]]: ...
+    ) -> Union[int, List[Tuple[Any, ...]]]: ...
 
-    def get_data_from_table(self, table: str, column: Union[str, List[str]], where: Union[str, List[str]] = "", beautify: bool = True) -> Union[int, Union[List[Dict[str, Any]], List[Tuple[Any, Any]]]]:
+    def get_data_from_table(self, table: str, column: Union[str, List[str]], where: Union[str, List[str]] = "", beautify: bool = True) -> Union[int, Union[List[Dict[str, Any]], List[Tuple[Any, ...]]]]:
         """Fetch rows from a table.
 
         Args:
