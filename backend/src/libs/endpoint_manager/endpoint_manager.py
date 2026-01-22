@@ -21,7 +21,7 @@
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 6:47:58 12-01-2026
+# LAST Modified: 18:52:37 22-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -34,6 +34,7 @@ from typing import Optional
 from display_tty import Disp, initialise_logger
 from . import endpoint_constants as ENDPOINT_CONST
 from .endpoints import Bonus
+from .endpoints import CatEndpoints
 from .endpoints import UserEndpoints
 from .endpoints import AdminEndpoints
 from .endpoints import TokenEndpoints
@@ -87,6 +88,11 @@ class EndpointManager(metaclass=FinalClass):
             debug=self.debug
         )
         self.bonus: Bonus = Bonus(
+            success=success,
+            error=error,
+            debug=debug
+        )
+        self.cat_endpoints: CatEndpoints = CatEndpoints(
             success=success,
             error=error,
             debug=debug
@@ -182,125 +188,64 @@ class EndpointManager(metaclass=FinalClass):
             f"{self.v1_str}/user", self.user.delete_user, ["DELETE"]
         )
 
-        # |- user favicon handling
+        # Cat Endpoints
         self.paths_initialised.add_path(
-            f"{self.v1_str}/user_favicons", self.user.get_user_favicons, [
-                "GET"]
+            f"{self.v1_str}/feeder/register", self.cat_endpoints.put_register_feeder, "PUT"
         )
         self.paths_initialised.add_path(
-            f"{self.v1_str}/active_user_favicons", self.user.get_active_user_favicons, [
-                "GET"]
+            f"{self.v1_str}/feeder", self.cat_endpoints.patch_feeder, "PATCH"
         )
         self.paths_initialised.add_path(
-            f"{self.user_favicon_endpoint}/{'{id}'}", self.user.put_user_favicon, [
-                "PUT"]
+            f"{self.v1_str}/feeder/status", self.cat_endpoints.get_feeder_status, "GET"
         )
         self.paths_initialised.add_path(
-            f"{self.user_favicon_endpoint}/{'{id}'}", self.user.patch_user_favicon, [
-                "PATCH"]
+            f"{self.v1_str}/feeder", self.cat_endpoints.delete_feeder, "DELETE"
         )
         self.paths_initialised.add_path(
-            f"{self.user_favicon_endpoint}/{'{id}'}", self.user.get_user_favicon, [
-                "GET"]
+            f"{self.v1_str}/feeder/feed", self.cat_endpoints.get_distribute_food, "GET"
         )
         self.paths_initialised.add_path(
-            f"{self.user_favicon_endpoint}/{'{id}'}/image", self.user.get_user_favicon_image, [
-                "GET"]
+            f"{self.v1_str}/feeder/fed", self.cat_endpoints.post_distribute_food, "POST"
         )
         self.paths_initialised.add_path(
-            f"{self.user_favicon_endpoint}/{'{id}'}", self.user.delete_user_favicon, [
-                "DELETE"]
+            f"{self.v1_str}/feeder/ip", self.cat_endpoints.put_register_feeder, "PUT"
         )
-        # review endpoints to allow user to retrieve their profile icons
-        # |- Favicon handling
+        # Beacon routes
         self.paths_initialised.add_path(
-            f"{self.favicon_endpoint}", self.admin.get_favicons, ["GET"]
+            f"{self.v1_str}/feeder/beacon/register", self.cat_endpoints.register_beacon, "PUT"
         )
         self.paths_initialised.add_path(
-            f"{self.favicon_endpoint}", self.admin.register_favicon, ["PUT"]
+            f"{self.v1_str}/feeder/beacon/status", self.cat_endpoints.get_beacon_status, "GET"
         )
         self.paths_initialised.add_path(
-            f"{self.favicon_endpoint}/{'{id}'}", self.admin.register_favicon, [
-                "PUT"]
+            f"{self.v1_str}/feeder/beacon", self.cat_endpoints.patch_beacon, "PATCH"
         )
         self.paths_initialised.add_path(
-            f"{self.favicon_endpoint}/{'{id}'}", self.admin.update_favicon, [
-                "PATCH"]
+            f"{self.v1_str}/feeder/beacon", self.cat_endpoints.delete_beacon, "DELETE"
+        )
+        # location endpoints
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/feeder/beacon/locations", self.cat_endpoints.get_beacon_locations, "GET"
         )
         self.paths_initialised.add_path(
-            f"{self.favicon_endpoint}/{'{id}'}", self.admin.get_favicon, [
-                "GET"]
+            f"{self.v1_str}/feeder/beacon/location", self.cat_endpoints.post_beacon_location, "POST"
         )
         self.paths_initialised.add_path(
-            f"{self.favicon_endpoint}/{'{id}'}", self.admin.delete_favicon, [
-                "DELETE"]
-        )
-        # | |- Favicon image handling
-        self.paths_initialised.add_path(
-            f"{self.favicon_endpoint}/{'{id}'}/image", self.admin.register_favicon_image, [
-                "PUT"]
+            f"{self.v1_str}/feeder/visits", self.cat_endpoints.get_feeder_visits, "GET"
         )
         self.paths_initialised.add_path(
-            f"{self.favicon_endpoint}/{'{id}'}/image", self.admin.update_favicon_image, [
-                "PATCH"]
+            f"{self.v1_str}/feeder/visit", self.cat_endpoints.post_feeder_visit, "POST"
+        )
+
+        # Pet endpoints
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/pet/register", self.cat_endpoints.put_register_pet, "PUT"
         )
         self.paths_initialised.add_path(
-            f"{self.favicon_endpoint}/{'{id}'}/image", self.admin.get_favicon_image, [
-                "GET"]
+            f"{self.v1_str}/pet", self.cat_endpoints.patch_pet, "PATCH"
         )
         self.paths_initialised.add_path(
-            f"{self.favicon_endpoint}/{'{id}'}/image", self.admin.delete_favicon_image, [
-                "DELETE"]
-        )
-        # | |- Favicon gender
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-gender", self.admin.register_favicon_gender, [
-                "PUT"]
-        )
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-gender", self.admin.update_favicon_gender, [
-                "PATCH"]
-        )
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-gender", self.admin.get_favicon_gender, [
-                "GET"]
-        )
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-gender", self.admin.delete_favicon_gender, [
-                "DELETE"]
-        )
-        # | |- Favicon season
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-season", self.admin.register_favicon_season, [
-                "PUT"]
-        )
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-season", self.admin.update_favicon_season, [
-                "PATCH"]
-        )
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-season", self.admin.get_favicon_season, [
-                "GET"]
-        )
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-season", self.admin.delete_favicon_season, [
-                "DELETE"]
-        )
-        # | \- Favicon type
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-type", self.admin.register_favicon_type, [
-                "PUT"]
-        )
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-type", self.admin.update_favicon_type, [
-                "PATCH"]
-        )
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-type", self.admin.get_favicon_type, ["GET"]
-        )
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/favicon-type", self.admin.delete_favicon_type, [
-                "DELETE"]
+            f"{self.v1_str}/pet", self.cat_endpoints.delete_pet, "DELETE"
         )
 
         # Bonus routes

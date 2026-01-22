@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: responses.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 22:0:37 11-01-2026
+# LAST Modified: 16:8:51 22-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -385,7 +385,7 @@ class BoilerplateResponses(FinalSingleton):
         )
         return HCI.not_found(content=body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
 
-    def missing_variable_in_body(self, title: str, token: Union[str, None] = None) -> Response:
+    def missing_variable_in_body(self, title: str, token: Union[str, None] = None, variable_name: str = "") -> Response:
         """_summary_
             Function that will return a message saying that there is a missing variable in the provided body.
 
@@ -398,7 +398,7 @@ class BoilerplateResponses(FinalSingleton):
         """
         body = self.build_response_body(
             title=title,
-            message="A variable is missing in the body of the request.",
+            message=f"A variable ('{variable_name}') is missing in the body of the request.",
             resp="Missing variable",
             token=token,
             error=True
