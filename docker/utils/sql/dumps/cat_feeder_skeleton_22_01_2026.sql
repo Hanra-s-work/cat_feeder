@@ -10,9 +10,9 @@
  * animals/cats
  * /STOP
  * PROJECT: CatFeeder
- * FILE: dumps/cat_feeder_skeleton_11_12_2025.sql
- * CREATION DATE: 11-12-2025
- * LAST Modified: 07:14:33 11-12-2025
+ * FILE: dumps/cat_feeder_skeleton_22_01_2026.sql
+ * CREATION DATE: 22-01-2026
+ * LAST Modified: 16:58:29 22-01-2026
  * DESCRIPTION: 
  * This is the project in charge of making the connected cat feeder project work.
  * /STOP
@@ -27,7 +27,7 @@
 --
 -- Host: 127.0.0.1    Database: cat_feeder
 -- ------------------------------------------------------
--- Server version	8.4.7
+-- Server version	8.4.8
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -176,6 +176,34 @@ LOCK TABLES `Feeder` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `FeederIp`
+--
+
+DROP TABLE IF EXISTS `FeederIp`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `FeederIp` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'The primary key of the table',
+  `parent_id` bigint unsigned NOT NULL COMMENT 'The id of the feeder.',
+  `ip` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'This is the ip communicated by the device.',
+  `creation_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'The date at which the line was added.',
+  `edit_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'The current time at which the line was edited.',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `FeederIp_UNIQUE` (`parent_id`),
+  CONSTRAINT `FeederIp_Feeder_FK` FOREIGN KEY (`parent_id`) REFERENCES `Feeder` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='This is the ip provided by the device when it makes it''s periodical call to the server.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `FeederIp`
+--
+
+LOCK TABLES `FeederIp` WRITE;
+/*!40000 ALTER TABLE `FeederIp` DISABLE KEYS */;
+/*!40000 ALTER TABLE `FeederIp` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `Location_history`
 --
 
@@ -246,13 +274,13 @@ DROP TABLE IF EXISTS `UserOauthConnection`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `UserOauthConnection` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'The primary key of the table.',
-  `provider_name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'The name of the service provider.',
+  `provider_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'The name of the service provider.',
   `client_id` bigint unsigned NOT NULL COMMENT 'The id of the initial account that allows us to start the OAuth process, here no-reply@cat-feeder.run.place.',
-  `client_secret` varchar(255) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'The secret of the initial account that allows us to start the OAuth process, here noreply-terarea@gmail.com.',
-  `provider_scope` varchar(512) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'The information that is queried from the provider.',
-  `authorisation_base_url` varchar(768) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'The url that allows the front-end to spawn a login page with the provider.',
-  `token_grabber_base_url` varchar(768) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT 'The link allowing the backend to get the information returned by the provider during the login.',
-  `user_info_base_url` varchar(768) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'Get the user info.',
+  `client_secret` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'The secret of the initial account that allows us to start the OAuth process, here noreply-terarea@gmail.com.',
+  `provider_scope` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'The information that is queried from the provider.',
+  `authorisation_base_url` varchar(768) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'The url that allows the front-end to spawn a login page with the provider.',
+  `token_grabber_base_url` varchar(768) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT 'The link allowing the backend to get the information returned by the provider during the login.',
+  `user_info_base_url` varchar(768) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'Get the user info.',
   `creation_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'The date at which the user colum was created.',
   `edit_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'The date at which the line was edited.',
   PRIMARY KEY (`id`),
@@ -281,7 +309,7 @@ DROP TABLE IF EXISTS `Users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Users` (
-    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'This is the primary key for the table',
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'This is the primary key for the table',
   `username` varchar(1000) NOT NULL DEFAULT 'user' COMMENT 'The username of the account',
   `email` varchar(255) NOT NULL COMMENT 'The e-mail used for the account',
   `password` varchar(768) DEFAULT NULL COMMENT 'The hashed password of the user.',
@@ -295,7 +323,7 @@ CREATE TABLE `Users` (
   `edit_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'The date at which the line was edited.',
   `deletion_date` datetime DEFAULT NULL COMMENT 'This is the date by which the account will be deleted from the system, based on the backend, the user will have a 30 day grace period to be able to change their mind; But this column is set and handled by the backend, meaning that 30 is the most likely value, not a garante.',
   PRIMARY KEY (`id`),
-UNIQUE KEY `Users_email_UNIQUE` (`email`)
+  UNIQUE KEY `Users_email_UNIQUE` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='This is the table that will contain the names and accounts of the users for the server.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -345,4 +373,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-11  7:14:33
+-- Dump completed on 2026-01-22 16:58:29
