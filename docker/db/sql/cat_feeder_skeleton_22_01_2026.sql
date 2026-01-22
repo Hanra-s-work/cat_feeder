@@ -281,17 +281,21 @@ DROP TABLE IF EXISTS `Users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Users` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'This is the primary key for the table',
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'This is the primary key for the table',
   `username` varchar(1000) NOT NULL DEFAULT 'user' COMMENT 'The username of the account',
   `email` varchar(255) NOT NULL COMMENT 'The e-mail used for the account',
   `password` varchar(768) DEFAULT NULL COMMENT 'The hashed password of the user.',
-  `method` varchar(200) DEFAULT NULL COMMENT 'The method the user used to log in: local, google, github, etc...',
+  `method` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'The method the user used to log in: local, google, github, etc...',
+  `gender` varchar(100) NOT NULL DEFAULT 'RNS' COMMENT 'This is the way we can track if the person is a man, women or other, this can help in the tailoring of the user content. M - Male, F - Female, RNS - Rather Not Say.',
+  `age` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '16-20' COMMENT 'This is the age range in jumps of 5 years so we can get a rough estimate of the age of the user and thus the type of content to tailor to them.',
   `favicon` varchar(768) DEFAULT NULL COMMENT 'The link to the icon of the user account.',
   `admin` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Informs the server if the user is an administrator or not.',
+  `last_connection` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'This contains the last time when the user was connected.',
   `creation_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'The date at which the user colum was created.',
   `edit_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'The date at which the line was edited.',
+  `deletion_date` datetime DEFAULT NULL COMMENT 'This is the date by which the account will be deleted from the system, based on the backend, the user will have a 30 day grace period to be able to change their mind; But this column is set and handled by the backend, meaning that 30 is the most likely value, not a garante.',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `Users_email_UNIQUE` (`email`)
+UNIQUE KEY `Users_email_UNIQUE` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='This is the table that will contain the names and accounts of the users for the server.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
