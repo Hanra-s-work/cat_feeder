@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: sql_connections.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 15:44:13 30-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:52:3 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File in charge of containing the class that will manage the sql connections.
@@ -361,6 +361,10 @@ class SQLManageConnections:
         """
         title = "run_and_commit"
         self.disp.log_debug("Running and committing sql query.", title)
+        self.disp.log_debug(
+            f"Arguments: Query='{query}', Values='{values}', cursor='{cursor}'",
+            title
+        )
         if cursor is None:
             self.disp.log_debug("No cursor found, generating one.", title)
             connection = self.get_connection()
@@ -375,7 +379,10 @@ class SQLManageConnections:
             self.disp.log_debug("Cursor found, using it.", title)
             internal_cursor = cursor
         try:
-            self.disp.log_debug(f"Executing query: {query}.", title)
+            self.disp.log_debug(
+                f"Executing query: {query} with parameter(s): {values}",
+                title
+            )
             internal_cursor.execute(query, params=values)
             self.disp.log_debug("Committing content.", title)
             con: Optional[mysql.connector.MySQLConnection] = getattr(
@@ -453,13 +460,13 @@ class SQLManageConnections:
                 )
             raise RuntimeError(msg) from e
 
-    def run_and_fetch_all(self, query: str, values: Optional[List[Union[str, int, float]]] = None, cursor: Union[mysql.connector.cursor.MySQLCursor, None] = None) -> Union[int, Any]:
+    def run_and_fetch_all(self, query: str, values: Optional[List[Union[str, int, float, None]]] = None, cursor: Union[mysql.connector.cursor.MySQLCursor, None] = None) -> Union[int, Any]:
         """
         Execute a SELECT-style query and return fetched rows.
 
         Args:
             query (str): The SQL SELECT statement to execute.
-            values (Optional[List[Union[str, int, float]]]): Values to bind to the query.
+            values (Optional[List[Union[str, int, float, None]]]): Values to bind to the query.
             cursor (Optional[mysql.connector.cursor.MySQLCursor]): The cursor to use for execution.
 
         Returns:
@@ -584,7 +591,14 @@ class SQLManageConnections:
         Returns:
             int: `self.success` if the command executes successfully, otherwise `self.error`.
         """
-        title = "_run_editing_command"
+        title = "run_editing_command"
+        self.disp.log_debug(
+            "Going to run a command that will alter the database."
+        )
+        self.disp.log_debug(
+            f"Query: '{sql_query}', values: '{values}', table: '{table}', action_type: '{action_type}'",
+            title
+        )
         try:
             resp = self.run_and_commit(query=sql_query, values=values)
             if resp != self.success:

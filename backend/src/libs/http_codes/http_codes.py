@@ -1,30 +1,20 @@
 """
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
 # PROJECT: CatFeeder
 # FILE: http_codes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 20:59:16 22-11-2025
+# LAST Modified: 22:25:14 10-01-2026
 # DESCRIPTION:
-# This is the project in charge of making the connected cat feeder project work.
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File containing the list of http codes that can be sent and received by the server.
@@ -49,14 +39,18 @@ ContentTypeLike: TypeAlias = Union[CONST.DataTypes, str]
 
 
 class HttpCodes(metaclass=FinalClass):
-    """_summary_
-    A class containing all the known http codes that can be used to reply to websites.
-    These codes are:
-    * The 1xx: Continue
-    * The 2xx: Success
-    * The 3xx: Redirection
-    * The 4xx: Client error
-    * The 5xx: Server error
+    """HTTP status code response handler using FastAPI response types.
+
+    Provides methods for returning standardized HTTP responses with appropriate
+    status codes, content types, and headers. Supports JSON, plain text, HTML,
+    binary, file, and redirect responses.
+
+    HTTP Response Categories:
+    - 1xx: Informational
+    - 2xx: Successful
+    - 3xx: Redirection
+    - 4xx: Client error
+    - 5xx: Server error
     """
 
     def __init__(self) -> None:
@@ -66,12 +60,9 @@ class HttpCodes(metaclass=FinalClass):
     # """ General basic success message that speaks on channel 200 by default """
 
     def _check_data_type(self, data_type: Optional[ContentTypeLike] = None) -> str:
-        """Validate and normalize the provided content type to a MIME string.
+        """Validate and normalize provided content type to canonical MIME string.
 
-        Accepts:
-        - A `DataTypes` enum member (e.g., `DataTypes.JSON`)
-        - A known key (e.g., "json", "HTML", "form-data")
-        - A raw MIME string (e.g., "application/json")
+        Resolves content type from DataTypes enum member, known key string, or raw MIME type string to standardized MIME format.
 
         Args:
             data_type (ContentTypeLike, optional): Desired content type or alias.
@@ -102,31 +93,34 @@ class HttpCodes(metaclass=FinalClass):
         raise TypeError(f"Invalid data type: {data_type}")
 
     def _check_header(self, header: Optional[Mapping[str, str]] = None) -> Any:
-        """Function in charge of checking the headers provided by the user.
+        """Validate and normalize HTTP headers.
 
         Args:
             header (Mapping[str, str], optional): _description_. Defaults to None.
         Returns:
-            Any: _description_: Returns the correct known version of the sent headers.
+            Any: Returns the correct known version of the sent headers.
         Raises:
-            TypeError
+            TypeError: If header is not a Mapping or Dict.
         """
         if header is None:
             return {}
         if not isinstance(header, (Dict, Mapping)):
             raise TypeError(
-                f"Invalid header format, the format you provided is: {type(header)}")
+                f"Invalid header format, the format you provided is: {type(header)}"
+            )
         return dict(header)
 
     def _process_data_content(self, data: Any, data_type: str) -> Any:
-        """Function in charge of processing the data content to be sent.
+        """Process data content for HTTP response based on MIME type.
+
+        Handles binary passthrough, file-like objects, JSON, and streaming data.
 
         Args:
             data (Any): _description_: The data to be sent.
             data_type (str): _description_: The type of the data to be sent.
 
         Returns:
-            Any: _description_: The processed data.
+            Any: Processed data in appropriate format for response type.
         """
         if data is None:
             return ""
@@ -145,6 +139,41 @@ class HttpCodes(metaclass=FinalClass):
         return str(data)
 
     def _package_correctly(self, status: int = 200, content: Any = CONST.DEFAULT_MESSAGE_CONTENT, content_type: ContentTypeLike = CONST.DEFAULT_MESSAGE_TYPE, headers: Optional[Mapping[str, str]] = None) -> Union[Response, FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse, UJSONResponse, ORJSONResponse]:
+        """Route response content to appropriate FastAPI response class.
+
+        Determines correct response type based on content type and returns properly formatted response with status code, content, type, and headers.
+
+        Args:
+            status (int, optional): HTTP status code. Defaults to 200.
+            content (Any, optional): Response content. Defaults to DEFAULT_MESSAGE_CONTENT.
+            content_type (ContentTypeLike, optional): MIME type or DataTypes member. Defaults to DEFAULT_MESSAGE_TYPE.
+            headers (Optional[Mapping[str, str]], optional): HTTP headers mapping. Defaults to None.
+
+        Raises:
+            TypeError: If content type is incompatible with content.
+
+        Returns:
+            Union[Response, FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse, UJSONResponse, ORJSONResponse]: _description_
+        """
+        # Returning the content as a response if the payload data is bytes.
+        if isinstance(content, bytes):
+            return Response(
+                content=content,
+                status_code=status,
+                headers=headers,
+                media_type=content_type
+            )
+
+        # Streaming / Binary (check BEFORE FILE because OCTET_STREAM is in both categories)
+        if content_type in CONST.STREAMING_MIME_TYPES:
+            # For actual iterables/generators, use StreamingResponse
+            return StreamingResponse(
+                content=content,
+                status_code=status,
+                headers=headers,
+                media_type=content_type
+            )
+
         # FILE BASED
         if content_type in CONST.FILE_MIME_TYPES:
             if not isinstance(content, str):
@@ -194,15 +223,6 @@ class HttpCodes(metaclass=FinalClass):
                 headers=headers
             )
 
-        # Streaming
-        if content_type in CONST.STREAMING_MIME_TYPES:
-            return StreamingResponse(
-                content=content,
-                status_code=status,
-                headers=headers,
-                media_type=content_type
-            )
-
         # UJSON
         if content_type in CONST.UJSON_MIME_TYPES:
             return UJSONResponse(
@@ -230,13 +250,16 @@ class HttpCodes(metaclass=FinalClass):
         )
 
     def send_message_on_status(self, status: int = 200, content: Any = CONST.DEFAULT_MESSAGE_CONTENT, content_type: ContentTypeLike = CONST.DEFAULT_MESSAGE_TYPE, headers: Optional[Mapping[str, str]] = None) -> Response:
-        """A generic function in charge of sending a message with a status.
+        """Send HTTP response with specified status code and content.
 
         Args:
             status (int, optional): HTTP status code. Defaults to 200.
-            content (Any, optional): The content to send. Defaults to None.
-            content_type (ContentTypeLike, optional): Content type as `DataTypes` member, known short key (e.g., "json"), or raw MIME string. Defaults to "JSON".
-            headers (Mapping[str, str], optional): The headers. Defaults to None.
+            content (Any, optional): Response content. Defaults to DEFAULT_MESSAGE_CONTENT.
+            content_type (ContentTypeLike, optional): MIME type as DataTypes, known key, or string. Defaults to DEFAULT_MESSAGE_TYPE.
+            headers (Mapping[str, str], optional): HTTP headers mapping. Defaults to None.
+
+        Raises:
+            ValueError: If status code is not authorized.
 
         Returns:
             Response: FastAPI response object.
@@ -272,16 +295,14 @@ class HttpCodes(metaclass=FinalClass):
     # """ 1xx informational response"""
 
     def send_continue(self, content: Any = CONST.DEFAULT_MESSAGE_CONTENT, *, content_type: ContentTypeLike = CONST.DEFAULT_MESSAGE_TYPE, headers: Optional[Mapping[str, str]] = None) -> Response:
-        """
-        Send a 100 Continue HTTP response.
+        """Send 100 Continue HTTP response.
 
-        This response indicates that the initial part of a request has been received
-        and the client should continue with the request or ignore if already finished.
+        Indicates initial part of request received; client should continue or ignore if already finished.
 
         Args:
-            content (Any, optional): The content to send. Defaults to CONST.DEFAULT_MESSAGE_CONTENT.
-            content_type (ContentTypeLike, optional): Content type as `DataTypes` member, known key (e.g., "json"), or raw MIME string. Defaults to CONST.DEFAULT_MESSAGE_TYPE.
-            headers (Mapping[str, str], optional): Additional headers to include. Defaults to None.
+            content (Any, optional): Response content. Defaults to DEFAULT_MESSAGE_CONTENT.
+            content_type (ContentTypeLike, optional): MIME type or DataTypes member. Defaults to DEFAULT_MESSAGE_TYPE.
+            headers (Mapping[str,str], optional): HTTP headers mapping. Defaults to None.
 
         Returns:
             Response: A FastAPI Response object with status 100.
@@ -289,138 +310,124 @@ class HttpCodes(metaclass=FinalClass):
         return self.send_message_on_status(status=100, content=content, content_type=content_type, headers=headers)
 
     def switching_protocols(self, content: Any = CONST.DEFAULT_MESSAGE_CONTENT, *, content_type: ContentTypeLike = CONST.DEFAULT_MESSAGE_TYPE, headers: Optional[Mapping[str, str]] = None) -> Response:
-        """
-        Send a 101 Switching Protocols HTTP response.
+        """Send 101 Switching Protocols HTTP response.
 
-        This response indicates that the server is switching protocols as requested
-        by the client, typically during a WebSocket handshake.
+        Server switches protocols as requested by client, typically for WebSocket.
 
         Args:
-            content (Any, optional): The content to send. Defaults to CONST.DEFAULT_MESSAGE_CONTENT.
-            content_type (ContentTypeLike, optional): Content type as `DataTypes` member, known key (e.g., "json"), or raw MIME string. Defaults to CONST.DEFAULT_MESSAGE_TYPE.
-            headers (Mapping[str, str], optional): Additional headers to include. Defaults to None.
+            content (Any, optional): Response content. Defaults to DEFAULT_MESSAGE_CONTENT.
+            content_type (ContentTypeLike, optional): MIME type or DataTypes member. Defaults to DEFAULT_MESSAGE_TYPE.
+            headers (Optional[Mapping[str, str]], optional): HTTP headers mapping. Defaults to None.
 
         Returns:
-            Response: A FastAPI Response object with status 101.
+            Response: FastAPI Response object with status 101.
         """
         return self.send_message_on_status(status=101, content=content, content_type=content_type, headers=headers)
 
     def processing(self, content: Any = CONST.DEFAULT_MESSAGE_CONTENT, *, content_type: ContentTypeLike = CONST.DEFAULT_MESSAGE_TYPE, headers: Optional[Mapping[str, str]] = None) -> Response:
-        """
-        Send a 102 Processing HTTP response.
+        """Send 102 Processing HTTP response.
 
-        This response indicates that the server has received and is processing the request,
-        but no response is available yet. Commonly used in WebDAV.
+        Server has received and is processing request; no response available yet. Commonly used in WebDAV.
 
         Args:
-            content (Any, optional): The content to send. Defaults to CONST.DEFAULT_MESSAGE_CONTENT.
-            content_type (ContentTypeLike, optional): Content type as `DataTypes` member, known key (e.g., "json"), or raw MIME string. Defaults to CONST.DEFAULT_MESSAGE_TYPE.
-            headers (Mapping[str, str], optional): Additional headers to include. Defaults to None.
+            content (Any, optional): Response content. Defaults to DEFAULT_MESSAGE_CONTENT.
+            content_type (ContentTypeLike, optional): MIME type or DataTypes member. Defaults to DEFAULT_MESSAGE_TYPE.
+            headers (Optional[Mapping[str, str]], optional): HTTP headers mapping. Defaults to None.
 
         Returns:
-            Response: A FastAPI Response object with status 102.
+            Response: FastAPI Response object with status 102.
         """
         return self.send_message_on_status(status=102, content=content, content_type=content_type, headers=headers)
 
     def early_hints(self, content: Any = CONST.DEFAULT_MESSAGE_CONTENT, *, content_type: ContentTypeLike = CONST.DEFAULT_MESSAGE_TYPE, headers: Optional[Mapping[str, str]] = None) -> Response:
-        """
-        Send a 103 Early Hints HTTP response.
+        """Send 103 Early Hints HTTP response.
 
-        This response is used to preload resources while the server is still preparing
-        the final response. Useful for improving page load performance.
+        Preload resources while server prepares final response. Improves page load.
 
         Args:
-            content (Any, optional): The content to send. Defaults to CONST.DEFAULT_MESSAGE_CONTENT.
-            content_type (ContentTypeLike, optional): Content type as `DataTypes` member, known key (e.g., "json"), or raw MIME string. Defaults to CONST.DEFAULT_MESSAGE_TYPE.
-            headers (Mapping[str, str], optional): Additional headers to include. Defaults to None.
+            content (Any, optional): Response content. Defaults to DEFAULT_MESSAGE_CONTENT.
+            content_type (ContentTypeLike, optional): MIME type or DataTypes member. Defaults to DEFAULT_MESSAGE_TYPE.
+            headers (Optional[Mapping[str, str]], optional): HTTP headers mapping. Defaults to None.
 
         Returns:
-            Response: A FastAPI Response object with status 103.
+            Response: FastAPI Response object with status 103.
         """
         return self.send_message_on_status(status=103, content=content, content_type=content_type, headers=headers)
 
     def response_is_stale(self, content: Any = CONST.DEFAULT_MESSAGE_CONTENT, *, content_type: ContentTypeLike = CONST.DEFAULT_MESSAGE_TYPE, headers: Optional[Mapping[str, str]] = None) -> Response:
-        """
-        Send a 110 Response Is Stale HTTP response.
+        """Send 110 Response Is Stale HTTP response.
 
-        This response indicates that the cached response is stale but still usable.
-        Commonly used in caching scenarios.
+        Cached response is stale but still usable. Used in caching scenarios.
 
         Args:
-            content (Any, optional): The content to send. Defaults to CONST.DEFAULT_MESSAGE_CONTENT.
-            content_type (ContentTypeLike, optional): Content type as `DataTypes` member, known key (e.g., "json"), or raw MIME string. Defaults to CONST.DEFAULT_MESSAGE_TYPE.
-            headers (Mapping[str, str], optional): Additional headers to include. Defaults to None.
+            content (Any, optional): Response content. Defaults to DEFAULT_MESSAGE_CONTENT.
+            content_type (ContentTypeLike, optional): MIME type or DataTypes member. Defaults to DEFAULT_MESSAGE_TYPE.
+            headers (Optional[Mapping[str, str]], optional): HTTP headers mapping. Defaults to None.
 
         Returns:
-            Response: A FastAPI Response object with status 110.
+            Response: FastAPI Response object with status 110.
         """
         return self.send_message_on_status(status=110, content=content, content_type=content_type, headers=headers)
 
     # """success: 200"""
 
     def success(self, content: Any = CONST.DEFAULT_MESSAGE_CONTENT, *, content_type: ContentTypeLike = CONST.DEFAULT_MESSAGE_TYPE, headers: Optional[Mapping[str, str]] = None) -> Response:
-        """
-        Send a 200 OK HTTP response.
+        """Send 200 OK HTTP response.
 
-        This response indicates that the request has succeeded. The meaning of the
-        success depends on the HTTP method used (e.g., GET, POST, etc.).
+        Request succeeded. Meaning depends on HTTP method (GET, POST, etc.).
 
         Args:
-            content (Any, optional): The content to send. Defaults to CONST.DEFAULT_MESSAGE_CONTENT.
-            content_type (ContentTypeLike, optional): Content type as `DataTypes` member, known key (e.g., "json"), or raw MIME string. Defaults to CONST.DEFAULT_MESSAGE_TYPE.
-            headers (Mapping[str, str], optional): Additional headers to include. Defaults to None.
+            content (Any, optional): Response content. Defaults to DEFAULT_MESSAGE_CONTENT.
+            content_type (ContentTypeLike, optional): MIME type or DataTypes member. Defaults to DEFAULT_MESSAGE_TYPE.
+            headers (Optional[Mapping[str, str]], optional): HTTP headers mapping. Defaults to None.
 
         Returns:
-            Response: A FastAPI Response object with status 200.
+            Response: FastAPI Response object with status 200.
         """
         return self.send_message_on_status(status=200, content=content, content_type=content_type, headers=headers)
 
     def created(self, content: Any = CONST.DEFAULT_MESSAGE_CONTENT, *, content_type: ContentTypeLike = CONST.DEFAULT_MESSAGE_TYPE, headers: Optional[Mapping[str, str]] = None) -> Response:
-        """
-        Send a 201 Created HTTP response.
+        """Send 201 Created HTTP response.
 
-        This response indicates that the request has been fulfilled and resulted in
-        the creation of a new resource.
+        Request fulfilled; new resource created.
 
         Args:
-            content (Any, optional): The content to send. Defaults to CONST.DEFAULT_MESSAGE_CONTENT.
-            content_type (ContentTypeLike, optional): Content type as `DataTypes` member, known key (e.g., "json"), or raw MIME string. Defaults to CONST.DEFAULT_MESSAGE_TYPE.
-            headers (Mapping[str, str], optional): Additional headers to include. Defaults to None.
+            content (Any, optional): Response content. Defaults to DEFAULT_MESSAGE_CONTENT.
+            content_type (ContentTypeLike, optional): MIME type or DataTypes member. Defaults to DEFAULT_MESSAGE_TYPE.
+            headers (Optional[Mapping[str, str]], optional): HTTP headers mapping. Defaults to None.
 
         Returns:
-            Response: A FastAPI Response object with status 201.
+            Response: FastAPI Response object with status 201.
         """
         return self.send_message_on_status(status=201, content=content, content_type=content_type, headers=headers)
 
     def accepted(self, content: Any = CONST.DEFAULT_MESSAGE_CONTENT, *, content_type: ContentTypeLike = CONST.DEFAULT_MESSAGE_TYPE, headers: Optional[Mapping[str, str]] = None) -> Response:
-        """
-        Send a 202 Accepted HTTP response.
+        """Send 202 Accepted HTTP response.
 
-        This response indicates that the request has been accepted for processing,
-        but the processing has not been completed. It is typically used for
-        asynchronous operations.
+        Request accepted for processing but not yet completed. Used for async ops.
 
         Args:
-            content (Any, optional): The content to send. Defaults to CONST.DEFAULT_MESSAGE_CONTENT.
-            content_type (ContentTypeLike, optional): Content type as `DataTypes` member, known key (e.g., "json"), or raw MIME string. Defaults to CONST.DEFAULT_MESSAGE_TYPE.
-            headers (Mapping[str, str], optional): Additional headers to include. Defaults to None.
+            content (Any, optional): Response content. Defaults to DEFAULT_MESSAGE_CONTENT.
+            content_type (ContentTypeLike, optional): MIME type or DataTypes member. Defaults to DEFAULT_MESSAGE_TYPE.
+            headers (Optional[Mapping[str, str]], optional): HTTP headers mapping. Defaults to None.
 
         Returns:
-            Response: A FastAPI Response object with status 202.
+            Response: FastAPI Response object with status 202.
         """
         return self.send_message_on_status(status=202, content=content, content_type=content_type, headers=headers)
 
     def non_authoritative_information(self, content: Any = CONST.DEFAULT_MESSAGE_CONTENT, *, content_type: ContentTypeLike = CONST.DEFAULT_MESSAGE_TYPE, headers: Optional[Mapping[str, str]] = None) -> Response:
-        """
-        Send a 203 Non-Authoritative Information HTTP response.
+        """Send 203 Non-Authoritative Information HTTP response.
 
-        This response indicates that the request was successful, but the returned
-        metadata may not be from the origin server.
+        Request succeeded
+        returned info from third-party source.
 
         Args:
-            content (Any, optional): The content to send. Defaults to CONST.DEFAULT_MESSAGE_CONTENT.
-            content_type (ContentTypeLike, optional): Content type as `DataTypes` member, known key (e.g., "json"), or raw MIME string. Defaults to CONST.DEFAULT_MESSAGE_TYPE.
-            headers (Mapping[str, str], optional): Additional headers to include. Defaults to None.
+            content_type: MIME type or DataTypes member.
+            Defaults to DEFAULT_MESSAGE_TYPE.
+            content(Any, optional): The content to send. Defaults to CONST.DEFAULT_MESSAGE_CONTENT.
+            content_type(ContentTypeLike, optional): Content type as `DataTypes` member, known key(e.g., "json"), or raw MIME string. Defaults to CONST.DEFAULT_MESSAGE_TYPE.
+            headers(Mapping[str, str], optional): Additional headers to include. Defaults to None.
 
         Returns:
             Response: A FastAPI Response object with status 203.

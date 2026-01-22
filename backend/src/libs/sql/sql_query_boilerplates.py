@@ -1,30 +1,20 @@
 """
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
 # PROJECT: CatFeeder
 # FILE: sql_query_boilerplates.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:52:3 25-11-2025
+# LAST Modified: 14:54:28 19-12-2025
 # DESCRIPTION:
-# This is the project in charge of making the connected cat feeder project work.
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE:
@@ -129,6 +119,107 @@ class SQLQueryBoilerplates:
         if sl in ("current_date", "current_date()"):
             return self.sanitize_functions.sql_time_manipulation.get_correct_current_date_value()
         return s
+
+    def _parse_where_clause(self, where: Union[str, List[str]]) -> Tuple[str, List[Union[str, int, float, None]]]:
+        """Parse WHERE clause and extract values for parameterization.
+
+        This method takes a WHERE clause (or list of clauses) and:
+        1. Checks column names for SQL injection attempts
+        2. Sanitizes column names
+        3. Extracts values from comparisons
+        4. Replaces values with %s placeholders
+        5. Returns the parameterized WHERE string and extracted values
+
+        Args:
+            where (Union[str, List[str]]): WHERE clause content; string or list joined by AND.
+
+        Returns:
+            Tuple[str, List[Union[str, int, float, None]]]:
+                - Parameterized WHERE clause string
+                - List of extracted values for parameters
+
+        Raises:
+            RuntimeError: If SQL injection is detected in column names or operators.
+        """
+        title = "_parse_where_clause"
+
+        # Handle empty WHERE clause
+        if where == "" or (isinstance(where, list) and len(where) == 0):
+            return "", []
+
+        # Convert to list for uniform processing
+        if isinstance(where, str):
+            where_list = [where]
+        else:
+            where_list = where
+
+        params: List[Union[str, int, float, None]] = []
+        parsed_clauses: List[str] = []
+        column_names_to_check: List[str] = []
+
+        for clause in where_list:
+            clause_str = str(clause).strip()
+
+            # Check if this clause contains a comparison operator with a value
+            if "=" in clause_str:
+                # Split on the first = to get column and value
+                parts = clause_str.split("=", maxsplit=1)
+                if len(parts) == 2:
+                    column_part = parts[0].strip()
+                    value_part = parts[1].strip()
+
+                    # Check column name for injection (before removing quotes from value)
+                    column_names_to_check.append(column_part)
+
+                    # Remove quotes from value if present
+                    if value_part.startswith("'") and value_part.endswith("'"):
+                        value_part = value_part[1:-1]
+                    elif value_part.startswith('"') and value_part.endswith('"'):
+                        value_part = value_part[1:-1]
+
+                    # Escape risky column name if needed
+                    if column_part.lower() not in self.sanitize_functions.keyword_logic_gates and column_part.lower() in self.sanitize_functions.risky_keywords:
+                        column_part = f"`{column_part}`"
+
+                    # Normalize and add the value to params
+                    normalized_value = self._normalize_cell(value_part)
+                    params.append(normalized_value)
+
+                    # Build parameterized clause
+                    parsed_clauses.append(f"{column_part}=%s")
+                else:
+                    # No value found, just add the clause as-is
+                    parsed_clauses.append(clause_str)
+            else:
+                # No = operator, add clause as-is (might be a column check or other condition)
+                parsed_clauses.append(clause_str)
+
+        # Check all extracted column names for SQL injection
+        # Note: We filter out risky keywords (like "order", "select") as these are legitimate column names
+        # that will be escaped with backticks. We only check for actual injection attempts (symbols and commands).
+        if column_names_to_check:
+            self.disp.log_debug(
+                f"Checking column names for injection: {column_names_to_check}", title
+            )
+            # Filter out risky keywords - they're legitimate column names, not injection attempts
+            non_risky_columns = [
+                col for col in column_names_to_check
+                if col.lower() not in self.sanitize_functions.risky_keywords
+            ]
+            if non_risky_columns and self.sql_injection.check_if_symbol_and_command_injection(non_risky_columns):
+                self.disp.log_error(
+                    "SQL injection detected in WHERE clause column names", title
+                )
+                raise RuntimeError("SQL injection detected in WHERE clause")
+
+        # Join all clauses with AND
+        where_string = " AND ".join(parsed_clauses)
+
+        self.disp.log_debug(
+            f"Parsed WHERE: '{where_string}', params: {params}", title
+        )
+
+        return where_string, params
 
     def get_database_version(self) -> Optional[Tuple[int, int, int]]:
         """Fetch and parse the database version.
@@ -320,7 +411,7 @@ class SQLQueryBoilerplates:
                 "WHERE TRIGGER_SCHEMA = %s "
                 "ORDER BY TRIGGER_NAME;"
             )
-            values: List[Union[str, int, float]] = [db_name]
+            values: List[Union[str, int, float, None]] = [db_name]
         else:
             query = (
                 "SELECT TRIGGER_NAME "
@@ -328,7 +419,7 @@ class SQLQueryBoilerplates:
                 "WHERE TRIGGER_SCHEMA = DATABASE() "
                 "ORDER BY TRIGGER_NAME;"
             )
-            values: List[Union[str, int, float]] = []
+            values: List[Union[str, int, float, None]] = []
 
         # --------------------------------------------------------------------------
         # Execute the query
@@ -552,6 +643,7 @@ class SQLQueryBoilerplates:
             ] = self.sanitize_functions.process_sql_line(data, column, column_length)
             line = cleaned_lines[0]
             values = cleaned_lines[1]
+            self.disp.log_debug(f"Cleaned lines = '{cleaned_lines}'", title)
             sql_query = f"INSERT INTO {table} ({column_str}) VALUES {line}"
             self.disp.log_debug(
                 f"sql_query = '{sql_query}', values = '{values}'", title
@@ -654,23 +746,32 @@ class SQLQueryBoilerplates:
         """
         title = "get_data_from_table"
         self.disp.log_debug(f"fetching data from the table {table}", title)
-        if self.sql_injection.check_if_injections_in_strings([table, column]) is True or self.sql_injection.check_if_symbol_and_command_injection(where) is True:
+
+        # Only check table/column names for injection — WHERE values will be parameterized
+        if self.sql_injection.check_if_injections_in_strings([table, column]) is True:
             self.disp.log_error("Injection detected.", "sql")
             return self.error
+
         if isinstance(column, list) is True:
             column = self.sanitize_functions.escape_risky_column_names(column)
             column = ", ".join(column)
+
         sql_command = f"SELECT {column} FROM {table}"
-        if isinstance(where, (str, List)) is True:
-            where = self.sanitize_functions.escape_risky_column_names_where_mode(
-                where
-            )
-        if isinstance(where, List) is True:
-            where = " AND ".join(where)
-        if where != "":
-            sql_command += f" WHERE {where}"
-        self.disp.log_debug(f"sql_query = '{sql_command}'", title)
-        resp = self.sql_pool.run_and_fetch_all(query=sql_command, values=[])
+
+        # Parse WHERE clause and extract values for parameterization
+        try:
+            where_clause, where_params = self._parse_where_clause(where)
+        except RuntimeError as e:
+            self.disp.log_error(f"WHERE clause parsing failed: {e}", title)
+            return self.error
+
+        if where_clause != "":
+            sql_command += f" WHERE {where_clause}"
+
+        self.disp.log_debug(
+            f"sql_query = '{sql_command}', params = {where_params}", title)
+        resp = self.sql_pool.run_and_fetch_all(
+            query=sql_command, values=where_params)
         if isinstance(resp, int):
             if resp != self.success:
                 self.disp.log_error(
@@ -701,22 +802,31 @@ class SQLQueryBoilerplates:
         """
         title = "get_table_size"
         self.disp.log_debug(f"fetching data from the table {table}", title)
-        if self.sql_injection.check_if_injections_in_strings([table, column]) is True or self.sql_injection.check_if_symbol_and_command_injection(where) is True:
+
+        # Only check table/column names for injection — WHERE values will be parameterized
+        if self.sql_injection.check_if_injections_in_strings([table, column]) is True:
             self.disp.log_error("Injection detected.", "sql")
             return SCONST.GET_TABLE_SIZE_ERROR
+
         if isinstance(column, list) is True:
             column = ", ".join(column)
+
         sql_command = f"SELECT COUNT({column}) FROM {table}"
-        if isinstance(where, (str, List)) is True:
-            where = self.sanitize_functions.escape_risky_column_names_where_mode(
-                where
-            )
-        if isinstance(where, List) is True:
-            where = " AND ".join(where)
-        if where != "":
-            sql_command += f" WHERE {where}"
-        self.disp.log_debug(f"sql_query = '{sql_command}'", title)
-        resp = self.sql_pool.run_and_fetch_all(query=sql_command)
+
+        # Parse WHERE clause and extract values for parameterization
+        try:
+            where_clause, where_params = self._parse_where_clause(where)
+        except RuntimeError as e:
+            self.disp.log_error(f"WHERE clause parsing failed: {e}", title)
+            return SCONST.GET_TABLE_SIZE_ERROR
+
+        if where_clause != "":
+            sql_command += f" WHERE {where_clause}"
+
+        self.disp.log_debug(
+            f"sql_query = '{sql_command}', params = {where_params}", title)
+        resp = self.sql_pool.run_and_fetch_all(
+            query=sql_command, values=where_params)
         if isinstance(resp, int):
             if resp != self.success:
                 self.disp.log_error(
@@ -754,23 +864,32 @@ class SQLQueryBoilerplates:
         if column is None:
             column = ""
 
-        # Only check table/column names for injection — data is parameterized
+        # Only check table/column names for injection — data and WHERE values are parameterized
+        self.disp.log_debug(
+            "Checking the table/column name to make sure everything is parameterised."
+        )
         check_items = [table]
         if isinstance(column, list):
             check_items.extend([str(c) for c in column])
         else:
             check_items.append(str(column))
-        if self.sql_injection.check_if_injections_in_strings(check_items) or self.sql_injection.check_if_symbol_and_command_injection(where):
+        if self.sql_injection.check_if_injections_in_strings(check_items):
             self.disp.log_error("Injection detected.", "sql")
             return self.error
 
+        self.disp.log_debug("Injection checking passed")
         if column == "":
+            self.disp.log_debug("No table column names provided, deducing")
             columns_raw = self.get_table_column_names(table)
             if isinstance(columns_raw, int):
+                self.disp.log_debug("Failed to deduce table column names")
                 return self.error
             column = columns_raw
 
         # Ensure column is a List[str] for subsequent operations
+        self.disp.log_debug(
+            "Making sure that the column variable is of type List[str]"
+        )
         _tmp_cols2: Union[List[str], str] = self.sanitize_functions.escape_risky_column_names(
             column
         )
@@ -778,6 +897,9 @@ class SQLQueryBoilerplates:
             column = _tmp_cols2
         else:
             column = [str(_tmp_cols2)]
+        self.disp.log_debug(
+            "Made sure that the column was of the appropriate type"
+        )
 
         if isinstance(column, str) and isinstance(data, str):
             data = [data]
@@ -790,19 +912,12 @@ class SQLQueryBoilerplates:
             title
         )
 
-        where_sanitized = self.sanitize_functions.escape_risky_column_names_where_mode(
-            where
-        )
-        if isinstance(where_sanitized, list):
-            where = " AND ".join(where_sanitized)
-        else:
-            where = where_sanitized
-
         # Build SET clause with placeholders and parameter list
+        self.disp.log_debug("Building the set clause and parameters")
         set_parts: List[str] = []
         params: List[Union[str, None, int, float]] = []
         for i in range(column_length):
-            set_parts.append(f"{column[i]} = ?")
+            set_parts.append(f"{column[i]} = %s")
             if i < len(data):
                 v = data[i]
             else:
@@ -815,16 +930,29 @@ class SQLQueryBoilerplates:
             ] = self._normalize_cell(v)
             self.disp.log_debug(f"Normalised cell: {normalised_cell}")
             params.append(normalised_cell)
+        self.disp.log_debug(f"Set clause and parameters built: {set_parts}")
+        self.disp.log_debug(f"Parameters: {params}")
 
         update_line = ", ".join(set_parts)
         sql_query = f"UPDATE {table} SET {update_line}"
 
-        if where != "":
-            sql_query += f" WHERE {where}"
+        # Parse WHERE clause and add its parameters
+        try:
+            where_clause, where_params = self._parse_where_clause(where)
+        except RuntimeError as e:
+            self.disp.log_error(f"WHERE clause parsing failed: {e}", title)
+            return self.error
+        params.extend(where_params)
 
-        self.disp.log_debug(f"sql_query = '{sql_query}'", title)
+        if where_clause != "":
+            sql_query += f" WHERE {where_clause}"
 
-        return self.sql_pool.run_editing_command(sql_query, params, table, "update")
+        self.disp.log_debug(
+            f"sql_query = '{sql_query}', params = {params}",
+            title
+        )
+
+        return self.sql_pool.run_editing_command(sql_query, params, table=table, action_type="update")
 
     def insert_or_update_data_into_table(self, table: str, data: Union[List[List[Union[str, None, int, float]]], List[Union[str, None, int, float]]], columns: Union[List[str], None] = None) -> int:
         """Insert or update rows using the first column as key.
@@ -991,24 +1119,31 @@ class SQLQueryBoilerplates:
             f"Removing data from table {table}",
             "remove_data_from_table"
         )
-        if self.sql_injection.check_if_sql_injection(table) is True or self.sql_injection.check_if_symbol_and_command_injection(where) is True:
+
+        # Only check table name for injection — WHERE values will be parameterized
+        if self.sql_injection.check_if_sql_injection(table):
             self.disp.log_error("Injection detected.", "sql")
             return self.error
 
-        if isinstance(where, List) is True:
-            where = " AND ".join(where)
-
         sql_query = f"DELETE FROM {table}"
 
-        if where != "":
-            sql_query += f" WHERE {where}"
+        # Parse WHERE clause and extract values for parameterization
+        try:
+            where_clause, where_params = self._parse_where_clause(where)
+        except RuntimeError as e:
+            self.disp.log_error(
+                f"WHERE clause parsing failed: {e}"
+            )
+            return self.error
+
+        if where_clause != "":
+            sql_query += f" WHERE {where_clause}"
 
         self.disp.log_debug(
-            f"sql_query = '{sql_query}'",
-            "remove_data_from_table"
+            f"sql_query = '{sql_query}', params = {where_params}"
         )
 
-        return self.sql_pool.run_editing_command(sql_query, [], table, "delete")
+        return self.sql_pool.run_editing_command(sql_query, where_params, table, "delete")
 
     def remove_table(self, table: str) -> int:
         """Drop a table from the MySQL database.

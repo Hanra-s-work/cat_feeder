@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: rapipdf_provider.py
 # CREATION DATE: 26-11-2025
-# LAST Modified: 9:51:32 27-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:45:19 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: RapiPDF documentation provider implementation.
@@ -153,7 +153,7 @@ class RapiPDFProvider:
     <div class="container">
         <h1>{self.api_title} - PDF Documentation</h1>
         <p>Generate a comprehensive PDF document of the API specification.</p>
-        
+
         <rapi-pdf
             spec-url="{self.openapi_url}"
             style="{RAPIPDF_CONST.RAPIPDF_STYLE}"

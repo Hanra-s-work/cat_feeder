@@ -1,10 +1,10 @@
-r""" 
+r"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
-# ..............(..../\
+# LOGO:
+# ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
-# ...............\(__)|
+# ...............\\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -12,9 +12,9 @@ r"""
 # PROJECT: CatFeeder
 # FILE: conftest.py
 # CREATION DATE: 11-12-2025
-# LAST Modified: 21:11:6 14-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:55:8 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The file in charge of checking the logging library.
@@ -78,12 +78,13 @@ class DummyDisp:
         pass
 
 
-def initialise_logger(name, flag=False):
+def initialise_logger(name=None, flag=False, **kwargs):
     """Create and return a dummy display object for testing.
 
     Args:
         name (str): Logger name (ignored in test mock).
         flag (bool): Debug flag (ignored in test mock).
+        **kwargs: Additional keyword arguments (class_name, debug, etc) - ignored in test mock.
 
     Returns:
         DummyDisp: A no-op display object.
@@ -106,12 +107,39 @@ sys.modules.setdefault(project_package_name, package_mod)
 # `libs.sql.<module>` doesn't execute the real `<root>/src/libs/__init__.py`.
 
 sql_dir = os.path.join(project_root, "src", "libs", "sql")
+utils_dir = os.path.join(project_root, "src", "libs", "utils")
 libs_pkg = types.ModuleType("libs")
 libs_sql_pkg = types.ModuleType("libs.sql")
-# Provide __path__ on the package so import machinery can find submodules
+libs_utils_pkg = types.ModuleType("libs.utils")
+
+# Provide __path__ on the packages so import machinery can find submodules
 libs_sql_pkg.__path__ = [sql_dir]
+libs_utils_pkg.__path__ = [utils_dir]
+libs_pkg.__path__ = [os.path.join(project_root, "src", "libs")]
+
 sys.modules.setdefault("libs", libs_pkg)
 sys.modules.setdefault("libs.sql", libs_sql_pkg)
+sys.modules.setdefault("libs.utils", libs_utils_pkg)
+
+# Mock the constants module that sql_connections imports
+constants_mod = types.ModuleType("libs.utils.constants")
+# Add dummy constants that might be imported
+constants_mod.DATABASE_POOL_NAME = "test_pool"
+constants_mod.DATABASE_MAX_POOL_CONNECTIONS = 5
+constants_mod.DATABASE_RESET_POOL_NODE_CONNECTION = True
+constants_mod.DATABASE_COLLATION = "utf8mb4_unicode_ci"
+constants_mod.DATABASE_CONNECTION_TIMEOUT = 10
+constants_mod.DATABASE_LOCAL_INFILE = False
+constants_mod.DATABASE_INIT_COMMAND = ""
+constants_mod.DATABASE_DEFAULT_FILE = None
+constants_mod.DATABASE_AUTOCOMMIT = False
+constants_mod.DATABASE_SSL = False
+constants_mod.DATABASE_SSL_KEY = None
+constants_mod.DATABASE_SSL_CERT = None
+constants_mod.DATABASE_SSL_CA = None
+constants_mod.DATABASE_SSL_CIPHER = None
+constants_mod.DATABASE_SSL_VERIFY_CERT = False
+sys.modules.setdefault("libs.utils.constants", constants_mod)
 
 
 @pytest.fixture(autouse=True)

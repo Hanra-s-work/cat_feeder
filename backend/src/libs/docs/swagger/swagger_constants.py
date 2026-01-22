@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: swagger_constants.py
 # CREATION DATE: 26-11-2025
-# LAST Modified: 4:10:7 26-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:46:4 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The constants used in the swagger class.

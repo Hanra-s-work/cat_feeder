@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: redis_args.py
 # CREATION DATE: 15-11-2025
-# LAST Modified: 15:41:0 17-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:51:26 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: This is the file that will contain the dataclass with the optional redis initialisation information.
@@ -36,7 +36,15 @@ from redis.credentials import CredentialProvider
 from redis.maint_notifications import MaintNotificationsConfig
 from redis.utils import get_lib_version
 
-from .redis_constants import REDIS_PASSWORD_KEY, REDIS_SOCKET_DEFAULT, REDIS_SOCKET_KEY
+from .redis_constants import (
+    REDIS_PASSWORD_KEY,
+    REDIS_SOCKET_DEFAULT,
+    REDIS_SOCKET_KEY,
+    REDIS_HOST_KEY,
+    REDIS_HOST_DEFAULT,
+    REDIS_PORT_KEY,
+    REDIS_PORT_DEFAULT,
+)
 
 if TYPE_CHECKING:
     import ssl
@@ -105,18 +113,60 @@ def build_redis_args() -> RedisArgs:
     This function does not connect immediately; the client will establish
     a connection upon first command execution.
 
+    Connection Priority:
+    1. Unix socket (if REDIS_SOCKET is set and file exists) - preferred for docker-compose
+    2. TCP connection (REDIS_HOST:REDIS_PORT) - fallback for CI/testing environments
+
+    Environment Variables:
+    - REDIS_SOCKET: Path to Unix socket (default: /run/redis/redis.sock)
+    - REDIS_HOST: Redis host for TCP connection (default: 127.0.0.1)
+    - REDIS_PORT: Redis port for TCP connection (default: 6379)
+    - REDIS_PASSWORD: Redis password (required)
+
     Returns:
         redis.Redis: Configured Redis client instance.
     """
     socket_path = os.getenv(REDIS_SOCKET_KEY, REDIS_SOCKET_DEFAULT)
+    redis_host = os.getenv(REDIS_HOST_KEY, REDIS_HOST_DEFAULT)
+
+    # Parse redis_port with validation
+    redis_port_str = os.getenv(REDIS_PORT_KEY, str(REDIS_PORT_DEFAULT))
+    try:
+        redis_port = int(redis_port_str)
+        if not (1 <= redis_port <= 65535):
+            raise ValueError(
+                f"Port must be between 1 and 65535, got {redis_port}")
+    except (ValueError, TypeError) as e:
+        raise ValueError(
+            f"Invalid REDIS_PORT value '{redis_port_str}': must be a valid integer between 1-65535"
+        ) from e
+
     password = os.getenv(REDIS_PASSWORD_KEY)
-    if system().lower() != "Windows":
-        unix_socket_path = socket_path
+
+    # Determine connection method: socket (preferred) or TCP (fallback)
+    unix_socket_path = None
+    use_tcp = True
+
+    # Try Unix socket first (not on Windows, and only if socket file exists)
+    if system().lower() != "windows":
+        if os.path.exists(socket_path):
+            unix_socket_path = socket_path
+            use_tcp = False  # Socket available, don't use TCP
+
+    # Build RedisArgs with appropriate connection method
+    if use_tcp:
+        # TCP connection for CI/testing or when socket unavailable
+        node: RedisArgs = RedisArgs(
+            host=redis_host,
+            port=redis_port,
+            password=password,
+            decode_responses=True
+        )
     else:
-        unix_socket_path = None
-    node: RedisArgs = RedisArgs(
-        unix_socket_path=unix_socket_path,
-        password=password,
-        decode_responses=True
-    )
+        # Unix socket connection for docker-compose
+        node: RedisArgs = RedisArgs(
+            unix_socket_path=unix_socket_path,
+            password=password,
+            decode_responses=True
+        )
     return node

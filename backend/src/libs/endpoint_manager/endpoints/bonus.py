@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: bonus.py
 # CREATION DATE: 19-11-2025
-# LAST Modified: 9:53:26 27-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 22:27:53 11-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The endpoints that can be considered as bonus in the server.
@@ -142,18 +142,23 @@ class Bonus:
         token = self.boilerplate_incoming_initialised.get_token_if_present(
             request
         )
-        # if self.boilerplate_non_http_initialised.is_token_admin(token) is False:
-        #     self.disp.log_error(
-        #         "Non-admin user tried to stop the server.", title
-        #     )
-        #     body = self.boilerplate_responses_initialised.build_response_body(
-        #         title=title,
-        #         message="You do not have enough privileges to run this endpoint.",
-        #         resp="privilege to low",
-        #         token=token,
-        #         error=True
-        #     )
-        #     return HCI.unauthorized(content=body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
+        if not token:
+            self.disp.log_error(
+                "Unauthenticated user tried to stop the server."
+            )
+            return self.boilerplate_responses_initialised.no_access_token(title=title, token=token)
+        if self.boilerplate_non_http_initialised.is_token_admin(token) is False:
+            self.disp.log_error(
+                "Non-admin user tried to stop the server.", title
+            )
+            body = self.boilerplate_responses_initialised.build_response_body(
+                title=title,
+                message="You do not have enough privileges to run this endpoint.",
+                resp="privilege to low",
+                token=token,
+                error=True
+            )
+            return HCI.unauthorized(content=body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
         body = self.boilerplate_responses_initialised.build_response_body(
             title=title,
             message="The server is stopping",

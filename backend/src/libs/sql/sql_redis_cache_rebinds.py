@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: sql_redis_cache_rebinds.py
 # CREATION DATE: 18-11-2025
-# LAST Modified: 3:52:21 25-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:52:36 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: This is the redis cache handler for the sql library using the underlying redis wrapper.
@@ -629,12 +629,16 @@ class SQLRedisCacheRebinds(RedisCaching):
         Returns:
             int: Writer return code.
         """
+        self.disp_inner.log_debug(
+            "Update cacher, going to run the writer function."
+        )
         result = writer(table, data, column, where)
         self.disp_inner.log_debug(
             f"Writer executed for update_data_in_table on '{table}', result={result}")
         if isinstance(result, int) and result == 0:
             self.disp_inner.log_debug(
-                "Invalidating table caches after update_data_in_table success")
+                "Invalidating table caches after update_data_in_table success"
+            )
             self.invalidate_table(table)
         return result
 

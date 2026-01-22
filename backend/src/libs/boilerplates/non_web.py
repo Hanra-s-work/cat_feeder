@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: incoming.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 9:22:37 11-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 19:40:35 11-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: This is the the class in charge of containing the non-http boilerplates.
@@ -31,6 +31,7 @@ from fastapi import Response
 
 from display_tty import Disp, initialise_logger
 
+from ..core import FinalSingleton
 from ..core.runtime_manager import RuntimeManager, RI
 from ..utils import constants as CONST
 from ..sql.sql_manager import SQL
@@ -39,14 +40,22 @@ if TYPE_CHECKING:
     from .responses import BoilerplateResponses
 
 
-class BoilerplateNonHTTP:
+class BoilerplateNonHTTP(FinalSingleton):
     """_summary_
     """
 
     disp: Disp = initialise_logger(__qualname__, False)
 
     def __init__(self, success: int = 0, error: int = 84, debug: bool = False) -> None:
-        """_summary_
+        """Initialize the BoilerplateNonHTTP instance.
+        The initializer configures the logger, stores commonly used status codes and
+        runtime manager references, and obtains shared instances such as the
+        database link and optional response helper.
+
+        Args:
+            success (int): Numeric code representing a successful operation. Defaults to 0.
+            error (int): Numeric code representing an error. Defaults to 84.
+            debug (bool): Enable debug logging when True. Defaults to False.
         """
         # ------------------------ The logging function ------------------------
         self.disp.update_disp_debug(debug)
@@ -86,7 +95,74 @@ class BoilerplateNonHTTP:
         return offset_time
 
     def is_token_admin(self, token: str) -> bool:
+        """Check if a given token correspond to a user that is an administrator or not.
+
+        Args:
+            token (str): The token to analyse.
+
+        Returns:
+            bool: The administrative status.
+        """
+        title: str = "is_token_admin"
+        usr_id: Union[
+            str, Response, None
+        ] = self.get_user_id_from_token(title, token)
+        if not isinstance(usr_id, str):
+            return False
+        current_user_raw: Union[int, List[Dict[str, Any]]] = self.database_link.get_data_from_table(
+            table=CONST.TAB_ACCOUNTS,
+            column="*",
+            where=f"id='{usr_id}'",
+            beautify=True
+        )
+        self.disp.log_debug(f"Queried data = {current_user_raw}")
+        if isinstance(current_user_raw, int) or current_user_raw == []:
+            return False
+        if "admin" in current_user_raw[0]:
+            if str(current_user_raw[0].get("admin", "0")) == "1":
+                self.disp.log_warning(
+                    f"User account {usr_id} with name {current_user_raw[0].get('username', '<unknown_username>')} is an admin"
+                )
+                self.disp.log_warning(
+                    "They probably called an admin endpoint."
+                )
+                return True
         return False
+
+    def update_lifespan(self, token: str) -> int:
+        """Refresh the expiration date for a connection token.
+        The function computes a new expiration datetime using :meth:`set_lifespan`
+        and persists it to the database using the configured SQL manager. The
+        stored value is formatted for SQL using :meth:`SQL.datetime_to_string`.
+
+        Args:
+            token (str): The connection token whose expiration should be updated.
+
+        Returns:
+            int: The status code returned by the database update operation. This will be `self.success` on success or an error code on failure.
+        """
+        self.disp.log_debug("The token is still valid, updating lifespan.")
+        new_date = self.set_lifespan(
+            CONST.UA_TOKEN_LIFESPAN
+        )
+        self.disp.log_debug(f"New token lifespan: {new_date}")
+        new_date_str = self.database_link.datetime_to_string(
+            datetime_instance=new_date,
+            date_only=False,
+            sql_mode=True
+        )
+        self.disp.log_debug(f"string date: {new_date_str}")
+        status = self.database_link.update_data_in_table(
+            table=CONST.TAB_CONNECTIONS,
+            data=[new_date_str],
+            column=["expiration_date"],
+            where=f"token={token}"
+        )
+        if status == self.success:
+            self.disp.log_debug("Token expiration date updated.")
+            return status
+        self.disp.log_error("Failed to update token lifespan.")
+        return status
 
     def is_token_correct(self, token: str) -> bool:
         """_summary_
@@ -103,7 +179,7 @@ class BoilerplateNonHTTP:
             return False
         login_table = self.database_link.get_data_from_table(
             CONST.TAB_CONNECTIONS,
-            "*",
+            ["expiration_date"],
             where=f"token={token}",
             beautify=False
         )
@@ -112,23 +188,13 @@ class BoilerplateNonHTTP:
         if len(login_table) != 1:
             return False
         self.disp.log_debug(f"login_table = {login_table}", title)
-        if datetime.now() > login_table[0][-1]:
+        if datetime.now() > login_table[0][0]:
+            self.disp.log_warning(
+                "The provided token is invalid due to excessive idle time."
+            )
             return False
-        new_date = self.set_lifespan(
-            CONST.UA_TOKEN_LIFESPAN
-        )
-        new_date_str = self.database_link.datetime_to_string(
-            datetime_instance=new_date,
-            date_only=False,
-            sql_mode=True
-        )
-        self.disp.log_debug(f"string date: {new_date_str}", title)
-        status = self.database_link.update_data_in_table(
-            table=CONST.TAB_CONNECTIONS,
-            data=[new_date_str],
-            column=["expiration_date"],
-            where=f"token={token}"
-        )
+        self.disp.log_debug("The token is still valid, updating lifespan.")
+        status = self.update_lifespan(token)
         if status != self.success:
             self.disp.log_warning(
                 f"Failed to update expiration_date for {token}.",
@@ -152,6 +218,8 @@ class BoilerplateNonHTTP:
         )
         if isinstance(user_token, int):
             return token
+        if isinstance(user_token, list) and token not in user_token:
+            return token
         self.disp.log_debug(f"user_token = {user_token}", title)
         while not isinstance(user_token, int):
             token = str(uuid.uuid4())
@@ -161,8 +229,12 @@ class BoilerplateNonHTTP:
                 where=f"token='{token}'",
                 beautify=False
             )
+            if user_token == []:
+                user_token = self.success
             self.disp.log_debug(f"user_token = {user_token}", title)
             if isinstance(user_token, int) and user_token == self.error:
+                return token
+            if isinstance(user_token, list) and token not in user_token:
                 return token
         return token
 
@@ -199,11 +271,18 @@ class BoilerplateNonHTTP:
         Returns:
             bool: _description_: True if the date is correct, False otherwise
         """
+        # First a quick format check, then validate actual calendar date
         pattern = re.compile(
             r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$"
         )
-        match = pattern.match(date)
-        return bool(match)
+        if not pattern.match(date):
+            return False
+        try:
+            # Validate real calendar date (catches things like 31/02/2020)
+            datetime.strptime(date, "%d/%m/%Y")
+            return True
+        except Exception:
+            return False
 
     def generate_check_token(self, token_size: int = 4) -> str:
         """_summary_
@@ -250,6 +329,10 @@ class BoilerplateNonHTTP:
         self.boilerplate_responses: Optional[BoilerplateResponses] = RI.get_if_exists(
             "BoilerplateResponses", self.boilerplate_responses)
         if not self.boilerplate_responses:
+            self.disp.log_error(
+                "BoilerplateResponses not found, retuning None",
+                f"{title}:{function_title}"
+            )
             return None
         self.disp.log_debug(
             f"Getting user id based on {token}", function_title
@@ -262,7 +345,7 @@ class BoilerplateNonHTTP:
         )
         if isinstance(current_user_raw, int):
             return self.boilerplate_responses.user_not_found(title, token)
-        current_user: List[Dict[str, Any]] = []
+        current_user: List[Dict[str, Any]] = current_user_raw
         self.disp.log_debug(f"current_user = {current_user}", function_title)
         if current_user == self.error:
             return self.boilerplate_responses.user_not_found(title, token)

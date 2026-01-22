@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: sql_cache_orchestrator.py
 # CREATION DATE: 18-11-2025
-# LAST Modified: 2:39:21 15-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:51:59 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File that contains the class in charge of calling the redis cache if present and fallback to sql querying if absent.
@@ -89,6 +89,55 @@ class SQLCacheOrchestrator:
         if sl in ("current_date", "current_date()"):
             return self.sanitize_functions.sql_time_manipulation.get_correct_current_date_value()
         return s
+
+    def _parse_and_validate_where(self, where: Union[str, List[str]]) -> Tuple[Union[str, List[str]], List[Union[str, int, float, None]]]:
+        """Parse WHERE clause, validate column names, and extract values for parameterization.
+
+        This method:
+        1. Parses WHERE clause to extract column names and values
+        2. Validates column names for SQL injection (not values)
+        3. Returns the original WHERE clause and extracted values list
+
+        Args:
+            where (Union[str, List[str]]): WHERE clause content.
+
+        Returns:
+            Tuple[Union[str, List[str]], List[Union[str, int, float, None]]]:
+                - Original WHERE clause (unchanged, will be parameterized later)
+                - List of extracted values (empty if validation fails or no values)
+
+        Raises:
+            RuntimeError: If SQL injection detected in column names.
+        """
+        if where == "" or (isinstance(where, list) and len(where) == 0):
+            return where, []
+
+        # Convert to list for uniform processing
+        if isinstance(where, str):
+            where_list = [where]
+        else:
+            where_list = list(where)
+
+        column_names: List[str] = []
+
+        for clause in where_list:
+            clause_str = str(clause).strip()
+
+            # Extract column name from comparison
+            if "=" in clause_str:
+                parts = clause_str.split("=", maxsplit=1)
+                if len(parts) == 2:
+                    column_name = parts[0].strip()
+                    column_names.append(column_name)
+
+        # Validate only column names for injection (not values)
+        if column_names and self.sql_injection.check_if_injections_in_strings(column_names):
+            self.disp.log_error(
+                "SQL injection detected in WHERE column names.")
+            raise RuntimeError("SQL injection detected in WHERE clause")
+
+        # Return original WHERE clause - parameterization happens in boilerplate layer
+        return where, []
 
     def update_redis_cacher(self, redis_cacher: Optional[SQLRedisCacheRebinds] = None) -> None:
         """Update the redis caching instance only with an initialised SQLRedisCacheRebinds class.
@@ -456,15 +505,23 @@ class SQLCacheOrchestrator:
                 List[Tuple[Any, Any]]
             ]
         ] = self.error
-        if self.sql_injection.check_if_injections_in_strings([table, column]) is True or self.sql_injection.check_if_symbol_and_command_injection(where) is True:
+        # Check table/column names before caching
+        if self.sql_injection.check_if_injections_in_strings([table, column]) is True:
             self.disp.log_error("Injection detected.", "sql")
+            return self.error
+
+        # Parse and validate WHERE clause (checks column names, not values)
+        try:
+            validated_where, _ = self._parse_and_validate_where(where)
+        except RuntimeError:
+            self.disp.log_error("Injection detected in WHERE clause.", "sql")
             return self.error
         if self._redis_cacher:
             self.disp.log_debug("Cacher instance is defined, calling.")
             resp = self._redis_cacher.get_data_from_table(
                 table=table,
                 column=column,
-                where=where,
+                where=validated_where,
                 beautify=beautify,
                 fetcher=sql_function,
                 error_token=self.error
@@ -473,7 +530,7 @@ class SQLCacheOrchestrator:
             self.disp.log_debug(
                 "No cacher instance defined, calling sql boilerplate directly."
             )
-            resp = sql_function(table, column, where, beautify)
+            resp = sql_function(table, column, validated_where, beautify)
         return resp
 
     def get_table_size(self, table: str, column: Union[str, List[str]], where: Union[str, List[str]] = "") -> int:
@@ -489,22 +546,30 @@ class SQLCacheOrchestrator:
         """
         sql_function: Callable = self._sql_query_boilerplate.get_table_size
         resp: int = self.error
-        if self.sql_injection.check_if_injections_in_strings([table, column]) is True or self.sql_injection.check_if_symbol_and_command_injection(where) is True:
+        # Check table/column names before caching
+        if self.sql_injection.check_if_injections_in_strings([table, column]) is True:
             self.disp.log_error("Injection detected.", "sql")
+            return GET_TABLE_SIZE_ERROR
+
+        # Parse and validate WHERE clause (checks column names, not values)
+        try:
+            validated_where, _ = self._parse_and_validate_where(where)
+        except RuntimeError:
+            self.disp.log_error("Injection detected in WHERE clause.", "sql")
             return GET_TABLE_SIZE_ERROR
         if self._redis_cacher:
             self.disp.log_debug("Cacher instance is defined, calling.")
             resp = self._redis_cacher.get_table_size(
                 table=table,
                 column=column,
-                where=where,
+                where=validated_where,
                 fetcher=sql_function
             )
         else:
             self.disp.log_debug(
                 "No cacher instance defined, calling sql boilerplate directly."
             )
-            resp = sql_function(table, column, where)
+            resp = sql_function(table, column, validated_where)
         return resp
 
     def update_data_in_table(self, table: str, data: Union[List[List[Union[str, None, int, float]]], List[Union[str, None, int, float]]], column: List[str], where: Union[str, List[str]] = "") -> int:
@@ -524,14 +589,21 @@ class SQLCacheOrchestrator:
         if column is None:
             column = ""
 
-        # Only check table/column names for injection — data is parameterized
+        # Check table/column names before caching
         check_items = [table]
         if isinstance(column, list):
             check_items.extend([str(c) for c in column])
         else:
             check_items.append(str(column))
-        if self.sql_injection.check_if_injections_in_strings(check_items) or self.sql_injection.check_if_symbol_and_command_injection(where):
+        if self.sql_injection.check_if_injections_in_strings(check_items):
             self.disp.log_error("Injection detected.", "sql")
+            return self.error
+
+        # Parse and validate WHERE clause (checks column names, not values)
+        try:
+            validated_where, _ = self._parse_and_validate_where(where)
+        except RuntimeError:
+            self.disp.log_error("Injection detected in WHERE clause.", "sql")
             return self.error
         if self._redis_cacher:
             self.disp.log_debug("Cacher instance is defined, calling.")
@@ -539,14 +611,14 @@ class SQLCacheOrchestrator:
                 table=table,
                 data=data,
                 column=column,
-                where=where,
+                where=validated_where,
                 writer=sql_function
             )
         else:
             self.disp.log_debug(
                 "No cacher instance defined, calling sql boilerplate directly."
             )
-            resp = sql_function(table, data, column, where)
+            resp = sql_function(table, data, column, validated_where)
         return resp
 
     def insert_or_update_data_into_table(self, table: str, data: Union[List[List[Union[str, None, int, float]]], List[Union[str, None, int, float]]], columns: Union[List[str], None] = None) -> int:
@@ -632,21 +704,29 @@ class SQLCacheOrchestrator:
         """
         sql_function: Callable = self._sql_query_boilerplate.remove_data_from_table
         resp: int = self.error
-        if self.sql_injection.check_if_sql_injection(table) is True or self.sql_injection.check_if_symbol_and_command_injection(where) is True:
+        # Check table name before caching
+        if self.sql_injection.check_if_sql_injection(table) is True:
             self.disp.log_error("Injection detected.", "sql")
+            return self.error
+
+        # Parse and validate WHERE clause (checks column names, not values)
+        try:
+            validated_where, _ = self._parse_and_validate_where(where)
+        except RuntimeError:
+            self.disp.log_error("Injection detected in WHERE clause.", "sql")
             return self.error
         if self._redis_cacher:
             self.disp.log_debug("Cacher instance is defined, calling.")
             resp = self._redis_cacher.remove_data_from_table(
                 table=table,
-                where=where,
+                where=validated_where,
                 writer=sql_function
             )
         else:
             self.disp.log_debug(
                 "No cacher instance defined, calling sql boilerplate directly."
             )
-            resp = sql_function(table, where)
+            resp = sql_function(table, validated_where)
         return resp
 
     def remove_table(self, table: str) -> int:

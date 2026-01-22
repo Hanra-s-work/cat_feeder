@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: redoc_class.py
 # CREATION DATE: 26-11-2025
-# LAST Modified: 9:52:2 27-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 22:22:17 11-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The class in charge of handling the redoc instance.
@@ -161,7 +161,7 @@ class RedocHandler(metaclass=FinalClass):
                 token=token,
                 error=True
             )
-            return HCI.internal_server_error(
+            return HCI.service_unavailable(
                 content=error_body,
                 content_type=HTTP_DEFAULT_TYPE,
                 headers=self.server_headers_initialised.for_json()
@@ -196,7 +196,7 @@ class RedocHandler(metaclass=FinalClass):
                 token=token,
                 error=True
             )
-            return HCI.internal_server_error(
+            return HCI.service_unavailable(
                 content=error_body,
                 content_type=HTTP_DEFAULT_TYPE,
                 headers=self.server_headers_initialised.for_json()

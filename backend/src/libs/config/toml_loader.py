@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: toml_loader.py
 # CREATION DATE: 04-12-2025
-# LAST Modified: 8:6:18 04-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 22:14:17 14-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: Centralized configuration management with intelligent path discovery
@@ -26,6 +26,7 @@ import sys
 from pathlib import Path
 from typing import Optional, Dict, Any
 from display_tty import Disp, initialise_logger
+from .env_loader import EnvLoader
 
 if sys.version_info >= (3, 11):
     try:
@@ -43,6 +44,9 @@ else:
         ) from e
 
 
+_EI: EnvLoader = EnvLoader()
+
+
 class TOMLLoader:
     """
     Singleton configuration loader with smart path resolution.
@@ -55,6 +59,10 @@ class TOMLLoader:
     _initialized: bool = False
 
     debug: bool = False
+    try:
+        debug = _EI.get_environment_variable("DEBUG").lower() == "true"
+    except ValueError:
+        pass
     disp: Disp = initialise_logger(__qualname__, False)
 
     def __new__(cls):
@@ -169,6 +177,18 @@ class TOMLLoader:
         """
         root = self._find_project_root()
         return self._search_directory_for_file(root, filename, 0, max_depth)
+
+    def update_debug(self, debug: bool) -> None:
+        """
+        Update the debug status of the loader.
+
+        Args:
+            debug: New debug status
+        """
+        self.debug = debug
+        self.disp.update_disp_debug(self.debug)
+        _EI.update_debug(debug)
+        self.disp.log_info(f"Debug mode set to {self.debug}")
 
     def load_toml(self, force_reload: bool = False, custom_path: Optional[str] = None) -> Dict[str, Any]:
         """
@@ -396,3 +416,69 @@ def get_project_root() -> Path:
     """Get the project root directory."""
     loader = TOMLLoader()
     return loader.get_project_root()
+
+
+def refresh_debug(debug_mode_default: bool = False) -> bool:
+    """Refresh the debug status from environment variable."""
+    env_vars: list[str] = ["DEBUG", "DEBUG_MODE"]
+    toml_locations: list[str] = [
+        "Server_configuration.debug_mode",
+        "Server_configuration.debug",
+        "Server_configuration",
+        "debug_mode",
+        "debug",
+        ""
+    ]
+    toml_vars: list[str] = [
+        "debug_mode",
+        "debug"
+    ]
+    loader = TOMLLoader()
+    debug: bool = loader.debug
+    if debug_mode_default is True:
+        loader.update_debug(True)
+        _EI.update_debug(True)
+        loader.disp.log_debug("Debug mode enabled by default.")
+        return True
+    if debug:
+        loader.disp.log_debug("Debug mode already enabled, no refresh needed.")
+        return debug
+    loader.disp.log_info("Refreshing debug mode from configuration.")
+    for env_var in env_vars:
+        try:
+            debug = _EI.get_environment_variable(env_var).lower() == "true"
+            _EI.disp.log_debug(
+                f"Debug mode from ENV: {debug}, var name: '{env_var}'"
+            )
+        except ValueError:
+            pass
+        if debug:
+            _EI.update_debug(debug)
+            loader.update_debug(debug)
+            loader.disp.log_debug("Debug mode enabled from ENV.")
+            return debug
+    for location in toml_locations:
+        for toml_var_node in toml_vars:
+            tmp_debug = loader.get_toml_variable(
+                location, toml_var_node, None
+            )
+            if isinstance(tmp_debug, bool) and tmp_debug is True:
+                debug = tmp_debug
+                loader.update_debug(debug)
+                _EI.update_debug(debug)
+                _EI.disp.log_debug(
+                    f"Debug mode found in TOML at {location}.{toml_var_node}"
+                )
+                return debug
+            tmp_debug = loader.get_toml_variable(
+                location, toml_var_node, None
+            )
+            if isinstance(tmp_debug, bool) and tmp_debug is True:
+                debug = tmp_debug
+                loader.update_debug(debug)
+                _EI.update_debug(debug)
+                _EI.disp.log_debug(
+                    f"Debug mode found in TOML at {location}.{toml_var_node}"
+                )
+                return debug
+    return debug

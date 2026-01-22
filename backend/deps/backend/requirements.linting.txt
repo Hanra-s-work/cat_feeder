@@ -1,6 +1,6 @@
-# 
+#
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,14 +12,14 @@
 # PROJECT: CatFeeder
 # FILE: requirements.linting.txt
 # CREATION DATE: 11-10-2025
-# LAST Modified: 16:31:6 11-10-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 15:14:14 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The dependencies in charge of providing advanced types for the program's legibility.
 # // AR
 # +==== END CatFeeder =================+
-# 
+#
 # Code linting
 typing-extensions == 4.15.0

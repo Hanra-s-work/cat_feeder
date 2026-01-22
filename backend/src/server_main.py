@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: server_main.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 4:38:32 08-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 22:21:9 14-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The file allowing the server to be run as a standalone.
@@ -43,8 +43,8 @@ class Main(metaclass=FinalClass):
         self.port: int = 5000
         self.success: int = success
         self.error: int = error
-        self.app_name: str = "Cat Feeder"
-        self.debug: bool = False
+        self.app_name: str = "Asperguide"
+        self.debug: bool = False or CONST.DEBUG
 
     def process_args(self) -> None:
         """_summary_
@@ -85,26 +85,30 @@ class Main(metaclass=FinalClass):
                 if '=' in arg:
                     self.host = arg.split("=")[1]
                 else:
-                    self.host = argv[i + 1]
-                    i += 1
+                    if i+1 < self.argc:
+                        self.host = argv[i + 1]
+                        i += 1
             elif "--port" in arg or '-p' in arg:
                 if '=' in arg:
                     self.port = int(arg.split("=")[1])
                 else:
-                    self.port = int(argv[i + 1])
-                    i += 1
+                    if i+1 < self.argc:
+                        self.port = int(argv[i + 1])
+                        i += 1
             elif "--success" in arg or "-s" in arg:
                 if '=' in arg:
                     self.success = int(arg.split("=")[1])
                 else:
-                    self.success = int(argv[i + 1])
-                    i += 1
+                    if i+1 < self.argc:
+                        self.success = int(argv[i + 1])
+                        i += 1
             elif "--error" in arg or "-e" in arg:
                 if '=' in arg:
                     self.error = int(arg.split("=")[1])
                 else:
-                    self.error = int(argv[i + 1])
-                    i += 1
+                    if i+1 < self.argc:
+                        self.error = int(argv[i + 1])
+                        i += 1
             elif "--debug" in arg or "-d" in arg:
                 self.debug = True
 
@@ -145,7 +149,7 @@ class Main(metaclass=FinalClass):
             sys.exit(status)
 
         else:
-            print("Usage: python3 ./server --help")
+            print(f"Usage: python3 {sys.argv[0]} --help")
             sys.exit(self.success)
 
 

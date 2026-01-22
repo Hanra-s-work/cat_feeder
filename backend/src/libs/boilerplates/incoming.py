@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: incoming.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 20:32:9 14-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 22:47:49 14-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File containing boilerplate functions that could be used by the server in it's endpoints_initialised for checking incoming data.
@@ -28,11 +28,12 @@ from display_tty import Disp, initialise_logger
 
 from .non_web import BoilerplateNonHTTP
 from ..utils import constants as CONST
+from ..core import FinalSingleton
 from ..core.runtime_manager import RuntimeManager, RI
 from ..sql import SQL
 
 
-class BoilerplateIncoming:
+class BoilerplateIncoming(FinalSingleton):
     """_summary_
     """
 
@@ -263,6 +264,18 @@ class BoilerplateIncoming:
                 msg = f"Failed to parse request body: {str(form_error)}"
                 body = {"error": msg}
         return body
+
+    def get_body_type(self, request: Request) -> Optional[str]:
+        """Retrieve the type of the request body if present.
+            Get the content type of the request body.
+        Args:
+            request (Request): The incoming request object.
+        Returns:
+            Optional[str]: The content type of the request body, or None if not present.
+        """
+        body_type = request.headers.get("content-type", None)
+        self.disp.log_debug(f"Body type: {body_type}")
+        return body_type
 
     def log_user_out(self, token: str = "") -> Union[Dict[str, Any], bool]:
         """_summary_

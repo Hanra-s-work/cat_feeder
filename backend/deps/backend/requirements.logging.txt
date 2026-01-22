@@ -1,6 +1,6 @@
-# 
+#
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,15 +12,15 @@
 # PROJECT: CatFeeder
 # FILE: requirements.logging.txt
 # CREATION DATE: 11-10-2025
-# LAST Modified: 8:0:49 15-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 15:14:17 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The dependencies required to provide logging for the program.
 # // AR
 # +==== END CatFeeder =================+
-# 
+#
 # Text designing
 display-tty == 1.1.16
 rotary-logger==1.0.0

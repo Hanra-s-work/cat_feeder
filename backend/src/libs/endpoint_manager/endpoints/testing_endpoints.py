@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: testing_endpoints.py
 # CREATION DATE: 30-11-2025
-# LAST Modified: 19:39:17 13-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 23:5:15 10-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: Files to test the submodules of the server.
@@ -22,16 +22,21 @@
 # +==== END CatFeeder =================+
 """
 
-from typing import Optional, Dict, Union
+from typing import Optional, Dict, Union, TYPE_CHECKING
+from datetime import datetime
 from display_tty import Disp, initialise_logger
 from fastapi import Request, Response
-from ...core import RuntimeControl, RuntimeManager, RI
-from ...crons import BackgroundTasks
-from ...server_header import ServerHeaders
 from ...http_codes import HCI, HttpDataTypes
-from ...boilerplates import BoilerplateIncoming, BoilerplateResponses, BoilerplateNonHTTP
-from ...sql import SQL
-from ...bucket import Bucket
+from ...core import RuntimeControl, RuntimeManager, RI
+from ...favicon import favicon_constants as FAV_CONST
+
+if TYPE_CHECKING:
+    from ...sql import SQL
+    from ...bucket import Bucket
+    from ...crons import BackgroundTasks
+    from ...image_reducer import ImageReducer
+    from ...server_header import ServerHeaders
+    from ...boilerplates import BoilerplateIncoming, BoilerplateResponses, BoilerplateNonHTTP
 
 
 class TestingEndpoints:
@@ -56,24 +61,28 @@ class TestingEndpoints:
         self.error: int = error
         self.runtime_manager: RuntimeManager = RI
         # -------------------------- Shared instances --------------------------
-        self.boilerplate_incoming_initialised: BoilerplateIncoming = self.runtime_manager.get(
-            BoilerplateIncoming)
-        self.boilerplate_responses_initialised: BoilerplateResponses = self.runtime_manager.get(
-            BoilerplateResponses)
-        self.boilerplate_non_http_initialised: BoilerplateNonHTTP = self.runtime_manager.get(
-            BoilerplateNonHTTP)
-        self.runtime_controls_initialised: RuntimeControl = self.runtime_manager.get(
-            RuntimeControl)
-        self.server_headers_initialised: ServerHeaders = self.runtime_manager.get(
-            ServerHeaders)
-        self.background_tasks_initialised: BackgroundTasks = self.runtime_manager.get(
-            BackgroundTasks)
-        self.sql_connection: Optional[SQL] = self.runtime_manager.get_if_exists(
-            SQL,
+        self.boilerplate_incoming_initialised: "BoilerplateIncoming" = self.runtime_manager.get(
+            "BoilerplateIncoming")
+        self.boilerplate_responses_initialised: "BoilerplateResponses" = self.runtime_manager.get(
+            "BoilerplateResponses")
+        self.boilerplate_non_http_initialised: "BoilerplateNonHTTP" = self.runtime_manager.get(
+            "BoilerplateNonHTTP")
+        self.runtime_controls_initialised: "RuntimeControl" = self.runtime_manager.get(
+            "RuntimeControl")
+        self.server_headers_initialised: "ServerHeaders" = self.runtime_manager.get(
+            "ServerHeaders")
+        self.background_tasks_initialised: "BackgroundTasks" = self.runtime_manager.get(
+            "BackgroundTasks")
+        self.sql_connection: Optional["SQL"] = self.runtime_manager.get_if_exists(
+            "SQL",
             None
         )
-        self.bucket_connection: Optional[Bucket] = self.runtime_manager.get_if_exists(
-            Bucket,
+        self.bucket_connection: Optional["Bucket"] = self.runtime_manager.get_if_exists(
+            "Bucket",
+            None
+        )
+        self.image_reducer: Optional["ImageReducer"] = self.runtime_manager.get_if_exists(
+            "ImageReducer",
             None
         )
         self.disp.log_debug("Initialised")
@@ -90,7 +99,7 @@ class TestingEndpoints:
             Response: JSON list of table names or error response.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL,
+            "SQL",
             self.sql_connection
         )
         if not self.sql_connection:
@@ -115,7 +124,7 @@ class TestingEndpoints:
             Response: JSON list of column names or error response.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL, self.sql_connection)
+            "SQL", self.sql_connection)
         if not self.sql_connection:
             return HCI.service_unavailable("Database connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         table_name = request.query_params.get("table_name")
@@ -141,7 +150,7 @@ class TestingEndpoints:
             Response: JSON with table schema information or error response.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL, self.sql_connection)
+            "SQL", self.sql_connection)
         if not self.sql_connection:
             return HCI.service_unavailable("Database connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         table_name = request.query_params.get("table_name")
@@ -164,7 +173,7 @@ class TestingEndpoints:
             Response: JSON with database version or error response.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL, self.sql_connection)
+            "SQL", self.sql_connection)
         if not self.sql_connection:
             return HCI.service_unavailable("Database connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         self.disp.log_debug("Gathering database version")
@@ -184,7 +193,7 @@ class TestingEndpoints:
             Response: JSON with connection status.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL, self.sql_connection)
+            "SQL", self.sql_connection)
         if not self.sql_connection:
             return HCI.service_unavailable("Database connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         self.disp.log_debug("Testing database connection")
@@ -211,7 +220,7 @@ class TestingEndpoints:
             Response: JSON with row count or error response.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL, self.sql_connection)
+            "SQL", self.sql_connection)
         if not self.sql_connection:
             return HCI.service_unavailable("Database connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         table_name = request.query_params.get("table_name")
@@ -234,7 +243,7 @@ class TestingEndpoints:
             Response: JSON with triggers dictionary or error response.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL, self.sql_connection)
+            "SQL", self.sql_connection)
         if not self.sql_connection:
             return HCI.service_unavailable("Database connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         self.disp.log_debug("Gathering triggers")
@@ -254,7 +263,7 @@ class TestingEndpoints:
             Response: JSON list of trigger names or error response.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL, self.sql_connection)
+            "SQL", self.sql_connection)
         if not self.sql_connection:
             return HCI.service_unavailable("Database connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         self.disp.log_debug("Gathering trigger names")
@@ -274,7 +283,7 @@ class TestingEndpoints:
             Response: JSON with current datetime string.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL, self.sql_connection)
+            "SQL", self.sql_connection)
         if not self.sql_connection:
             return HCI.service_unavailable("Database connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         self.disp.log_debug("Getting current datetime")
@@ -292,7 +301,7 @@ class TestingEndpoints:
             Response: JSON with current date string.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL, self.sql_connection)
+            "SQL", self.sql_connection)
         if not self.sql_connection:
             return HCI.service_unavailable("Database connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         self.disp.log_debug("Getting current date")
@@ -315,7 +324,7 @@ class TestingEndpoints:
             Response: JSON with formatted datetime string or error response.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL, self.sql_connection)
+            "SQL", self.sql_connection)
         if not self.sql_connection:
             return HCI.service_unavailable("Database connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         datetime_str = request.query_params.get("datetime")
@@ -327,7 +336,6 @@ class TestingEndpoints:
             "sql_mode", "false").lower() == "true"
         self.disp.log_debug(f"Converting datetime: {datetime_str}")
         try:
-            from datetime import datetime
             dt_obj = datetime.fromisoformat(datetime_str)
             formatted = self.sql_connection.datetime_to_string(
                 dt_obj, date_only, sql_mode)
@@ -350,7 +358,7 @@ class TestingEndpoints:
             Response: JSON with ISO format datetime or error response.
         """
         self.sql_connection = self.runtime_manager.get_if_exists(
-            SQL, self.sql_connection)
+            "SQL", self.sql_connection)
         if not self.sql_connection:
             return HCI.service_unavailable("Database connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         datetime_str = request.query_params.get("datetime_str")
@@ -380,7 +388,7 @@ class TestingEndpoints:
             Response: JSON list of bucket names or error response.
         """
         self.bucket_connection = self.runtime_manager.get_if_exists(
-            Bucket,
+            "Bucket",
             self.bucket_connection
         )
         if not self.bucket_connection:
@@ -402,7 +410,7 @@ class TestingEndpoints:
             Response: JSON with connection status.
         """
         self.bucket_connection = self.runtime_manager.get_if_exists(
-            Bucket,
+            "Bucket",
             self.bucket_connection
         )
         if not self.bucket_connection:
@@ -431,7 +439,7 @@ class TestingEndpoints:
             Response: JSON list of file names or error response.
         """
         self.bucket_connection = self.runtime_manager.get_if_exists(
-            Bucket,
+            "Bucket",
             self.bucket_connection
         )
         if not self.bucket_connection:
@@ -460,7 +468,7 @@ class TestingEndpoints:
             Response: JSON with file metadata or error response.
         """
         self.bucket_connection = self.runtime_manager.get_if_exists(
-            Bucket,
+            "Bucket",
             self.bucket_connection
         )
         if not self.bucket_connection:
@@ -491,7 +499,7 @@ class TestingEndpoints:
             Response: Success or error response.
         """
         self.bucket_connection = self.runtime_manager.get_if_exists(
-            Bucket,
+            "Bucket",
             self.bucket_connection
         )
         if not self.bucket_connection:
@@ -519,7 +527,7 @@ class TestingEndpoints:
             Response: Success or error response.
         """
         self.bucket_connection = self.runtime_manager.get_if_exists(
-            Bucket,
+            "Bucket",
             self.bucket_connection
         )
         if not self.bucket_connection:
@@ -533,3 +541,125 @@ class TestingEndpoints:
             return HCI.internal_server_error(f"Failed to delete bucket '{bucket_name}'", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
         self.disp.log_debug(f"Bucket '{bucket_name}' deleted successfully")
         return HCI.success({"message": f"Bucket '{bucket_name}' deleted successfully"}, content_type=HttpDataTypes.JSON, headers=self.server_headers_initialised.for_json())
+
+    async def upload_test_file_stream(self, request: Request) -> Response:
+        """Upload a file to a bucket as a byte stream (from request body).
+
+        Query Parameters:
+            bucket_name (str): Name of the bucket to upload to.
+            file_name (str): Name to save the file as in the bucket.
+
+        Body: Raw file content (bytes).
+
+        Args:
+            request (Request): The incoming HTTP request.
+
+        Returns:
+            Response: Success or error response.
+        """
+        self.bucket_connection = self.runtime_manager.get_if_exists(
+            "Bucket",
+            self.bucket_connection
+        )
+        if not self.bucket_connection:
+            return HCI.service_unavailable("S3 bucket connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+        bucket_name = request.query_params.get("bucket_name")
+        file_name = request.query_params.get("file_name")
+        if not bucket_name or not file_name:
+            return HCI.bad_request("Missing required parameters: bucket_name and file_name", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+        try:
+            file_data = await request.body()
+            if not file_data:
+                return HCI.bad_request("Request body is empty", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+            self.disp.log_debug(
+                f"Uploading file stream '{file_name}' to bucket '{bucket_name}' ({len(file_data)} bytes)")
+            result = self.bucket_connection.upload_stream(
+                bucket_name, file_data, file_name)
+            if result != self.success:
+                return HCI.internal_server_error(f"Failed to upload file '{file_name}' to bucket '{bucket_name}'", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+            self.disp.log_debug(f"File '{file_name}' uploaded successfully")
+            return HCI.created({"message": f"File '{file_name}' uploaded successfully to bucket '{bucket_name}'"}, content_type=HttpDataTypes.JSON, headers=self.server_headers_initialised.for_json())
+        except Exception as e:
+            self.disp.log_error(f"Error uploading file stream: {str(e)}")
+            return HCI.internal_server_error(f"Error uploading file: {str(e)}", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+
+    async def download_test_file_stream(self, request: Request) -> Response:
+        """Download a file from a bucket as a byte stream.
+
+        Query Parameters:
+            bucket_name (str): Name of the bucket.
+            file_name (str): Name of the file to download.
+
+        Args:
+            request (Request): The incoming HTTP request.
+
+        Returns:
+            Response: File content as bytes or error response.
+        """
+        self.bucket_connection = self.runtime_manager.get_if_exists(
+            "Bucket",
+            self.bucket_connection
+        )
+        if not self.bucket_connection:
+            return HCI.service_unavailable("S3 bucket connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+        bucket_name = request.query_params.get("bucket_name")
+        file_name = request.query_params.get("file_name")
+        if not bucket_name or not file_name:
+            return HCI.bad_request("Missing required parameters: bucket_name and file_name", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+        self.disp.log_debug(
+            f"Downloading file stream '{file_name}' from bucket '{bucket_name}'")
+        file_data = self.bucket_connection.download_stream(
+            bucket_name, file_name)
+        if isinstance(file_data, int):
+            return HCI.not_found(f"File '{file_name}' not found in bucket '{bucket_name}'", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+        self.disp.log_debug(
+            f"File '{file_name}' downloaded successfully ({len(file_data)} bytes)")
+        self.image_reducer = self.runtime_manager.get_if_exists(
+            "ImageReducer", self.image_reducer
+        )
+        if not self.image_reducer:
+            self.disp.log_debug(
+                "ImageReducer not available, returning as octet-stream"
+            )
+            return HCI.success(file_data, content_type=HttpDataTypes.OCTET_STREAM, headers=self.server_headers_initialised.for_stream())
+        detected_format = self.image_reducer.detect_file_format(file_data)
+        self.disp.log_debug(
+            f"Detected file format: {detected_format}"
+        )
+        file_format = FAV_CONST.reducer_type_to_data_type(
+            detected_format
+        )
+        self.disp.log_debug(
+            f"Detected file format: {file_format}, returning accordingly")
+        return HCI.success(file_data, content_type=file_format, headers=self.server_headers_initialised.for_stream())
+
+    async def delete_test_file(self, request: Request) -> Response:
+        """Delete a file from a bucket.
+
+        Query Parameters:
+            bucket_name (str): Name of the bucket.
+            file_name (str): Name of the file to delete.
+
+        Args:
+            request (Request): The incoming HTTP request.
+
+        Returns:
+            Response: Success or error response.
+        """
+        self.bucket_connection = self.runtime_manager.get_if_exists(
+            "Bucket",
+            self.bucket_connection
+        )
+        if not self.bucket_connection:
+            return HCI.service_unavailable("S3 bucket connection not available", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+        bucket_name = request.query_params.get("bucket_name")
+        file_name = request.query_params.get("file_name")
+        if not bucket_name or not file_name:
+            return HCI.bad_request("Missing required parameters: bucket_name and file_name", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+        self.disp.log_debug(
+            f"Deleting file '{file_name}' from bucket '{bucket_name}'")
+        result = self.bucket_connection.delete_file(bucket_name, file_name)
+        if result != self.success:
+            return HCI.internal_server_error(f"Failed to delete file '{file_name}' from bucket '{bucket_name}'", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+        self.disp.log_debug(f"File '{file_name}' deleted successfully")
+        return HCI.success({"message": f"File '{file_name}' deleted successfully from bucket '{bucket_name}'"}, content_type=HttpDataTypes.JSON, headers=self.server_headers_initialised.for_json())

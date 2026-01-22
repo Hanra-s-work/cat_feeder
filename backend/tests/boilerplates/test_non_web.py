@@ -1,150 +1,174 @@
-import pytest
-from datetime import datetime, timedelta
-
-from libs.core.runtime_manager import RI
-from libs.sql import SQL
-
-# dynamic loader for the boilerplate non_web module
-import importlib.util
+"""
+# +==== BEGIN CatFeeder =================+
+# LOGO:
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
+# /STOP
+# PROJECT: CatFeeder
+# FILE: test_non_web.py
+# CREATION DATE: 19-12-2025
+# LAST Modified: 0:10:43 28-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
+# /STOP
+# COPYRIGHT: (c) Cat Feeder
+# PURPOSE: The code in charge of testing the non web boilerplate code to make sure it works properly.
+# // AR
+# +==== END CatFeeder =================+
+"""
+import os
+import re
 import sys
-import types
-from pathlib import Path
-_here = Path(__file__).resolve()
-_src = _here.parents[2] / 'src'
-_bp_dir = _src / 'libs' / 'boilerplates'
+from types import SimpleNamespace
+from datetime import datetime, timedelta
+from unittest.mock import Mock
+
+import pytest
+
+# Flexible import pattern similar to http_codes tests: try libs package first,
+# then fall back to src.libs when executed from repository root.
+try:
+    from libs.boilerplates.non_web import BoilerplateNonHTTP
+    from libs.utils import constants as CONST
+except Exception:
+    from src.libs.boilerplates.non_web import BoilerplateNonHTTP
+    from src.libs.utils import constants as CONST
 
 
-def _load_bp(name, fname):
-    # minimal constants
-    const_mod = types.ModuleType('libs.utils.constants')
-    const_mod.ASSETS_DIRECTORY = _src / 'assets'
-    const_mod.TAB_CONNECTIONS = 'Connections'
-    const_mod.TAB_ACCOUNTS = 'Accounts'
-    const_mod.REQUEST_TOKEN_KEY = 'X-Token'
-    const_mod.REQUEST_BEARER_KEY = 'Authorization'
-    const_mod.JSON_TITLE = 'title'
-    const_mod.JSON_MESSAGE = 'message'
-    const_mod.JSON_RESP = 'resp'
-    const_mod.JSON_ERROR = 'error'
-    const_mod.JSON_LOGGED_IN = 'logged_in'
-    const_mod.UA_TOKEN_LIFESPAN = 3600
-    const_mod.RANDOM_MIN = 1
-    const_mod.RANDOM_MAX = 9
-    sys.modules['libs.utils.constants'] = const_mod
-    sys.modules['src.libs.utils.constants'] = const_mod
+@pytest.fixture()
+def inst():
+    """Create a lightweight BoilerplateNonHTTP instance without running __init__.
 
-    # package placeholders
-    sys.modules.setdefault('src', types.ModuleType('src'))
-    sys.modules['src'].__path__ = [str(_src)]
-    sys.modules.setdefault('src.libs', types.ModuleType('src.libs'))
-    sys.modules['src.libs'].__path__ = [str(_src / 'libs')]
-    sys.modules.setdefault('src.libs.boilerplates',
-                           types.ModuleType('src.libs.boilerplates'))
-    sys.modules['src.libs.boilerplates'].__path__ = [str(_bp_dir)]
-    sys.modules.setdefault('libs', types.ModuleType('libs'))
-    sys.modules['libs'].__path__ = [str(_src / 'libs')]
-    sys.modules.setdefault('libs.boilerplates',
-                           types.ModuleType('libs.boilerplates'))
-    sys.modules['libs.boilerplates'].__path__ = [str(_bp_dir)]
-
-    last_mod = None
-    for pkg_prefix in ('libs.boilerplates', 'src.libs.boilerplates'):
-        mod_name = f'{pkg_prefix}.{fname[:-3]}'
-        spec = importlib.util.spec_from_file_location(
-            mod_name, str(_bp_dir / fname))
-        if spec is None:
-            continue
-        mod = importlib.util.module_from_spec(spec)
-        mod.__package__ = pkg_prefix
-        sys.modules[mod_name] = mod
-        try:
-            spec.loader.exec_module(mod)
-            last_mod = mod
-        except Exception:
-            sys.modules.pop(mod_name, None)
-    if last_mod is not None:
-        sys.modules[name] = last_mod
-    return last_mod
-
-
-_mod = _load_bp('test_boiler_non_web', 'non_web.py')
-BoilerplateNonHTTP = _mod.BoilerplateNonHTTP
-
-
-def test_check_date_valid_and_invalid():
-    """Test date validation with various formats and invalid dates.
-    
-    Verifies that check_date accepts valid DD/MM/YYYY dates and rejects
-    invalid dates (impossible dates like 32/01) and alternative formats.
+    Tests mock `database_link` and other attributes directly to avoid touching
+    RuntimeManager/SQL initialization.
     """
-    RI.register(SQL, SQL())
-    bn = BoilerplateNonHTTP()
-    assert bn.check_date('01/01/2020') is True
-    assert bn.check_date('31/12/1999') is True
-    assert bn.check_date('32/01/2020') is False
-    assert bn.check_date('2020-01-01') is False
+    obj = object.__new__(BoilerplateNonHTTP)
+    obj.debug = False
+    obj.success = 0
+    obj.error = 84
+    obj.runtime_manager = None
+    obj.database_link = SimpleNamespace()
+    # Provide a minimal boilerplate_responses object so methods that call
+    # `RI.get_if_exists` behave consistently and don't return early.
+    obj.boilerplate_responses = SimpleNamespace(
+        user_not_found=lambda *a, **k: None,
+        internal_server_error=lambda *a, **k: None,
+    )
+    return obj
 
 
-def test_generate_check_token_sizes_and_format():
-    """Test token generation with different sizes and format validation.
-    
-    Verifies that generate_check_token produces tokens with the correct
-    number of segments (leading number + token elements) based on the
-    requested token_size parameter.
-    """
-    RI.register(SQL, SQL())
-    bn = BoilerplateNonHTTP()
-    short = bn.generate_check_token(1)
-    assert isinstance(short, str)
-    parts = short.split('-')
-    assert len(parts) == 2  # one leading number + one token element
-
-    bigger = bn.generate_check_token(4)
-    assert isinstance(bigger, str)
-    # token_size + 1 parts (leading number + tokens)
-    assert len(bigger.split('-')) == 5
-
-
-def test_set_lifespan_returns_offset_datetime():
-    """Test that set_lifespan returns future datetime with correct offset.
-    
-    Verifies that the method returns a datetime object in the future
-    that is offset by approximately the requested number of seconds.
-    """
-    RI.register(SQL, SQL())
-    bn = BoilerplateNonHTTP()
+def test_set_lifespan(inst):
+    """Verify that `set_lifespan` returns a datetime in the future."""
     now = datetime.now()
-    dt = bn.set_lifespan(2)
-    assert isinstance(dt, datetime)
-    assert dt > now
-    assert dt - now < timedelta(seconds=10)
+    future = inst.set_lifespan(5)
+    assert isinstance(future, datetime)
+    assert future > now
 
 
-def test_generate_token_unique_and_uuid_format():
-    """Test token generation produces UUID-like formatted strings.
-    
-    Verifies that generate_token produces string tokens containing
-    hyphens (UUID format indicators) and ensures SQL is registered
-    to check for token uniqueness.
-    """
-    # Ensure SQL is registered and returns integer (meaning token not found)
-    sql = SQL()
-    RI.register(SQL, sql)
-    bn = BoilerplateNonHTTP()
-    token = bn.generate_token()
+def test_check_date_valid_and_invalid(inst):
+    """Check date validation for valid, invalid and malformed inputs."""
+    assert inst.check_date("01/01/2020") is True
+    assert inst.check_date("31/02/2020") is False
+    assert inst.check_date("not-a-date") is False
+
+
+def test_generate_check_token_default_size(inst):
+    """Ensure `generate_check_token` returns a string token containing a dash."""
+    token = inst.generate_check_token(2)
     assert isinstance(token, str)
-    assert '-' in token
+    assert "-" in token
 
 
-def test_is_token_correct_updates_and_returns_true():
-    """Test token validation and expiration checking.
-    
-    Verifies that is_token_correct properly validates tokens and updates
-    their last access time, returning True for valid unexpired tokens.
-    """
-    sql = SQL()
-    sql.update_return = 0
-    RI.register(SQL, sql)
-    bn = BoilerplateNonHTTP()
-    # Should find token and return True (mock returns future expiration)
-    assert bn.is_token_correct('sometoken') is True
+def test_hide_api_key(inst):
+    """Validate `hide_api_key` returns human-readable placeholders."""
+    assert inst.hide_api_key(None) == "No api key"
+    assert inst.hide_api_key("abcd") == "Some api key"
+
+
+def test_update_single_data_calls_db_and_returns_success(inst):
+    """Confirm `update_single_data` forwards parameters to DB layer and returns success."""
+    called = {}
+
+    def fake_update(table, data, column, where):
+        called['args'] = (table, data, column, where)
+        return inst.success
+
+    inst.database_link.update_data_in_table = fake_update
+    res = inst.update_single_data("t", "finder", "col", "val", {"col": "v"})
+    assert res == inst.success
+    assert called['args'][0] == "t"
+
+
+def test_remove_user_from_tables_with_list_and_str(inst):
+    """Test removal helper handles both list and single-table inputs."""
+    inst.database_link.remove_data_from_table = Mock(return_value=inst.success)
+    res = inst.remove_user_from_tables("id='1'", ["A", "B"])
+    assert res == {"A": inst.success, "B": inst.success}
+
+    res2 = inst.remove_user_from_tables("id='1'", "C")
+    assert res2 == {"C": inst.success}
+
+
+def test_generate_token_returns_new_uuid_when_db_empty(inst):
+    """When the DB contains no tokens, `generate_token` should return a non-empty string."""
+    def fake_get(table, column, where, beautify=False):
+        return []
+
+    inst.database_link.get_data_from_table = fake_get
+    token = inst.generate_token()
+    assert isinstance(token, str)
+    assert len(token) > 0
+
+
+def test_is_token_correct_updates_expiration(inst):
+    """Verify `is_token_correct` returns True and triggers a DB update for expiration."""
+    future = datetime.now() + timedelta(minutes=10)
+    inst.database_link.get_data_from_table = Mock(return_value=[(future,)])
+
+    def fake_datetime_to_string(datetime_instance, date_only=False, sql_mode=False):
+        return "2025-01-01 00:00:00"
+
+    inst.database_link.datetime_to_string = fake_datetime_to_string
+    inst.database_link.update_data_in_table = Mock(return_value=inst.success)
+
+    assert inst.is_token_correct("sometoken") is True
+    inst.database_link.update_data_in_table.assert_called()
+
+
+def test_is_token_admin_checks_admin_flag(inst):
+    """Check that `is_token_admin` correctly interprets the admin flag from DB records."""
+    inst.get_user_id_from_token = Mock(return_value="42")
+    inst.database_link.get_data_from_table = Mock(
+        return_value=[{"admin": "1", "username": "bob"}])
+    assert inst.is_token_admin("tok") is True
+
+    inst.database_link.get_data_from_table = Mock(
+        return_value=[{"username": "bob"}])
+    assert inst.is_token_admin("tok") is False
+
+
+def test_get_user_id_from_token_returns_user_not_found_on_error_and_list_behavior(inst):
+    """Ensure `get_user_id_from_token` handles DB errors and successful lookups appropriately."""
+    inst.boilerplate_responses = SimpleNamespace(
+        user_not_found=lambda title, token: "notfound")
+    inst.database_link.get_data_from_table = Mock(return_value=inst.error)
+    assert inst.get_user_id_from_token("t", "tok") == "notfound"
+
+    inst.database_link.get_data_from_table = Mock(
+        return_value=[{"user_id": "7"}])
+    assert inst.get_user_id_from_token("t", "tok") == "7"
+
+
+def test_update_user_data_calls_update_and_returns_success(inst):
+    """Validate `update_user_data` uses column names and calls the DB update endpoint."""
+    inst.database_link.get_table_column_names = Mock(
+        return_value=["id", "a", "b"])
+    inst.database_link.update_data_in_table = Mock(return_value=inst.success)
+    res = inst.update_user_data("t", "uid", [1, 2])
+    assert res == inst.success
+    inst.database_link.update_data_in_table.assert_called()

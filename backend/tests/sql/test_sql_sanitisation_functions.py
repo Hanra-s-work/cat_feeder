@@ -1,10 +1,10 @@
-r""" 
+r"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
-# ..............(..../\
+# LOGO:
+# ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
-# ...............\(__)|
+# ...............\\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -12,9 +12,9 @@ r"""
 # PROJECT: CatFeeder
 # FILE: test_sql_sanitisation_functions.py
 # CREATION DATE: 11-12-2025
-# LAST Modified: 21:1:37 14-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:55:21 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The file that is in charge of testing the sanitisation functions of the sql library.
@@ -116,6 +116,6 @@ def test_check_sql_cell_uuid_tokens():
     They should be returned as raw strings for use in parameterized queries.
     """
     sf = SQLSanitiseFunctions(debug=False)
-    uuid = "949ebf40-e87e-4705-ace1-7a48e3eddef4"
+    uuid = "00000000-0000-0000-0000-000000000002"
     result = sf.check_sql_cell(uuid)
     assert result == uuid

@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,15 +12,16 @@
 # PROJECT: CatFeeder
 # FILE: constants.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 7:25:42 04-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 20:55:1 12-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The constants file in charge of storing the constants for the endpoints.
 # // AR
 # +==== END CatFeeder =================+
 """
+from typing import Tuple
 from display_tty import Disp, initialise_logger
 from ..config import TOMLLoader
 
@@ -34,3 +35,10 @@ TOML: TOMLLoader = TOMLLoader()
 TEST_ENABLE_TESTING_ENDPOINTS = TOML.get_toml_variable(
     "Test", "enable_testing_endpoints", False
 )
+
+WORDS: Tuple[str, ...] = ()
+WORDS_LENGTH: int = 0
+
+DEFAULT_NAME_WORD_COUNT: int = 4
+DEFAULT_NAME_LENGTH: int = 12
+DEFAULT_NAME_LINK_CHARACTER: str = "-"

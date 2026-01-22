@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: server_management.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 19:40:22 28-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 3:34:56 13-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: This is the file in charge of containing the functions that will manage the server run status.
@@ -23,20 +23,30 @@
 """
 
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 import uvicorn
 from fastapi import FastAPI, Response, BackgroundTasks as FastAPIBackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from fastapi.middleware.asyncexitstack import AsyncExitStackMiddleware
 from display_tty import Disp, initialise_logger
-from . import CONST
-from ..server_header import ServerHeaders
-from ..core.runtime_manager import RuntimeManager, RI
-from ..sql import SQL
-from ..crons import BackgroundTasks
-from ..core import FinalClass, RuntimeControl
-from ..boilerplates import BoilerplateResponses
+
+from .runtime_manager import RuntimeManager, RI
+from .final_class import FinalClass
+from . import core_const as CORE_CONST
+
+from ..utils import constants as CONST
 from ..http_codes import HCI, HTTP_DEFAULT_TYPE, HttpDataTypes
-from ..docs import DocumentationHandler
+
+if TYPE_CHECKING:
+    from ..sql import SQL
+    from ..crons import BackgroundTasks
+    from ..docs import DocumentationHandler
+    from ..server_header import ServerHeaders
+    from .runtime_controls import RuntimeControl
+    from ..boilerplates import BoilerplateResponses
 
 
 class ServerManagement(metaclass=FinalClass):
@@ -58,19 +68,19 @@ class ServerManagement(metaclass=FinalClass):
         # ----------------------- Shared instance handler ----------------------
         self.runtime_manager: RuntimeManager = RI
         # -------------------------- Shared instances --------------------------
-        self.runtime_control: RuntimeControl = self.runtime_manager.get(
-            RuntimeControl)
-        self.database_link: SQL = self.runtime_manager.get(SQL)
-        self.background_tasks_initialised = self.runtime_manager.get(
-            BackgroundTasks)
-        self.boilerplate_responses_initialised: Optional[BoilerplateResponses] = self.runtime_manager.get_if_exists(
-            BoilerplateResponses,
+        self.runtime_control: "RuntimeControl" = self.runtime_manager.get(
+            "RuntimeControl")
+        self.database_link: "SQL" = self.runtime_manager.get("SQL")
+        self.background_tasks_initialised: Optional["BackgroundTasks"] = self.runtime_manager.get(
+            "BackgroundTasks")
+        self.boilerplate_responses_initialised: Optional["BoilerplateResponses"] = self.runtime_manager.get_if_exists(
+            "BoilerplateResponses",
             None
         )
-        self.server_headers: ServerHeaders = self.runtime_manager.get(
-            ServerHeaders)
-        self.documentation_handler_initialised: Optional[DocumentationHandler] = self.runtime_manager.get_if_exists(
-            DocumentationHandler,
+        self.server_headers: "ServerHeaders" = self.runtime_manager.get(
+            "ServerHeaders")
+        self.documentation_handler_initialised: Optional["DocumentationHandler"] = self.runtime_manager.get_if_exists(
+            "DocumentationHandler",
             None
         )
         self.disp.log_debug("Initialised")
@@ -124,7 +134,7 @@ class ServerManagement(metaclass=FinalClass):
             Response: Return the shutdown server message
         """
         self.boilerplate_responses_initialised = self.runtime_manager.get_if_exists(
-            BoilerplateResponses,
+            "BoilerplateResponses",
             self.boilerplate_responses_initialised
         )
         # Schedule shutdown to happen after response is sent
@@ -149,8 +159,8 @@ class ServerManagement(metaclass=FinalClass):
         return HCI.success(body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers.for_json())
 
     def _handle_documentation(self) -> None:
-        self.documentation_handler_initialised: Optional[DocumentationHandler] = self.runtime_manager.get_if_exists(
-            DocumentationHandler,
+        self.documentation_handler_initialised: Optional["DocumentationHandler"] = self.runtime_manager.get_if_exists(
+            "DocumentationHandler",
             self.documentation_handler_initialised
         )
         if not self.documentation_handler_initialised:
@@ -159,6 +169,7 @@ class ServerManagement(metaclass=FinalClass):
             )
             return None
         self.documentation_handler_initialised.inject()
+        return None
 
     # -------------------Initialisation-----------------------
 
@@ -167,7 +178,9 @@ class ServerManagement(metaclass=FinalClass):
             The function to initialise the server classes
         """
 
+        # ========= FastAPI app registration ==========
         self.runtime_control.app = FastAPI(
+            # This allows Fastapi to send trace logs to the endpoint when it breaks.
             debug=self.debug,
             docs_url=None,
             redoc_url=None,
@@ -175,14 +188,34 @@ class ServerManagement(metaclass=FinalClass):
             # Disabled for security - OAuth2 handled separately
             swagger_ui_oauth2_redirect_url=None,
         )
+        # ========= Documentation handling ==========
         self._handle_documentation()
+        # ========== Middleware registration ==========
+        # ......... GZip Middelware .........
+        self.runtime_control.app.add_middleware(
+            GZipMiddleware,
+            minimum_size=CORE_CONST.GZIP_MINIMUM_SIZE,
+            compresslevel=CORE_CONST.GZIP_COMPRESSION_LEVEL
+        )
+        # ......... Force HTTPS Middelware .........
+        if CORE_CONST.SERVER_PROD_FORCE_HTTPS is True:
+            self.runtime_control.app.add_middleware(HTTPSRedirectMiddleware)
+        # ......... Middelware in charge of origin checking .........
         self.runtime_control.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
+            allow_origins=CORE_CONST.CORS_ALLOW_ORIGINS,
+            allow_credentials=CORE_CONST.CORS_ALLOW_CREDENTIALS,
+            allow_methods=CORE_CONST.CORS_ALLOW_METHODS,
+            allow_headers=CORE_CONST.CORS_ALLOW_HEADERS,
         )
+        # ......... Trusted Host Middelware ..........
+        self.runtime_control.app.add_middleware(
+            TrustedHostMiddleware,
+            allowed_hosts=CORE_CONST.TRUSTED_HOSTS_LIST
+        )
+        # ......... Async Exit Stack Middelware .........
+        self.runtime_control.app.add_middleware(AsyncExitStackMiddleware)
+        # ========= Uvicorn server configuration ==========
         msg = "uvicorn.Config(\n"
         msg += f"app='{self.runtime_control.app}',\n"
         msg += f"host='{self.server_headers.host}',\n"
@@ -212,6 +245,8 @@ class ServerManagement(metaclass=FinalClass):
             proxy_headers=CONST.SERVER_PROD_PROXY_HEADERS,
             forwarded_allow_ips=CONST.SERVER_PROD_FORWARDED_ALLOW_IPS
         )
+        # ========= Uvicorn server instance ==========
         self.runtime_control.server = uvicorn.Server(
             self.runtime_control.config)
+        # ======== Set running flag ==========
         self.runtime_control.continue_running = True

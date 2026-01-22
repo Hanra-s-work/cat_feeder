@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: sql_sanitisation_functions.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 7:34:46 11-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:52:41 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File in charge of cleaning and sanitising sql queries before they are submitted to the database.
@@ -441,6 +441,7 @@ class SQLSanitiseFunctions:
         #  Case 2: single-row data
         if isinstance(line, list) and not isinstance(line[0], list):
             buffer: str = "("
+            line_length = len(line)
             for index, row in enumerate(line):
                 if self.debug and ";base" not in str(row):
                     self.disp.log_debug(f"row = {row}", title)
@@ -454,7 +455,11 @@ class SQLSanitiseFunctions:
                         "Incorrect data format, aborting process"
                     )
 
-                if index - processed_list_instances < column_length - 1:
+                # Only add a comma if there are more provided values to come
+                # AND we haven't reached the column limit. This prevents a
+                # trailing comma when the provided data has fewer items than
+                # the number of table columns.
+                if index < line_length - 1 and index - processed_list_instances < column_length - 1:
                     buffer += ", "
 
                 if index - processed_list_instances == column_length - 1:

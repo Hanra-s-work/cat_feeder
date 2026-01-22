@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,23 @@
 # PROJECT: CatFeeder
 # FILE: constants.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 19:53:0 14-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 22:18:36 14-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
+# Backend server constants and configuration management.
+# 
+# This module contains all the configuration constants and utility functions
+# required to run the CatFeeder server. It manages environment variables,
+# TOML configurations, database settings, server configurations, and provides
+# helper functions for data manipulation.
+# 
+# Module-level constants include:
+# - Database connection parameters (host, port, user, password, database)
+# - Server configurations (workers, timeout, development/production settings)
+# - Verification settings (email delays, token sizes)
+# - Table names and database schema constants
+# - JSON response key constants
+# - User data field mappings and indices
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: This is the file in charge of containing the constants that run the server.
@@ -22,12 +36,13 @@
 # +==== END CatFeeder =================+
 """
 
-from typing import List, Tuple, Any
+import re
+from typing import List, Tuple, Any, Dict
 from pathlib import Path
 
 from display_tty import Disp, initialise_logger
 
-from ..config import TOMLLoader, EnvLoader
+from ..config import TOMLLoader, EnvLoader, refresh_debug
 
 IDISP: Disp = initialise_logger("Constants", False)
 
@@ -45,13 +60,7 @@ ROOT_DIRECTORY: Path = Path(__file__).parent.parent.parent.parent
 ASSETS_DIRECTORY: Path = ROOT_DIRECTORY / "assets"
 
 # Enable debugging for the functions in the constants file.
-DEBUG_MODE: bool = TOML.get_toml_variable(
-    "Server_configuration.debug_mode", "debug", False
-)
-ENV.disp.update_disp_debug(DEBUG_MODE)
-TOML.disp.update_disp_debug(DEBUG_MODE)
-IDISP.update_disp_debug(DEBUG_MODE)
-
+DEBUG: bool = refresh_debug(False)
 
 # Server oauth variables
 REDIRECT_URI = ENV.get_environment_variable("REDIRECT_URI")
@@ -86,10 +95,6 @@ ERROR = int(TOML.get_toml_variable(
     "Server_configuration.status_codes", "error", -84
 ))
 
-# |- Server configuration -> Debug
-DEBUG = TOML.get_toml_variable(
-    "Server_configuration.debug_mode", "debug", False
-)
 
 # |- Server configuration -> development
 SERVER_DEV_RELOAD = TOML.get_toml_variable(
@@ -242,39 +247,134 @@ USER_INFO_ADMIN_NODE: str = "admin"
 
 # The path to the server icon
 ICON_PATH: str = str(
-    ASSETS_DIRECTORY / "icon" / "cat_feeder" / "favicon.ico"
+    ASSETS_DIRECTORY / "icon" / "asperguide" / "favicon.ico"
 )
 
 # Path to the png version of the icon
 PNG_ICON_PATH: str = str(
-    ASSETS_DIRECTORY / "icon" / "cat_feeder" / "logo_256x256.png"
+    ASSETS_DIRECTORY / "icon" / "asperguide" / "logo_256x256.png"
 )
 
 # Columns to ignore
-TABLE_COLUMNS_TO_IGNORE: Tuple = ("id", "creation_date", "edit_date")
+TABLE_COLUMNS_TO_IGNORE: Tuple[str, ...] = ("id", "creation_date", "edit_date")
+
+TABLE_COLUMNS_TO_IGNORE_USER: Tuple[str, ...] = (
+    "id", "creation_date", "edit_date", "last_connection", "deletion_date"
+)
+
+# Bucket info
+BUCKET_NAME: str = ENV.get_environment_variable("BUCKET_NAME")
 
 
-def clean_list(input: List[Any], items: Tuple[Any, Any], disp: Disp) -> List[Any]:
-    """Function in charge of popping items from a list if they are present.
+def clean_list(raw_input: List[Any], items: Tuple[Any, ...], disp: Disp) -> List[Any]:
+    """Remove specified items from a list if they are present.
+
+    Iterates through the input list and removes all occurrences of items
+    specified in the items tuple. Logs debug information for each removal.
 
     Args:
-        input (List[Any]): The list to check.
-        items (Tuple[Any, Any]): The items to remove.
-        disp (Disp): The logging function.
+        raw_input (List[Any]): The list to check and modify.
+        items (Tuple[Any, Any]): The items to remove from the list.
+        disp (Disp): The logging object for debug output.
 
     Returns:
-        List[Any]: _description_
+        List[Any]: The modified list with specified items removed.
     """
     to_pop = []
-    for index, item in enumerate(input):
+    for index, item in enumerate(raw_input):
         if item in items:
             to_pop.append(index)
             disp.log_debug(f"index to pop: {index}, item: {item}")
     max_length = len(to_pop)
     while max_length > 0:
         node = to_pop[max_length-1]
-        node_value = input.pop(node)
+        node_value = raw_input.pop(node)
         disp.log_debug(f"Popped item[{max_length-1}] = {node} -> {node_value}")
         max_length -= 1
-    disp.log_debug(f"final list: {input}")
-    return input
+    disp.log_debug(f"final list: {raw_input}")
+    return raw_input
+
+
+def clean_dict(raw_input: Dict[str, Any], items: Tuple[Any, ...], disp: Disp) -> Dict[str, Any]:
+    """Remove specified keys from a dictionary if they are present.
+
+    Iterates through the input dictionary and removes all keys specified
+    in the items tuple. Logs debug information for each removal.
+
+    Args:
+        input (Dict[str, Any]): The dictionary to check and modify.
+        items (Tuple[Any, Any]): The keys to remove from the dictionary.
+        disp (Disp): The logging object for debug output.
+
+    Returns:
+        Dict[str, Any]: The modified dictionary with specified keys removed.
+    """
+    for item in items:
+        if item in raw_input:
+            disp.log_debug(f"key to pop: {item}, value: {raw_input[item]}")
+            raw_input.pop(item)
+            disp.log_debug(f"Popped key: {item}")
+    disp.log_debug(f"final dictionary: {raw_input}")
+    return raw_input
+
+
+def mask_email_segment(segment: str) -> str:
+    """Mask a single email segment, showing first and last character."""
+    if len(segment) <= 2:
+        if segment:
+            return "[...]"
+        return ""
+    return f"{segment[0]}[...]{segment[-1]}"
+
+
+def hide_user_email(user_email: str, disp: Disp) -> str:
+    """Mask user email for privacy while preserving structure and shape.
+
+    Masks each word/segment separately, showing only first and last character.
+    Segments are separated by special characters: . + - @ 
+
+    Args:
+        user_email (str): Email address to mask.
+
+    Returns:
+        str: Masked email (e.g., t[...]t.m[...]e+r[...]m@g[...]l.c[...]m).
+    """
+
+    if "" == user_email:
+        disp.log_warning("Got empty email string to mask")
+        return "<unknown_email>"
+
+    if "@" not in user_email:
+        disp.log_warning(f"Got invalid email format: '{user_email}'")
+        return "<invalid_email>"
+
+    disp.log_debug(f"Masking email: {user_email}")
+
+    # Split on special characters but keep them
+    segments = re.split(r"([.+\-@])", user_email)
+    disp.log_debug(f"Split segments: {segments}")
+
+    # Process each segment
+    masked_parts = []
+    for segment in segments:
+        if not segment:
+            # Skip empty segments
+            continue
+
+        # Check if segment is a special character
+        is_special_char = re.match(r"[.+\-@]", segment)
+
+        if is_special_char:
+            # Keep special characters as-is
+            disp.log_debug(f"Keeping special character: '{segment}'")
+            masked_parts.append(segment)
+        else:
+            # Mask alphanumeric segments
+            masked_segment = mask_email_segment(segment)
+            disp.log_debug(f"Masked segment '{segment}' -> '{masked_segment}'")
+            masked_parts.append(masked_segment)
+
+    # Join all parts back together
+    result = "".join(masked_parts)
+    disp.log_debug(f"Final masked email: {result}")
+    return result

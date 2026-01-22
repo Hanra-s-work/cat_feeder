@@ -1,6 +1,6 @@
-# 
+#
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,15 +12,15 @@
 # PROJECT: CatFeeder
 # FILE: config.toml
 # CREATION DATE: 10-10-2025
-# LAST Modified: 17:0:38 02-12-2025
-# DESCRIPTION: 
+# LAST Modified: 22:30:4 14-01-2026
+# DESCRIPTION:
 # The configuration file used to set the required settings for the server.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The server configuration file.
 # // AR
 # +==== END CatFeeder =================+
-# 
+#
 title = "Server file configuration"
 
 # As of the creation of this file, there is no way to put a null in toml, hence, to put a null vairable, you need to put "none" in a string.
@@ -117,12 +117,12 @@ forwarded_allow_ips = "none"
 
 # Set the name to be used for the sql pool
 # type: string
-# default: "mypool"
-pool_name = "mypool"
+# default: "my_pool"
+pool_name = "my_pool"
 
 # Set the maximum size for the sql pool of connections
 # type: integer
-# options: 1 (no falback, not recommended) -> 64 (maximum allowed connections)
+# options: 1 (no fallback, not recommended) -> 64 (maximum allowed connections)
 # default: 10
 max_pool_connections = 10
 
@@ -196,22 +196,89 @@ autocommit = false
 # default: "utf8mb4_unicode_ci"
 collation = "utf8mb4_unicode_ci" #"utf8mb4_general_ci"
 
+# The middleware settings for the server
+[Server_configuration.middleware]
+
+# Gzip middleware settings
+[Server_configuration.middleware.gzip]
+
+# Minimum size in bytes to apply Gzip compression
+# type: integer
+# default: 500
+minimum_size = 500
+
+# Compression level for Gzip (1-9)
+# type: integer
+# default: 9
+compression_level = 9
+
+# CORS middleware settings
+[Server_configuration.middleware.cors]
+
+# List of allowed origins for CORS
+# type: list[str], str
+# default: ["*"]
+allow_origins = ["*"]
+
+# Allow credentials (cookies, authorization headers, etc.) in CORS requests
+# type: boolean
+# options: true, false
+# default: true
+allow_credentials = true
+
+# List of allowed HTTP methods for CORS
+# type: list[str], str
+# default: ["*"]
+allow_methods = ["*"]
+
+# List of allowed HTTP headers for CORS
+# type: list[str], str
+# default: ["*"]
+allow_headers = ["*"]
+
+# HTTPS middleware settings
+[Server_configuration.middleware.https]
+
+# Enforce HTTPS by redirecting HTTP requests to HTTPS
+# type: boolean
+# options: true, false
+# default: true
+force_https = false
+
+# Trusted hosts middleware settings
+[Server_configuration.middleware.trusted_hosts]
+
+# List of trusted hosts for the application
+# type: list[str], str
+# default: []
+host = [
+    "asperguide.fr",
+    "www.asperguide.fr",
+    "www.apserguide.fr",
+    "www.apserguide.fr",
+]
+
+# List of trusted development hosts for the application (only added onto the trusted_host_list if force_https is false)
+# type: list[str], str
+# default: ["localhost", "127.0.0.1", "[::1]"]
+dev_hosts = ["localhost", "127.0.0.1", "[::1]"]
+
 # The settings for the automation of the cache of the program.
 [Crons]
-# Enable token cleaning (removing epxired tokens)
+# Enable token cleaning (removing expired tokens)
 # type: boolean
 # options: true, false
 # default: true
 clean_tokens = true
 
-# The interval in which the loop for removing the expried tokens is run
+# The interval in which the loop for removing the expired tokens is run
 # The clean_tokens needs to be true for this setting to have an impact
 # type: integer
 # options: 0 (instant, not recommended) -> 2147483647 (68.1 years)
 # default: 1800 seconds (30 minutes)
 clean_tokens_interval = 1800 #seconds
 
-# Enable verification cleaning (removing epxired lines)
+# Enable verification cleaning (removing expired lines)
 # type: boolean
 # options: true, false
 # default: true
@@ -311,7 +378,7 @@ api_version = "1.0.0"
 # API description displayed in documentation
 # type: string
 # default: "API documentation for the CatFeeder server"
-api_description = """Backend API for the Cat Feeder application.
+api_description = """Backend API for the Asperguide application.
 
 This API provides endpoints for:
 * Authentication and authorization
@@ -341,14 +408,14 @@ admin = "Administrative access to API resources"
 
 # Contact information for API documentation
 [Documentation.contact]
-name = "Cat Feeder Team"
-url = "https://github.com/Cat Feeder"
-email = "support@Cat Feeder.com"
+name = "Asperguide Team"
+url = "https://github.com/Asperguide"
+email = "support@asperguide.com"
 
 # License information for API documentation
 [Documentation.license]
 name = "Proprietary"
-url = "https://github.com/Cat Feeder/back-end/blob/prod/LICENSE"
+url = "https://github.com/Asperguide/back-end/blob/prod/LICENSE"
 
 # Server URLs for different environments
 [[Documentation.servers]]
@@ -356,7 +423,7 @@ url = "http://localhost:5000"
 description = "Development server"
 
 [[Documentation.servers]]
-url = "https://api.Cat Feeder.com"
+url = "https://api.asperguide.com"
 description = "Production server"
 
 # Tags metadata for grouping endpoints
@@ -408,13 +475,13 @@ port = 6000
 
 [Test.hosts]
 # This is the host on which the server will be listening when it will be waiting for queries
-# type: strig (ip)
+# type: string (ip)
 # options: 0.0.0.0 (everything) -> 127.0.0.1 (localhost) -> 255.255.255.255 (ip mask)
 # The default value is "0.0.0.0"
 server = "0.0.0.0"
 
 # This is the host on which the client will make it's requests.
-# type: strig (ip)
+# type: string (ip)
 # options: 0.0.0.0 (everything) -> 127.0.0.1 (localhost) -> 255.255.255.255 (ip mask)
 # The default value is "http://127.0.0.1"
 client = "http://127.0.0.1"

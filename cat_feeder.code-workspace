@@ -25,6 +25,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../../Asperguide/back-end"
 		}
 	],
 	"settings": {

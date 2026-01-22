@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,20 +12,16 @@
 # PROJECT: CatFeeder
 # FILE: user_endpoints.py
 # CREATION DATE: 19-11-2025
-# LAST Modified: 20:2:31 14-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 21:57:24 11-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
-# PURPOSE: 
-# The endpoints used for tracking the user requirements.
-# User-related HTTP endpoint implementations.
-# This module provides the :class:`UserEndpoints` class used by the CatFeeder backend to handle login, registration, password reset, profile management, email verification and session/logout endpoints.
-# /STOP
+# PURPOSE: The endpoints used for tracking the user requirements.
 # // AR
 # +==== END CatFeeder =================+
 """
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from display_tty import Disp, initialise_logger
 from fastapi import Request, Response
 from ...core import RuntimeManager, RI
@@ -34,10 +30,11 @@ from ...e_mail import MailManagement
 from ...http_codes import HCI, HttpDataTypes, HTTP_DEFAULT_TYPE
 
 if TYPE_CHECKING:
-    from typing import List, Dict, Any, Optional, Union
+    from typing import List, Dict, Any, Optional
     from ...sql import SQL
     from ...server_header import ServerHeaders
     from ...boilerplates import BoilerplateIncoming, BoilerplateResponses, BoilerplateNonHTTP
+    from ...favicon import FaviconUser
 
 
 class UserEndpoints:
@@ -93,6 +90,8 @@ class UserEndpoints:
         self.database_link: "SQL" = self.runtime_manager.get("SQL")
         self.server_headers_initialised: "ServerHeaders" = self.runtime_manager.get(
             "ServerHeaders")
+        self.favicon_user: Optional["FaviconUser"] = self.runtime_manager.get_if_exists(
+            "FaviconUser", None)
         self.disp.log_debug("Initialised")
 
     async def post_login(self, request: Request) -> Response:
@@ -120,7 +119,7 @@ class UserEndpoints:
             CONST.TAB_ACCOUNTS, "*", f"email='{email}'"
         )
         self.disp.log_debug(f"Retrived data: {user_info}", title)
-        if isinstance(user_info, int):
+        if isinstance(user_info, int) or len(user_info) == 0:
             return self.boilerplate_responses_initialised.unauthorized(title)
         if self.password_handling_initialised.check_password(password, user_info[0]["password"]) is False:
             return self.boilerplate_responses_initialised.unauthorized(title)
@@ -147,6 +146,92 @@ class UserEndpoints:
         body["token"] = data["token"]
         return HCI.success(content=body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
 
+    def _check_gender(self, gender: str) -> str:
+        default = "RNS"
+        self.disp.log_debug(f"Default gender: '{default}'")
+        if not isinstance(gender, str):
+            self.disp.log_debug(
+                "The provided gender is not a string, returning default"
+            )
+            return default
+        gender_lower = gender.lower()
+        if gender_lower in ("m", "male", "man"):
+            self.disp.log_debug("Gender is male")
+            return "M"
+        if gender_lower in ("f", "female", "femme"):
+            self.disp.log_debug("Gender is female")
+            return "F"
+        self.disp.log_debug(
+            "Gender is either not in the list or Rather Not Say"
+        )
+        return default
+
+    def _check_age_range(self, age: Union[str, int, float, None]) -> str:
+        default: str = "15-20"
+        self.disp.log_debug(f"Default age: '{default}'")
+
+        # Define valid age ranges
+        age_ranges = [
+            (0, 5, "0-5"),
+            (6, 10, "6-10"),
+            (11, 15, "11-15"),
+            (16, 20, "16-20"),
+            (21, 25, "21-25"),
+            (26, 30, "26-30"),
+            (31, 40, "31-40"),
+            (41, 50, "41-50"),
+            (51, 60, "51-60"),
+            (61, 100, "61+")
+        ]
+
+        # If age is a number, find its range
+        if isinstance(age, (int, float)):
+            age_num = int(age)
+            self.disp.log_debug(f"Age provided as number: {age_num}")
+            for min_age, max_age, range_str in age_ranges:
+                if min_age <= age_num <= max_age:
+                    self.disp.log_debug(
+                        f"Age {age_num} falls in range {range_str}")
+                    return range_str
+            self.disp.log_debug(
+                f"Age {age_num} doesn't fall in any defined range")
+            return default
+
+        # If age is a string
+        if isinstance(age, str):
+            age_str = age.strip()
+            self.disp.log_debug(f"Age provided as string: '{age_str}'")
+
+            # Check if it's already a valid range
+            valid_range_strs = [r[2] for r in age_ranges]
+            if age_str in valid_range_strs:
+                self.disp.log_debug(
+                    f"Age string '{age_str}' is already a valid range")
+                return age_str
+
+            # Try to parse as a number string
+            try:
+                age_num = int(float(age_str))
+                self.disp.log_debug(f"Age string parsed as number: {age_num}")
+                for min_age, max_age, range_str in age_ranges:
+                    if min_age <= age_num <= max_age:
+                        self.disp.log_debug(
+                            f"Age {age_num} falls in range {range_str}")
+                        return range_str
+                self.disp.log_debug(
+                    f"Age {age_num} doesn't fall in any defined range")
+            except (ValueError, TypeError):
+                self.disp.log_debug(
+                    f"Could not parse age string '{age_str}' as number")
+
+            return default
+
+        # If age is None or any other type
+        self.disp.log_debug(
+            "Age is either not in the list or not provided"
+        )
+        return default
+
     async def post_register(self, request: Request) -> Response:
         """Register a new user account.
 
@@ -167,28 +252,43 @@ class UserEndpoints:
             return self.boilerplate_responses_initialised.bad_request(title)
         email: str = request_body["email"]
         password: str = request_body["password"]
+        if "gender" not in request_body:
+            self.disp.log_warning(
+                "The gender field was not provided during registration."
+            )
+        if "age" not in request_body:
+            self.disp.log_warning(
+                "The age field was not provided during registration."
+            )
+        gender: str = self._check_gender(request_body.get("gender", ""))
+        age: str = self._check_age_range(request_body.get("age", None))
         if not (email and password):
             return self.boilerplate_responses_initialised.bad_request(title)
         user_info = self.database_link.get_data_from_table(
             CONST.TAB_ACCOUNTS, "*", f"email='{email}'"
         )
-        if isinstance(user_info, int):
-            node = self.boilerplate_responses_initialised.build_response_body(
-                title=title,
-                message="Email already exist.",
-                resp="email exists",
-                token=None,
-                error=True
-            )
-            return HCI.conflict(node)
+        account_creation_error = self.boilerplate_responses_initialised.build_response_body(
+            title=title,
+            message="Unable to create account. Please try again later.",
+            resp="registration_failed",
+            token=None,
+            error=True
+        )
+        if not isinstance(user_info, int):
+            for user in user_info:
+                if email in user["email"]:
+                    return HCI.bad_request(account_creation_error)
+        else:
+            return HCI.bad_request(account_creation_error)
         hashed_password = self.password_handling_initialised.hash_password(
             password)
         username = email.split('@')[0]
         self.disp.log_debug(f"Username = {username}", title)
         admin = int(False)
-        favicon = "NULL"
+        favicon = None
+        deletion_date = None
         data: List[Union[str, int, float, None]] = [
-            username, email, hashed_password, "local", favicon, admin
+            username, email, hashed_password, "local", gender, age, favicon, admin, deletion_date
         ]
         self.disp.log_debug(f"Data list = {data}", title)
         column = self.database_link.get_table_column_names(
@@ -199,7 +299,7 @@ class UserEndpoints:
             return self.boilerplate_responses_initialised.internal_server_error(title)
         column = CONST.clean_list(
             column,
-            CONST.TABLE_COLUMNS_TO_IGNORE,
+            CONST.TABLE_COLUMNS_TO_IGNORE_USER,
             self.disp
         )
         if self.database_link.insert_data_into_table(CONST.TAB_ACCOUNTS, data, column) == self.error:
@@ -261,7 +361,7 @@ class UserEndpoints:
         self.disp.log_debug(f"user query = {data}", title)
         if data == self.error or len(data) == 0:
             return self.boilerplate_responses_initialised.bad_request(title)
-        email_subject = "[Cat Feeder] Verification code"
+        email_subject = "[Asperguide] Verification code"
         code = self.boilerplate_non_http_initialised.generate_check_token(
             CONST.CHECK_TOKEN_SIZE
         )
@@ -701,9 +801,68 @@ class UserEndpoints:
         Returns:
             Response: A FastAPI response indicating the result.
         """
+        title: str = "put_user_favicon"
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
+            request
+        )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
+        token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
+            token
+        )
+        self.disp.log_debug(f"token = {token}, valid = {token_valid}", title)
+        if token_valid is False:
+            return self.boilerplate_responses_initialised.unauthorized(title, token)
+        self.favicon_user = self.runtime_manager.get_if_exists(
+            "FaviconUser", self.favicon_user)
+        if not self.favicon_user:
+            return self.boilerplate_responses_initialised.service_unavailable(
+                service="FaviconUser",
+                title=title,
+                token=token
+            )
+        usr_id = self.boilerplate_non_http_initialised.get_user_id_from_token(
+            title, token
+        )
         return HCI.service_unavailable("This function needs to be implemented", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
 
-    async def get_user_favicon(self, request: Request) -> Response:
+    async def patch_user_favicon(self, request: Request) -> Response:
+        """Update the authenticated user's favicon.
+
+        Args:
+            request (Request): The incoming FastAPI request containing the favicon payload.
+
+        Returns:
+            Response: A FastAPI response indicating the result.
+        """
+        title: str = "patch_user_favicon"
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
+            request
+        )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
+        token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
+            token
+        )
+        self.disp.log_debug(f"token = {token}, valid = {token_valid}", title)
+        if token_valid is False:
+            return self.boilerplate_responses_initialised.unauthorized(title, token)
+        self.favicon_user = self.runtime_manager.get_if_exists(
+            "FaviconUser", self.favicon_user)
+        if not self.favicon_user:
+            return self.boilerplate_responses_initialised.service_unavailable(
+                service="FaviconUser",
+                title=title,
+                token=token
+            )
+        usr_id = self.boilerplate_non_http_initialised.get_user_id_from_token(
+            title, token
+        )
+        return HCI.service_unavailable("This function needs to be implemented", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+
+    async def get_user_favicons(self, request: Request) -> Response:
         """Get the authenticated user's favicon.
 
         Args:
@@ -712,7 +871,200 @@ class UserEndpoints:
         Returns:
             Response: A FastAPI response indicating the result.
         """
-        return HCI.service_unavailable("This function needs to be implemented", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
+        title: str = "get_user_favicons"
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
+            request
+        )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
+        token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
+            token
+        )
+        self.disp.log_debug(f"token = {token}, valid = {token_valid}", title)
+        if token_valid is False:
+            return self.boilerplate_responses_initialised.unauthorized(title, token)
+        self.favicon_user = self.runtime_manager.get_if_exists(
+            "FaviconUser", self.favicon_user)
+        if not self.favicon_user:
+            return self.boilerplate_responses_initialised.service_unavailable(
+                service="FaviconUser",
+                title=title,
+                token=token
+            )
+        usr_id = self.boilerplate_non_http_initialised.get_user_id_from_token(
+            title, token
+        )
+        if isinstance(usr_id, Response):
+            return usr_id
+        if not usr_id:
+            return self.boilerplate_responses_initialised.user_not_found(title, token_raw)
+        if usr_id.isnumeric():
+            usr_id_int = int(usr_id)
+        else:
+            return self.boilerplate_responses_initialised.user_not_found(title, token_raw)
+        favicons = self.favicon_user.list_user_favicons(usr_id_int)
+        body = self.boilerplate_responses_initialised.build_response_body(
+            title=title,
+            message="Available user favicons",
+            resp=favicons,
+            token=token,
+            error=False
+        )
+        return HCI.success(body, content_type=HttpDataTypes.JSON, headers=self.server_headers_initialised.for_json())
+
+    async def get_active_user_favicons(self, request: Request) -> Response:
+        """Get the authenticated user's favicon.
+
+        Args:
+            request (Request): The incoming FastAPI request containing the favicon payload.
+
+        Returns:
+            Response: A FastAPI response indicating the result.
+        """
+        title: str = "get_active_user_favicons"
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
+            request
+        )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
+        token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
+            token
+        )
+        self.disp.log_debug(f"token = {token}, valid = {token_valid}", title)
+        if token_valid is False:
+            return self.boilerplate_responses_initialised.unauthorized(title, token)
+        self.favicon_user = self.runtime_manager.get_if_exists(
+            "FaviconUser", self.favicon_user)
+        if not self.favicon_user:
+            return self.boilerplate_responses_initialised.service_unavailable(
+                service="FaviconUser",
+                title=title,
+                token=token
+            )
+        usr_id = self.boilerplate_non_http_initialised.get_user_id_from_token(
+            title, token
+        )
+        if isinstance(usr_id, Response):
+            return usr_id
+        if not usr_id:
+            return self.boilerplate_responses_initialised.user_not_found(title, token_raw)
+        if usr_id.isnumeric():
+            usr_id_int = int(usr_id)
+        else:
+            return self.boilerplate_responses_initialised.user_not_found(title, token_raw)
+        favicons = self.favicon_user.list_active_user_favicons(usr_id_int)
+        body = self.boilerplate_responses_initialised.build_response_body(
+            title=title,
+            message="Available user favicons",
+            resp=favicons,
+            token=token,
+            error=False
+        )
+        return HCI.success(body, content_type=HttpDataTypes.JSON, headers=self.server_headers_initialised.for_json())
+
+    async def get_user_favicon(self, request: Request, id: int) -> Response:
+        """Get the authenticated user's favicon.
+
+        Args:
+            request (Request): The incoming FastAPI request containing the favicon payload.
+
+        Returns:
+            Response: A FastAPI response indicating the result.
+        """
+        title: str = "get_user_favicon"
+        favicon_id: int = id
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
+            request
+        )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
+        token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
+            token
+        )
+        self.disp.log_debug(f"token = {token}, valid = {token_valid}", title)
+        if token_valid is False:
+            return self.boilerplate_responses_initialised.unauthorized(title, token)
+        self.favicon_user = self.runtime_manager.get_if_exists(
+            "FaviconUser", self.favicon_user)
+        if not self.favicon_user:
+            return self.boilerplate_responses_initialised.service_unavailable(
+                service="FaviconUser",
+                title=title,
+                token=token
+            )
+        usr_id = self.boilerplate_non_http_initialised.get_user_id_from_token(
+            title, token
+        )
+        if isinstance(usr_id, Response):
+            return usr_id
+        if not usr_id:
+            return self.boilerplate_responses_initialised.user_not_found(title, token_raw)
+        if usr_id.isnumeric():
+            usr_id_int = int(usr_id)
+        else:
+            return self.boilerplate_responses_initialised.user_not_found(title, token_raw)
+        favicons = self.favicon_user.get_user_favicon(usr_id_int, favicon_id)
+        if isinstance(favicons, Response):
+            return favicons
+
+        body = self.boilerplate_responses_initialised.build_response_body(
+            title=title,
+            message="Available user favicons",
+            resp=favicons.data,
+            token=token,
+            error=False
+        )
+        return HCI.success(body, content_type=HttpDataTypes.JSON, headers=self.server_headers_initialised.for_json())
+
+    async def get_user_favicon_image(self, request: Request, id: int) -> Response:
+        """Get the authenticated user's favicon.
+
+        Args:
+            request (Request): The incoming FastAPI request containing the favicon payload.
+
+        Returns:
+            Response: A FastAPI response indicating the result.
+        """
+        title: str = "get_user_favicon_image"
+        favicon_id: int = id
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
+            request
+        )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
+        token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
+            token
+        )
+        self.disp.log_debug(f"token = {token}, valid = {token_valid}", title)
+        if token_valid is False:
+            return self.boilerplate_responses_initialised.unauthorized(title, token)
+        self.favicon_user = self.runtime_manager.get_if_exists(
+            "FaviconUser", self.favicon_user)
+        if not self.favicon_user:
+            return self.boilerplate_responses_initialised.service_unavailable(
+                service="FaviconUser",
+                title=title,
+                token=token
+            )
+        usr_id = self.boilerplate_non_http_initialised.get_user_id_from_token(
+            title, token
+        )
+        if isinstance(usr_id, Response):
+            return usr_id
+        if not usr_id:
+            return self.boilerplate_responses_initialised.user_not_found(title, token_raw)
+        if usr_id.isnumeric():
+            usr_id_int = int(usr_id)
+        else:
+            return self.boilerplate_responses_initialised.user_not_found(title, token_raw)
+        favicons = self.favicon_user.get_user_favicon(usr_id_int, favicon_id)
+        if isinstance(favicons, Response):
+            return favicons
+        return HCI.success(favicons.img, content_type=favicons.img_type, headers=self.server_headers_initialised.for_json())
 
     async def delete_user_favicon(self, request: Request) -> Response:
         """Delete the authenticated user's favicon.
@@ -723,6 +1075,30 @@ class UserEndpoints:
         Returns:
             Response: A FastAPI response indicating the result.
         """
+        title: str = "delete_user_favicon"
+        token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
+            request
+        )
+        if not token_raw:
+            return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
+        token: str = token_raw
+        token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
+            token
+        )
+        self.disp.log_debug(f"token = {token}, valid = {token_valid}", title)
+        if token_valid is False:
+            return self.boilerplate_responses_initialised.unauthorized(title, token)
+        self.favicon_user = self.runtime_manager.get_if_exists(
+            "FaviconUser", self.favicon_user)
+        if not self.favicon_user:
+            return self.boilerplate_responses_initialised.service_unavailable(
+                service="FaviconUser",
+                title=title,
+                token=token
+            )
+        usr_id = self.boilerplate_non_http_initialised.get_user_id_from_token(
+            title, token
+        )
         return HCI.service_unavailable("This function needs to be implemented", content_type=HttpDataTypes.TEXT, headers=self.server_headers_initialised.for_text())
 
     async def post_logout(self, request: Request) -> Response:
@@ -738,24 +1114,33 @@ class UserEndpoints:
             internal server error.
         """
         title = "Logout"
+        self.disp.log_debug("Checking is a token is present", title)
         token_raw: Optional[str] = self.boilerplate_incoming_initialised.get_token_if_present(
             request
         )
         if not token_raw:
             return self.boilerplate_responses_initialised.no_access_token(title, token_raw)
         token: str = token_raw
+        self.disp.log_debug("Checking if the token is still valid", title)
         token_valid: bool = self.boilerplate_non_http_initialised.is_token_correct(
             token
         )
         self.disp.log_debug(f"token = {token}, valid = {token_valid}", title)
-        if token_valid is False:
+        if not token_valid:
             return self.boilerplate_responses_initialised.unauthorized(title, token)
+        self.disp.log_debug("Attempting to remove data from the table", title)
+        self.disp.log_debug(
+            f"token: {token}, table: {CONST.TAB_CONNECTIONS}", title
+        )
         response = self.database_link.remove_data_from_table(
             CONST.TAB_CONNECTIONS,
             f"token='{token}'"
         )
         if response == self.error:
             return self.boilerplate_responses_initialised.internal_server_error(title)
+        self.disp.log_debug(
+            "Informing the user that the removal was a success", title
+        )
         data = self.boilerplate_responses_initialised.build_response_body(
             title=title,
             message="You have successfully logged out...",

@@ -1,0 +1,28 @@
+#
+# +==== BEGIN CatFeeder =================+
+# LOGO:
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
+# /STOP
+# PROJECT: CatFeeder
+# FILE: requirements.words.txt
+# CREATION DATE: 12-01-2026
+# LAST Modified: 20:13:46 12-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
+# /STOP
+# COPYRIGHT: (c) Cat Feeder
+# PURPOSE: This is the file containing dependencies for generating random names.
+# // AR
+# +==== END CatFeeder =================+
+#
+
+# English dictionary
+english-words == 2.0.2
+
+

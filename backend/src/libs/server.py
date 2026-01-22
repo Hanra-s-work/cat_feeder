@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: server.py
 # CREATION DATE: 19-11-2025
-# LAST Modified: 6:53:41 02-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 23:3:21 10-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The main class required to set up the environement for the server to run properly.
@@ -28,11 +28,13 @@ from .bucket import Bucket
 from .e_mail import MailManagement
 from .path_manager import PathManager
 from .docs import DocumentationHandler
+from .image_reducer import ImageReducer
 from .server_header import ServerHeaders
 from .crons import BackgroundTasks, Crons
 from .endpoint_manager import EndpointManager
-from .utils import ServerManagement, CONST, OAuthAuthentication
-from .core import FinalClass, RuntimeControl, RuntimeManager, RI
+from .utils import CONST, OAuthAuthentication
+from .favicon import FaviconUser, FaviconAdmin
+from .core import ServerManagement, FinalClass, RuntimeControl, RuntimeManager, RI
 from .boilerplates import BoilerplateIncoming, BoilerplateNonHTTP, BoilerplateResponses
 
 
@@ -42,7 +44,7 @@ class Server(metaclass=FinalClass):
 
     disp: Disp = initialise_logger(__qualname__, False)
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 5000, success: int = 0, error: int = 84, app_name: str = "Cat Feeder", debug: bool = False) -> None:
+    def __init__(self, host: str = "0.0.0.0", port: int = 5000, success: int = 0, error: int = 84, app_name: str = "Asperguide", debug: bool = False) -> None:
         """_summary_
             This is the class Server, a class that contains the structures used to allow the uvicorn and fastapi combo to run successfully.
             host (str, optional): _description_. Defaults to "0.0.0.0".
@@ -139,6 +141,18 @@ class Server(metaclass=FinalClass):
         )
         self.runtime_manager.set(
             DocumentationHandler,
+            **{"success": self.success, "error": self.error, "debug": self.debug}
+        )
+        self.runtime_manager.set(
+            ImageReducer,
+            **{"success": self.success, "error": self.error, "debug": self.debug}
+        )
+        self.runtime_manager.set(
+            FaviconUser,
+            **{"success": self.success, "error": self.error, "debug": self.debug}
+        )
+        self.runtime_manager.set(
+            FaviconAdmin,
             **{"success": self.success, "error": self.error, "debug": self.debug}
         )
         #

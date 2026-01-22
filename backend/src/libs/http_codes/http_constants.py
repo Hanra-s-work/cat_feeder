@@ -1,30 +1,20 @@
 """
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
 # PROJECT: CatFeeder
 # FILE: http_constants.py
 # CREATION DATE: 19-11-2025
-# LAST Modified: 16:33:2 30-11-2025
+# LAST Modified: 0:33:21 17-01-2026
 # DESCRIPTION:
-# This is the project in charge of making the connected cat feeder project work.
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE:
@@ -47,6 +37,7 @@
 
 from __future__ import annotations
 from enum import Enum
+from dataclasses import dataclass
 from typing import Dict, List, Tuple, ClassVar, Optional, Set
 
 
@@ -90,16 +81,24 @@ class DataTypes(str, Enum):
     Use `from_key()` to resolve a member from the original lower-case
     dictionary key (case-insensitive, supports hyphenated keys).
     """
+    # Python 3.10 compatibility: ignore cache variables so they're not treated as enum members
+    _ignore_ = ['_key_to_value_cache', '_value_to_member_cache']
+
     # Archive / Binary formats
     _7Z = 'application/x-7z-compressed'
     DIGIT_7Z = 'application/x-7z-compressed'
     BZ2 = 'application/x-bzip2'
     DMG = 'application/x-apple-diskimage'
     GZIP = 'application/gzip'
+    GZ = 'application/gzip'
     ISO = 'application/x-iso9660-image'
     OCTET_STREAM = 'application/octet-stream'
     RAR = 'application/vnd.rar'
     TAR = 'application/x-tar'
+    TAR_GZ = 'application/gzip'
+    TAR_BZ2 = 'application/x-bzip2'
+    TAR_XZ = 'application/x-xz'
+    XZ = 'application/x-xz'
     ZIP = 'application/zip'
 
     # Audio formats
@@ -143,6 +142,9 @@ class DataTypes(str, Enum):
     XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     YAML = 'application/yaml'
     YML = 'application/yaml'
+    XHTML = "application/xhtml+xml"
+    RSS = "application/rss+xml"
+    ATOM = "application/atom+xml"
 
     # Font formats
     EOT = 'application/vnd.ms-fontobject'
@@ -168,12 +170,64 @@ class DataTypes(str, Enum):
     HEIF = 'image/heif'
     ICO = 'image/vnd.microsoft.icon'
     JPEG = 'image/jpeg'
+    JPE = 'image/jpe'
     JPG = 'image/jpeg'
     PNG = 'image/png'
     SVG = 'image/svg+xml'
     TIFF = 'image/tiff'
     WEBP = 'image/webp'
     XICON = 'image/x-icon'
+    # Less common image types
+    GRIB = 'application/grib'
+    HDR = 'image/vnd.radiance'
+    ICNS = 'image/icns'
+    H5 = 'application/x-hdf5'
+    HDF = 'application/x-hdf'
+    JP2 = 'image/jp2'
+    J2K = 'image/jp2'
+    JPC = 'image/jp2'
+    JPF = 'image/jp2'
+    JPX = 'image/jp2'
+    J2C = 'image/jp2'
+    IM = 'image/im'
+    IIM = 'application/x-iim'
+    JFIF = 'image/jpeg'
+    MPO = 'image/mpo'
+    MSP = 'image/x-mspaint'
+    PALM = 'image/x-palm'
+    PCD = 'image/x-photo-cd'
+    PXR = 'image/pxr'
+    PBM = 'image/portable-bitmap'
+    PGM = 'image/portable-graymap'
+    PPM = 'image/portable-pixmap'
+    PNM = 'image/portable-anymap'
+    PFM = 'image/portable-floatmap'
+    PSD = 'image/vnd.adobe.photoshop'
+    QOI = 'image/qoi'
+    BW = 'image/bw'
+    RGB = 'image/rgb'
+    RGBA = 'image/rgba'
+    SGI = 'image/sgi'
+    RAS = 'image/cmu-raster'
+    ICB = 'image/tga'
+    VDA = 'image/tga'
+    VST = 'image/tga'
+    WMF = 'image/wmf'
+    EMF = 'image/emf'
+    DIB = "image/bmp"                      # DIB is essentially BMP
+    CUR = "image/x-icon"                    # Cursor files
+    PCX = "image/pcx"                       # PCX
+    DDS = "image/vnd.ms-dds"                # DirectDraw Surface
+    EPS = "application/postscript"          # Encapsulated PostScript
+    FIT = "image/fits"                       # FITS (astronomical)
+    FITS = "image/fits"
+    FLI = "video/fli"                       # FLI animation
+    FLC = "video/flc"                       # FLC animation
+    GBR = "image/gbr"                        # GIMP brush / old graphics
+    APNG = "image/apng"                      # Animated PNG
+    TIF = "image/tiff"                       # TIFF alternate extension
+    XBM = "image/x-xbitmap"                  # X bitmap
+    XPM = "image/x-xpixmap"                  # X pixmap
 
     # Redirect pseudo-type
     REDIRECT = 'application/redirect'
@@ -197,31 +251,47 @@ class DataTypes(str, Enum):
     MP4 = 'video/mp4'
     MPEG = 'video/mpeg'
     WEBM = 'video/webm'
+    OGG_VIDEO = "video/ogg"
+    WMV = "video/x-ms-wmv"
+    M4v = "video/x-m4v"
 
     # WASM
     WASM = 'application/wasm'
     OGG = 'application/ogg'
 
+    # Not a mime
+    BASE16 = 'application/base16'
+    BASE32 = 'application/base32'
+    BASE64 = 'application/base64'
+    BASE85 = 'application/base85'
+    BYTES = 'application/bytes'
+
     # Class cleaning + optimisation
-    __KEY_TO_VALUE: ClassVar[Dict[str, str]] = {}
-    __VALUE_TO_MEMBER: ClassVar[Dict[str, "DataTypes"]] = {}
+    _key_to_value_cache: ClassVar[Dict[str, str]] = {}
+    _value_to_member_cache: ClassVar[Dict[str, "DataTypes"]] = {}
 
     @classmethod
     def _init_cache(cls) -> None:
         """Initialize internal caches, called on first use."""
+        # Access via __dict__ to bypass enum's __getattr__ in Python 3.10
+        key_cache = cls.__dict__.get('_key_to_value_cache', {})
+        val_cache = cls.__dict__.get('_value_to_member_cache', {})
+
         # Only build if caches are empty (dicts start empty by definition)
-        if cls.__KEY_TO_VALUE and cls.__VALUE_TO_MEMBER:
+        if key_cache and val_cache:
             return
+
         # build the key->value dict once
         key_to_value: Dict[str, str] = {}
         for name, member in cls.__members__.items():
             key_to_value[cls._normalize_key(name)] = member.value
-        cls.__KEY_TO_VALUE = key_to_value
+        cls._key_to_value_cache = key_to_value
+
         # build the value->member dict once
         value_to_member: Dict[str, "DataTypes"] = {}
         for member in cls.__members__.values():
             value_to_member[member.value] = member
-        cls.__VALUE_TO_MEMBER = value_to_member
+        cls._value_to_member_cache = value_to_member
 
     @staticmethod
     def _normalize_key(name: str) -> str:
@@ -237,14 +307,21 @@ class DataTypes(str, Enum):
         """Return enum member matching original DATA_TYPES key (case-insensitive)."""
         norm = key.strip().lower()
         cls._init_cache()
-        if not cls.__KEY_TO_VALUE:
+
+        # Access via __dict__ to bypass enum's __getattr__ in Python 3.10
+        key_cache = cls.__dict__.get('_key_to_value_cache', {})
+        if not key_cache:
             return None
-        value = cls.__KEY_TO_VALUE.get(norm)
+
+        value = key_cache.get(norm)
         if not value:
             return None
-        if not cls.__VALUE_TO_MEMBER:
+
+        val_cache = cls.__dict__.get('_value_to_member_cache', {})
+        if not val_cache:
             return None
-        return cls.__VALUE_TO_MEMBER.get(value)
+
+        return val_cache.get(value)
 
     @classmethod
     def get_dict(cls) -> Dict[str, str]:
@@ -264,9 +341,8 @@ class DataTypes(str, Enum):
             Dict[str, str]: A mapping of normalized string keys to MIME type strings.
         """
         cls._init_cache()
-        if cls.__KEY_TO_VALUE:
-            return cls.__KEY_TO_VALUE
-        return {}
+        # Access via __dict__ to bypass enum's __getattr__ in Python 3.10
+        return cls.__dict__.get('_key_to_value_cache', {})
 
 # ============================================================
 # BASE MIME-TYPE DEFINITIONS
@@ -282,22 +358,37 @@ FILE_TYPES: Tuple[DataTypes, ...] = (
     DataTypes.ZIP, DataTypes.GZIP, DataTypes.TAR,
     DataTypes._7Z, DataTypes.DIGIT_7Z,
     DataTypes.BZ2, DataTypes.DMG, DataTypes.ISO, DataTypes.OCTET_STREAM, DataTypes.RAR,
+    DataTypes.TAR_GZ, DataTypes.TAR_BZ2, DataTypes.TAR_XZ, DataTypes.XZ,
     # Fonts
     DataTypes.EOT, DataTypes.OTF, DataTypes.TTF, DataTypes.WOFF, DataTypes.WOFF2,
     # Audio
     DataTypes.MP3, DataTypes.WAV, DataTypes.FLAC, DataTypes.AAC, DataTypes.OGG_AUDIO, DataTypes.OPUS,
+    DataTypes.M4A, DataTypes.AIFF, DataTypes.AMR, DataTypes.MID, DataTypes.MIDI,
     # Video
     DataTypes.MP4, DataTypes.MPEG, DataTypes.AVI,
     DataTypes._3GP, DataTypes.DIGIT_3GP,
     DataTypes._3GPP, DataTypes.DIGIT_3GPP,
     DataTypes._3G2, DataTypes.DIGIT_3G2,
     DataTypes._3GPP2, DataTypes.DIGIT_3GPP2,
+    DataTypes.MOV, DataTypes.FLV, DataTypes.MKV, DataTypes.WEBM, DataTypes.OGG_VIDEO,
+    DataTypes.WMV, DataTypes.M4v,
     # Documents
     DataTypes.PDF, DataTypes.RTF, DataTypes.DOC, DataTypes.DOCX,
     DataTypes.XLS, DataTypes.XLSX, DataTypes.PPT, DataTypes.PPTX,
+    DataTypes.ODT, DataTypes.ODS, DataTypes.ODP, DataTypes.EPUB,
+    DataTypes.ICS, DataTypes.CSV, DataTypes.GEOJSON,
     # Images
-    DataTypes.JPEG, DataTypes.JPG, DataTypes.PNG, DataTypes.GIF, DataTypes.BMP,
-    DataTypes.TIFF, DataTypes.WEBP, DataTypes.ICO, DataTypes.SVG, DataTypes.XICON,
+    DataTypes.JPEG, DataTypes.JPG, DataTypes.JPE, DataTypes.PNG, DataTypes.GIF, DataTypes.BMP,
+    DataTypes.TIFF, DataTypes.WEBP, DataTypes.ICO, DataTypes.SVG, DataTypes.XICON, DataTypes.GRIB,
+    DataTypes.HDR, DataTypes.ICNS, DataTypes.H5, DataTypes.HDF, DataTypes.JP2, DataTypes.J2K,
+    DataTypes.JPC, DataTypes.JPF, DataTypes.JPX, DataTypes.J2C, DataTypes.IM, DataTypes.IIM,
+    DataTypes.JFIF, DataTypes.MPO, DataTypes.MSP, DataTypes.PALM, DataTypes.PCD, DataTypes.PXR,
+    DataTypes.PBM, DataTypes.PGM, DataTypes.PPM, DataTypes.PNM, DataTypes.PFM, DataTypes.PSD,
+    DataTypes.QOI, DataTypes.BW, DataTypes.RGB, DataTypes.RGBA, DataTypes.SGI, DataTypes.RAS,
+    DataTypes.ICB, DataTypes.VDA, DataTypes.VST, DataTypes.WMF, DataTypes.EMF, DataTypes.DIB,
+    DataTypes.CUR, DataTypes.PCX, DataTypes.DDS, DataTypes.EPS, DataTypes.FIT, DataTypes.FITS,
+    DataTypes.FLI, DataTypes.FLC, DataTypes.GBR, DataTypes.APNG, DataTypes.TIF, DataTypes.XBM,
+    DataTypes.XPM,
     # Streaming / others
     DataTypes.OGG, DataTypes.STREAM,
     # JavaScript files (served as files, not inline)
@@ -382,3 +473,558 @@ ORJSON_MIME_TYPES: Set[str] = _build_mime_set(ORJSON_TYPES)
 DEFAULT_MESSAGE_CONTENT: Dict[str, str] = {'msg': 'message'}
 
 DEFAULT_MESSAGE_TYPE: str = DataTypes.JSON
+
+# ============================================================
+# Media type groupings
+
+# Image types
+IMAGE_TYPES_UNIVERSAL: Tuple[DataTypes, ...] = (
+    DataTypes.PNG, DataTypes.JPEG, DataTypes.JPE,
+    DataTypes.JPG, DataTypes.GIF, DataTypes.SVG,
+    DataTypes.ICO, DataTypes.WEBP, DataTypes.APNG
+)
+IMAGE_TYPES_NEED_CONVERTING: Tuple[DataTypes, ...] = (
+    DataTypes.BMP, DataTypes.HEIC, DataTypes.HEIF, DataTypes.XICON, DataTypes.AVIF,
+    DataTypes.GRIB, DataTypes.HDR, DataTypes.ICNS, DataTypes.H5, DataTypes.HDF,
+    DataTypes.JP2, DataTypes.J2K, DataTypes.JPC, DataTypes.JPF, DataTypes.JPX, DataTypes.J2C,
+    DataTypes.IM, DataTypes.IIM, DataTypes.JFIF, DataTypes.MPO, DataTypes.MSP,
+    DataTypes.PALM, DataTypes.PCD, DataTypes.PBM, DataTypes.PGM, DataTypes.PPM,
+    DataTypes.PNM, DataTypes.PFM, DataTypes.PSD, DataTypes.QOI, DataTypes.BW,
+    DataTypes.RGB, DataTypes.RGBA, DataTypes.SGI, DataTypes.RAS, DataTypes.ICB,
+    DataTypes.VDA, DataTypes.VST, DataTypes.WMF, DataTypes.EMF, DataTypes.DIB,
+    DataTypes.CUR, DataTypes.PCX, DataTypes.DDS, DataTypes.EPS, DataTypes.FIT,
+    DataTypes.FITS, DataTypes.FLI, DataTypes.FLC, DataTypes.GBR, DataTypes.TIF,
+    DataTypes.XBM, DataTypes.XPM
+)
+IMAGE_TYPES_HEAVY: Tuple[DataTypes, ...] = (
+    DataTypes.BMP,
+    DataTypes.TIFF,
+    DataTypes.PNG,   # large for photos
+    DataTypes.HEIC,
+    DataTypes.HEIF,
+    DataTypes.HDR,
+    DataTypes.JP2,
+    DataTypes.J2K,
+    DataTypes.JPC,
+    DataTypes.JPF,
+    DataTypes.JPX,
+    DataTypes.J2C,
+    DataTypes.PSD,
+    DataTypes.TIF
+)
+
+IMAGE_CONVERSION_TARGET: Dict[DataTypes, DataTypes] = {
+    DataTypes.BMP: DataTypes.WEBP,
+    DataTypes.HEIC: DataTypes.WEBP,
+    DataTypes.HEIF: DataTypes.WEBP,
+    DataTypes.XICON: DataTypes.PNG,
+    DataTypes.AVIF: DataTypes.WEBP,
+    DataTypes.TIFF: DataTypes.WEBP,
+    DataTypes.JPE: DataTypes.JPEG,
+    DataTypes.JPG: DataTypes.JPEG,
+    DataTypes.GRIB: DataTypes.PNG,
+    DataTypes.HDR: DataTypes.PNG,
+    DataTypes.ICNS: DataTypes.PNG,
+    DataTypes.H5: DataTypes.PNG,
+    DataTypes.HDF: DataTypes.PNG,
+    DataTypes.JP2: DataTypes.JPEG,
+    DataTypes.J2K: DataTypes.JPEG,
+    DataTypes.JPC: DataTypes.JPEG,
+    DataTypes.JPF: DataTypes.JPEG,
+    DataTypes.JPX: DataTypes.JPEG,
+    DataTypes.J2C: DataTypes.JPEG,
+    DataTypes.IM: DataTypes.PNG,
+    DataTypes.IIM: DataTypes.PNG,
+    DataTypes.JFIF: DataTypes.JPEG,
+    DataTypes.MPO: DataTypes.JPEG,
+    DataTypes.MSP: DataTypes.PNG,
+    DataTypes.PALM: DataTypes.PNG,
+    DataTypes.PCD: DataTypes.JPEG,
+    DataTypes.PBM: DataTypes.PNG,
+    DataTypes.PGM: DataTypes.PNG,
+    DataTypes.PPM: DataTypes.PNG,
+    DataTypes.PNM: DataTypes.PNG,
+    DataTypes.PFM: DataTypes.PNG,
+    DataTypes.PSD: DataTypes.PNG,
+    DataTypes.QOI: DataTypes.PNG,
+    DataTypes.BW: DataTypes.PNG,
+    DataTypes.RGB: DataTypes.PNG,
+    DataTypes.RGBA: DataTypes.PNG,
+    DataTypes.SGI: DataTypes.PNG,
+    DataTypes.RAS: DataTypes.PNG,
+    DataTypes.ICB: DataTypes.PNG,
+    DataTypes.VDA: DataTypes.PNG,
+    DataTypes.VST: DataTypes.PNG,
+    DataTypes.WMF: DataTypes.PNG,
+    DataTypes.EMF: DataTypes.PNG,
+    DataTypes.DIB: DataTypes.PNG,
+    DataTypes.CUR: DataTypes.PNG,
+    DataTypes.PCX: DataTypes.PNG,
+    DataTypes.DDS: DataTypes.PNG,
+    DataTypes.EPS: DataTypes.PNG,
+    DataTypes.FIT: DataTypes.PNG,
+    DataTypes.FITS: DataTypes.PNG,
+    DataTypes.FLI: DataTypes.GIF,
+    DataTypes.FLC: DataTypes.GIF,
+    DataTypes.GBR: DataTypes.PNG,
+    DataTypes.TIF: DataTypes.WEBP,
+    DataTypes.XBM: DataTypes.PNG,
+    DataTypes.XPM: DataTypes.PNG
+}
+
+# Video types
+VIDEO_TYPES_UNIVERSAL: Tuple[DataTypes, ...] = (
+    DataTypes.MP4,    # H.264 + AAC assumed
+    DataTypes.WEBM,   # VP8/VP9 (modern-safe)
+)
+
+VIDEO_TYPES_NEED_CONVERTING: Tuple[DataTypes, ...] = (
+    DataTypes.MKV,
+    DataTypes.AVI,
+    DataTypes.FLV,
+    DataTypes.MOV,
+    DataTypes.MPEG,
+    DataTypes._3GP,
+    DataTypes._3G2,
+    DataTypes._3GPP,
+    DataTypes._3GPP2,
+)
+
+VIDEO_TYPES_HEAVY: Tuple[DataTypes, ...] = (
+    DataTypes.MKV,
+    DataTypes.AVI,
+    DataTypes.MOV,
+    DataTypes.MPEG,
+)
+
+VIDEO_CONVERSION_TARGET: Dict[DataTypes, DataTypes] = {
+    DataTypes.MKV: DataTypes.MP4,
+    DataTypes.AVI: DataTypes.MP4,
+    DataTypes.FLV: DataTypes.MP4,
+    DataTypes.MOV: DataTypes.MP4,
+    DataTypes.MPEG: DataTypes.MP4,
+    DataTypes._3GP: DataTypes.MP4,
+    DataTypes._3G2: DataTypes.MP4,
+    DataTypes._3GPP: DataTypes.MP4,
+    DataTypes._3GPP2: DataTypes.MP4,
+}
+
+# Audio types
+AUDIO_TYPES_UNIVERSAL: Tuple[DataTypes, ...] = (
+    DataTypes.MP3,
+    DataTypes.WAV,
+    DataTypes.AAC,
+)
+
+AUDIO_TYPES_NEED_CONVERTING: Tuple[DataTypes, ...] = (
+    DataTypes.FLAC,
+    DataTypes.AIFF,
+    DataTypes.OPUS,
+    DataTypes.OGG_AUDIO,
+    DataTypes.M4A,
+    DataTypes.AMR,
+    DataTypes.MID,
+    DataTypes.MIDI,
+)
+
+AUDIO_TYPES_HEAVY: Tuple[DataTypes, ...] = (
+    DataTypes.WAV,
+    DataTypes.AIFF,
+    DataTypes.FLAC,
+    DataTypes.MID,
+    DataTypes.MIDI,
+)
+
+AUDIO_CONVERSION_TARGET: Dict[DataTypes, DataTypes] = {
+    DataTypes.FLAC: DataTypes.MP3,
+    DataTypes.AIFF: DataTypes.MP3,
+    DataTypes.OPUS: DataTypes.MP3,
+    DataTypes.OGG_AUDIO: DataTypes.MP3,
+    DataTypes.M4A: DataTypes.MP3,
+    DataTypes.AMR: DataTypes.MP3,
+    DataTypes.MID: DataTypes.MP3,
+    DataTypes.MIDI: DataTypes.MP3,
+}
+
+# Document types
+DOCUMENT_TYPES_UNIVERSAL: Tuple[DataTypes, ...] = (
+    DataTypes.PDF,
+    DataTypes.JSON,
+    DataTypes.PLAIN,
+    DataTypes.TEXT,
+    DataTypes.TXT,
+    DataTypes.CSV,
+    DataTypes.HTML,
+    DataTypes.XML,
+)
+
+DOCUMENT_TYPES_NEED_CONVERTING: Tuple[DataTypes, ...] = (
+    DataTypes.DOC,
+    DataTypes.DOCX,
+    DataTypes.PPT,
+    DataTypes.PPTX,
+    DataTypes.XLS,
+    DataTypes.XLSX,
+    DataTypes.ODS,
+    DataTypes.ODT,
+    DataTypes.ODP,
+    DataTypes.EPUB,
+    DataTypes.MARKDOWN,
+    DataTypes.MD,
+    DataTypes.RTF,
+    DataTypes.TOML,
+    DataTypes.YAML,
+    DataTypes.YML,
+)
+
+DOCUMENT_TYPES_HEAVY: Tuple[DataTypes, ...] = (
+    DataTypes.PDF,
+    DataTypes.PPTX,
+    DataTypes.DOCX,
+    DataTypes.XLSX,
+)
+
+DOCUMENT_CONVERSION_TARGET: Dict[DataTypes, DataTypes] = {
+    DataTypes.DOC: DataTypes.PDF,
+    DataTypes.DOCX: DataTypes.PDF,
+    DataTypes.PPT: DataTypes.PDF,
+    DataTypes.PPTX: DataTypes.PDF,
+    DataTypes.XLS: DataTypes.PDF,
+    DataTypes.XLSX: DataTypes.PDF,
+    DataTypes.ODS: DataTypes.PDF,
+    DataTypes.ODT: DataTypes.PDF,
+    DataTypes.ODP: DataTypes.PDF,
+    DataTypes.EPUB: DataTypes.PDF,
+    DataTypes.MARKDOWN: DataTypes.HTML,
+    DataTypes.MD: DataTypes.HTML,
+    DataTypes.RTF: DataTypes.PDF,
+    DataTypes.TOML: DataTypes.JSON,
+    DataTypes.YAML: DataTypes.JSON,
+    DataTypes.YML: DataTypes.JSON,
+}
+
+# Archive types
+ARCHIVE_TYPES_UNIVERSAL: Tuple[DataTypes, ...] = (
+    DataTypes.ZIP,
+)
+
+ARCHIVE_TYPES_NEED_CONVERTING: Tuple[DataTypes, ...] = (
+    DataTypes.RAR,
+    DataTypes._7Z,
+    DataTypes.BZ2,
+    DataTypes.TAR,
+    DataTypes.TAR_GZ,
+    DataTypes.TAR_BZ2,
+    DataTypes.TAR_XZ,
+    DataTypes.XZ,
+    DataTypes.GZIP,
+    DataTypes.ISO,
+    DataTypes.DMG,
+)
+
+ARCHIVE_TYPES_HEAVY: Tuple[DataTypes, ...] = (
+    DataTypes.ISO,
+    DataTypes.DMG,
+    DataTypes.TAR,
+    DataTypes.TAR_GZ,
+    DataTypes.TAR_BZ2,
+    DataTypes.TAR_XZ,
+    DataTypes.XZ,
+)
+
+ARCHIVE_CONVERSION_TARGET: Dict[DataTypes, DataTypes] = {
+    DataTypes.RAR: DataTypes.ZIP,
+    DataTypes._7Z: DataTypes.ZIP,
+    DataTypes.BZ2: DataTypes.ZIP,
+    DataTypes.TAR: DataTypes.ZIP,
+    DataTypes.GZIP: DataTypes.ZIP,
+    DataTypes.ISO: DataTypes.ZIP,
+    DataTypes.DMG: DataTypes.ZIP,
+    DataTypes.TAR_GZ: DataTypes.ZIP,
+    DataTypes.TAR_BZ2: DataTypes.ZIP,
+    DataTypes.TAR_XZ: DataTypes.ZIP,
+}
+
+# Font types
+FONT_TYPES_UNIVERSAL: Tuple[DataTypes, ...] = (
+    DataTypes.WOFF,
+    DataTypes.WOFF2,
+)
+
+FONT_TYPES_NEED_CONVERTING: Tuple[DataTypes, ...] = (
+    DataTypes.TTF,
+    DataTypes.OTF,
+    DataTypes.EOT,
+)
+
+FONT_TYPES_HEAVY: Tuple[DataTypes, ...] = (
+    DataTypes.TTF,
+    DataTypes.OTF,
+)
+
+FONT_CONVERSION_TARGET: Dict[DataTypes, DataTypes] = {
+    DataTypes.TTF: DataTypes.WOFF2,
+    DataTypes.OTF: DataTypes.WOFF2,
+    DataTypes.EOT: DataTypes.WOFF2,
+}
+
+# Stream binary types
+BINARY_TYPES_UNIVERSAL: Tuple[DataTypes, ...] = (
+    DataTypes.OCTET_STREAM,
+    DataTypes.STREAM,
+)
+
+BINARY_TYPES_NEED_CONVERTING: Tuple[DataTypes, ...] = ()
+BINARY_TYPES_HEAVY: Tuple[DataTypes, ...] = ()
+BINARY_CONVERSION_TARGET: Dict[DataTypes, DataTypes] = {}
+
+# Base types
+BASE_TYPES_UNIVERSAL: Tuple[DataTypes, ...] = (
+    DataTypes.BASE16,
+    DataTypes.BASE32,
+    DataTypes.BASE64,
+    DataTypes.BASE85,
+)
+BASE_TYPES_NEED_CONVERTING: Tuple[DataTypes, ...] = ()
+BASE_TYPES_HEAVY: Tuple[DataTypes, ...] = ()
+BASE_TYPES_CONVERSION_TARGET: Dict[DataTypes, DataTypes] = {}
+
+# ============================================================
+
+# lookup conversion table
+CONVERSION_TARGETS: Dict[DataTypes, DataTypes] = {}
+for d in (
+    IMAGE_CONVERSION_TARGET, VIDEO_CONVERSION_TARGET,
+    AUDIO_CONVERSION_TARGET, DOCUMENT_CONVERSION_TARGET,
+    ARCHIVE_CONVERSION_TARGET, FONT_CONVERSION_TARGET,
+    BINARY_CONVERSION_TARGET, BASE_TYPES_CONVERSION_TARGET
+):
+    CONVERSION_TARGETS.update(d)
+
+# ============================================================
+
+# Media type lookup tables
+
+
+@dataclass(frozen=True)
+class MediaTypeRegistry:
+    """Registry of media type groupings and conversion targets."""
+    # Images
+    image_universal: Tuple[DataTypes, ...]
+    image_needs_converting: Tuple[DataTypes, ...]
+    image_heavy: Tuple[DataTypes, ...]
+    image_conversion_targets: Dict[DataTypes, DataTypes]
+
+    # Video
+    video_universal: Tuple[DataTypes, ...]
+    video_needs_converting: Tuple[DataTypes, ...]
+    video_heavy: Tuple[DataTypes, ...]
+    video_conversion_targets: Dict[DataTypes, DataTypes]
+
+    # Audio
+    audio_universal: Tuple[DataTypes, ...]
+    audio_needs_converting: Tuple[DataTypes, ...]
+    audio_heavy: Tuple[DataTypes, ...]
+    audio_conversion_targets: Dict[DataTypes, DataTypes]
+
+    # Documents
+    document_universal: Tuple[DataTypes, ...]
+    document_needs_converting: Tuple[DataTypes, ...]
+    document_heavy: Tuple[DataTypes, ...]
+    document_conversion_targets: Dict[DataTypes, DataTypes]
+
+    # Archives
+    archive_universal: Tuple[DataTypes, ...]
+    archive_needs_converting: Tuple[DataTypes, ...]
+    archive_heavy: Tuple[DataTypes, ...]
+    archive_conversion_targets: Dict[DataTypes, DataTypes]
+
+    # Fonts
+    font_universal: Tuple[DataTypes, ...]
+    font_needs_converting: Tuple[DataTypes, ...]
+    font_heavy: Tuple[DataTypes, ...]
+    font_conversion_targets: Dict[DataTypes, DataTypes]
+
+    # Binary
+    binary_universal: Tuple[DataTypes, ...]
+    binary_needs_converting: Tuple[DataTypes, ...]
+    binary_heavy: Tuple[DataTypes, ...]
+    binary_conversion_targets: Dict[DataTypes, DataTypes]
+
+    # Base type
+    base_types_universal: Tuple[DataTypes, ...]
+    base_types_need_converting: Tuple[DataTypes, ...]
+    base_types_heavy: Tuple[DataTypes, ...]
+    base_types_conversion_targets: Dict[DataTypes, DataTypes]
+
+    # Conversion lookup
+    conversion_targets: Dict[DataTypes, DataTypes]
+
+    def is_image(self, mime: DataTypes) -> bool:
+        """Check if the given MIME type is an image.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            bool: True if it's an image, False otherwise.
+        """
+        return mime in self.image_universal or mime in self.image_needs_converting
+
+    def is_video(self, mime: DataTypes) -> bool:
+        """Check if the given MIME type is a video.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            bool: True if it's a video, False otherwise.
+        """
+        return mime in self.video_universal or mime in self.video_needs_converting
+
+    def is_audio(self, mime: DataTypes) -> bool:
+        """Check if the given MIME type is an audio.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            bool: True if it's an audio, False otherwise.
+        """
+        return mime in self.audio_universal or mime in self.audio_needs_converting
+
+    def is_document(self, mime: DataTypes) -> bool:
+        """Check if the given MIME type is a document.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            bool: True if it's a document, False otherwise.
+        """
+        return mime in self.document_universal or mime in self.document_needs_converting
+
+    def is_archive(self, mime: DataTypes) -> bool:
+        """Check if the given MIME type is an archive.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            bool: True if it's an archive, False otherwise.
+        """
+        return mime in self.archive_universal or mime in self.archive_needs_converting
+
+    def is_font(self, mime: DataTypes) -> bool:
+        """Check if the given MIME type is a font.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            bool: True if it's a font, False otherwise.
+        """
+        return mime in self.font_universal or mime in self.font_needs_converting
+
+    def is_binary(self, mime: DataTypes) -> bool:
+        """Check if the given MIME type is a binary stream.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            bool: True if it's a binary stream, False otherwise.
+        """
+        return mime in self.binary_universal or mime in self.binary_needs_converting
+
+    def is_base_type(self, mime: DataTypes) -> bool:
+        """Check if the given MIME type is a base (universal) type.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            bool: True if it's a base type, False otherwise.
+        """
+        return mime in self.base_types_universal or mime in self.base_types_need_converting
+
+    def is_heavy(self, mime: DataTypes) -> bool:
+        """Check if the given MIME type is considered heavy.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            bool: True if it's heavy, False otherwise.
+        """
+        return (
+            mime in self.image_heavy or
+            mime in self.video_heavy or
+            mime in self.audio_heavy or
+            mime in self.document_heavy or
+            mime in self.archive_heavy or
+            mime in self.font_heavy or
+            mime in self.binary_heavy
+        )
+
+    def is_supported(self, mime: DataTypes) -> bool:
+        """Check if the given MIME type is supported in any category.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            bool: True if supported, False otherwise.
+        """
+        return (
+            self.is_image(mime) or
+            self.is_video(mime) or
+            self.is_audio(mime) or
+            self.is_document(mime) or
+            self.is_archive(mime) or
+            self.is_font(mime) or
+            self.is_binary(mime)
+        )
+
+    def needs_conversion(self, mime: DataTypes) -> bool:
+        """Check if the given MIME type requires conversion.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            bool: True if conversion is needed, False otherwise.
+        """
+        return mime in MEDIA_TYPES.conversion_targets
+
+    def get_conversion_target(self, mime: DataTypes) -> Optional[DataTypes]:
+        """Get the conversion target MIME type for the given MIME type.
+        Args:
+            mime (DataTypes): The MIME type to check.
+        Returns:
+            Optional[DataTypes]: The target MIME type if conversion is needed, None otherwise.
+        """
+        return MEDIA_TYPES.conversion_targets.get(mime)
+
+
+MEDIA_TYPES = MediaTypeRegistry(
+    image_universal=IMAGE_TYPES_UNIVERSAL,
+    image_needs_converting=IMAGE_TYPES_NEED_CONVERTING,
+    image_heavy=IMAGE_TYPES_HEAVY,
+    image_conversion_targets=IMAGE_CONVERSION_TARGET,
+
+    video_universal=VIDEO_TYPES_UNIVERSAL,
+    video_needs_converting=VIDEO_TYPES_NEED_CONVERTING,
+    video_heavy=VIDEO_TYPES_HEAVY,
+    video_conversion_targets=VIDEO_CONVERSION_TARGET,
+
+    audio_universal=AUDIO_TYPES_UNIVERSAL,
+    audio_needs_converting=AUDIO_TYPES_NEED_CONVERTING,
+    audio_heavy=AUDIO_TYPES_HEAVY,
+    audio_conversion_targets=AUDIO_CONVERSION_TARGET,
+
+    document_universal=DOCUMENT_TYPES_UNIVERSAL,
+    document_needs_converting=DOCUMENT_TYPES_NEED_CONVERTING,
+    document_heavy=DOCUMENT_TYPES_HEAVY,
+    document_conversion_targets=DOCUMENT_CONVERSION_TARGET,
+
+    archive_universal=ARCHIVE_TYPES_UNIVERSAL,
+    archive_needs_converting=ARCHIVE_TYPES_NEED_CONVERTING,
+    archive_heavy=ARCHIVE_TYPES_HEAVY,
+    archive_conversion_targets=ARCHIVE_CONVERSION_TARGET,
+
+    font_universal=FONT_TYPES_UNIVERSAL,
+    font_needs_converting=FONT_TYPES_NEED_CONVERTING,
+    font_heavy=FONT_TYPES_HEAVY,
+    font_conversion_targets=FONT_CONVERSION_TARGET,
+
+    binary_universal=BINARY_TYPES_UNIVERSAL,
+    binary_needs_converting=BINARY_TYPES_NEED_CONVERTING,
+    binary_heavy=BINARY_TYPES_HEAVY,
+    binary_conversion_targets=BINARY_CONVERSION_TARGET,
+
+    base_types_universal=BASE_TYPES_UNIVERSAL,
+    base_types_need_converting=BASE_TYPES_NEED_CONVERTING,
+    base_types_heavy=BASE_TYPES_HEAVY,
+    base_types_conversion_targets=BASE_TYPES_CONVERSION_TARGET,
+
+    conversion_targets=CONVERSION_TARGETS,
+)

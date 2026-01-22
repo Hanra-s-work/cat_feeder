@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: editor_provider.py
 # CREATION DATE: 26-11-2025
-# LAST Modified: 9:50:27 27-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:44:9 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: Swagger Editor documentation provider implementation.
@@ -105,7 +105,7 @@ class SwaggerEditorProvider:
     <script>
         window.onload = function() {{
             if (typeof SwaggerUIBundle === 'undefined') {{
-                document.getElementById('swagger-ui').innerHTML = 
+                document.getElementById('swagger-ui').innerHTML =
                     '<div style="padding: 20px; color: red;">Editor scripts failed to load. Please check your internet connection.</div>';
                 return;
             }}

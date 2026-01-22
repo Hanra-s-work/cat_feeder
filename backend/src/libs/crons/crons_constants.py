@@ -1,30 +1,20 @@
 """
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
 # PROJECT: CatFeeder
 # FILE: crons_constants.py
 # CREATION DATE: 19-11-2025
-# LAST Modified: 7:26:1 04-12-2025
+# LAST Modified: 21:44:44 14-01-2026
 # DESCRIPTION:
-# This is the project in charge of making the connected cat feeder project work.
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The constants used for the cron library.
@@ -40,13 +30,6 @@ IDISP: Disp = initialise_logger("Crons Constants", False)
 
 # The TOML instance in charge of loading the toml config file
 TOML = TOMLLoader()
-
-# Enable debugging for the functions in the constants file.
-DEBUG_MODE: bool = TOML.get_toml_variable(
-    "Server_configuration.debug_mode", "debug", False
-)
-IDISP.update_disp_debug(DEBUG_MODE)
-TOML.disp.update_disp_debug(DEBUG_MODE)
 
 # TOML variables
 # |- Cron settings

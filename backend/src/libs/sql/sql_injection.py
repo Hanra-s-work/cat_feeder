@@ -1,27 +1,18 @@
 """
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# LAST Modified: 17:39:13 13-12-2025
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
 # PROJECT: CatFeeder
 # FILE: sql_injection.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 7:3:4 13-12-2025
+# LAST Modified: 22:33:21 12-01-2026
 # DESCRIPTION:
 # SQL injection detection module for backend connectors.
 # /STOP
@@ -281,6 +272,60 @@ class SQLInjection:
                     return True
         return False
 
+    def _is_hex_colour_valid(self, colour: str) -> bool:
+        """Check if a string is a valid CSS-style hex colour code.
+
+        The input is preprocessed:
+        - Strips surrounding whitespace and optional key=value wrappers
+        - Strips surrounding quotes
+        - Rejects internal whitespace
+        - Validates starts with '#' and allowed hex lengths
+
+        Acceptable formats (without '#'):
+        - 3  : RGB
+        - 4  : RGBA
+        - 6  : RRGGBB
+        - 8  : RRGGBBAA
+        - 9  : RRRGGGBBB
+        - 12 : RRRGGGBBBAAA
+
+        Args:
+            colour (str): The colour string to validate.
+
+        Returns:
+            bool: True if valid hex colour, False otherwise.
+        """
+        s = self._extract_wrapped_value(
+            colour, function="_is_hex_colour_valid:_extract_wrapped_value"
+        )
+        if s is None:
+            return False
+
+        # Required preprocessing check — do not alter s
+        if not s.startswith("#"):
+            return False
+
+        # Reject any internal whitespace
+        for c in s:
+            if c.isspace():
+                return False
+
+        hex_part = s[1:]
+        length = len(hex_part)
+
+        # Acceptable hex lengths for CSS-style colors
+        allowed_lengths = {3, 4, 6, 8, 9, 12}
+        if length not in allowed_lengths:
+            return False
+
+        # Validate that all characters are valid hexadecimal digits
+        try:
+            int(hex_part, 16)
+        except ValueError:
+            return False
+
+        return True
+
     def _is_numeric(self, s: str) -> bool:
         """Return True if string is purely numeric."""
         return bool(re.fullmatch(r'\d+(\.\d+)?', s))
@@ -326,6 +371,43 @@ class SQLInjection:
             return None
 
         return candidate
+
+    def _extract_wrapped_value(self, raw: str, function: str = "_extract_wrapped_value") -> Optional[str]:
+        """Extract and normalize a potentially wrapped value.
+
+        Handles optional `key=value` wrappers, strips surrounding quotes and
+        whitespace, and returns None for inputs containing internal whitespace
+        or that are not strings. This mirrors the preprocessing used for
+        e-mail extraction but is generic for other single-value tokens.
+
+        Args:
+            raw (str): Raw input to process.
+            function (str): Caller name for debug logging.
+
+        Returns:
+            Optional[str]: The normalized inner value, or ``None`` if the
+            input is not a valid single token.
+        """
+        if not isinstance(raw, str):
+            self.disp.log_debug("Not a string", function)
+            return None
+
+        s = raw.strip()
+        m_kv = re.match(r"^\s*([^\s=]+)\s*=\s*(.+)$", s)
+        if m_kv:
+            s = m_kv.group(2).strip()
+
+        # Strip surrounding quotes
+        if (s.startswith("'") and s.endswith("'")) or (s.startswith('"') and s.endswith('"')):
+            s = s[1:-1]
+
+        # Reject values containing whitespace
+        if re.search(r"\s", s):
+            self.disp.log_debug(
+                "Whitespace found in candidate, rejecting", function)
+            return None
+
+        return s
 
     def _is_email(self, raw: str, function: str = "_is_email") -> Optional[str]:
         """Check if the provided text is an e-mail and return normalized value.
@@ -409,6 +491,10 @@ class SQLInjection:
         if norm_email:
             self.disp.log_debug("E-mail found")
             return False
+        # Treat valid hex colour codes as safe input (e.g. '#FFAABB')
+        if self._is_hex_colour_valid(raw):
+            self.disp.log_debug("Hex colour detected; treating as safe input")
+            return False
         string = self._sanitize_usr_input(raw)
         if self._is_numeric(string):
             return False
@@ -451,6 +537,10 @@ class SQLInjection:
         if norm_email:
             self.disp.log_debug("E-mail found")
             return False
+        # Treat valid hex colour codes as safe input (e.g. '#FFAABB')
+        if self._is_hex_colour_valid(raw):
+            self.disp.log_debug("Hex colour detected; treating as safe input")
+            return False
         string = self._sanitize_usr_input(raw)
         if self._is_numeric(string):
             return False
@@ -488,6 +578,10 @@ class SQLInjection:
         norm_email = self._is_email(raw)
         if norm_email:
             self.disp.log_debug("E-mail found")
+            return False
+        # Treat valid hex colour codes as safe input (e.g. '#FFAABB')
+        if self._is_hex_colour_valid(raw):
+            self.disp.log_debug("Hex colour detected; treating as safe input")
             return False
         string = self._sanitize_usr_input(raw)
         if self._is_numeric(string):
@@ -573,6 +667,10 @@ class SQLInjection:
         norm_email = self._is_email(raw)
         if norm_email:
             self.disp.log_debug("E-mail found")
+            return False
+        # Treat valid hex colour codes as safe input (e.g. '#FFAABB')
+        if self._is_hex_colour_valid(raw):
+            self.disp.log_debug("Hex colour detected; treating as safe input")
             return False
         string = self._sanitize_usr_input(raw)
         if self._is_numeric(string):

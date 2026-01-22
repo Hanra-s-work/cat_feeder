@@ -1,6 +1,6 @@
-# 
+#
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,15 +12,15 @@
 # PROJECT: CatFeeder
 # FILE: requirements.backend.txt
 # CREATION DATE: 11-10-2025
-# LAST Modified: 1:4:58 03-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 23:1:17 16-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The dependencies required for the server to run in production mode.
 # // AR
 # +==== END CatFeeder =================+
-# 
+#
 # uuid generator
 uuid == 1.30
 
@@ -56,3 +56,15 @@ uuid == 1.30
 
 # For passwords and environment variables (security)
 -r ./backend/requirements.security.txt
+
+# A library of words to make the names more human like
+-r ./backend/requirements.words.txt
+
+# Font processing
+-r ./backend/requirements.fonts.txt
+
+# Archive handling
+-r ./backend/requirements.archive.txt
+
+# Document processing
+-r ./backend/requirements.document.txt

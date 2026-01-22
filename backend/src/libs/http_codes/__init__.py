@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: __init__.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 18:45:27 22-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 0:1:14 15-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE:
@@ -28,11 +28,14 @@
 
 
 from .http_codes import HttpCodes, HCI
-from .http_constants import DataTypes as HttpDataTypes, DEFAULT_MESSAGE_TYPE as HTTP_DEFAULT_TYPE
+from .converter import Converter as HttpConverter
+from .http_constants import DataTypes as HttpDataTypes, DEFAULT_MESSAGE_TYPE as HTTP_DEFAULT_TYPE, MEDIA_TYPES as HTTP_MEDIA_TYPES
 
 __all__ = [
     "HttpCodes",
     "HCI",
     "HttpDataTypes",
-    "HTTP_DEFAULT_TYPE"
+    "HTTP_DEFAULT_TYPE",
+    "HTTP_MEDIA_TYPES",
+    "HttpConverter",
 ]

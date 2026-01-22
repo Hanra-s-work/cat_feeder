@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -13,8 +13,8 @@
 # FILE: mail_constants.py
 # CREATION DATE: 18-11-2025
 # LAST Modified: 0:38:53 26-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The file in charge of containing the constants for the mail management class.

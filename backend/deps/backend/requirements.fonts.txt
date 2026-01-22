@@ -1,0 +1,26 @@
+# 
+# +==== BEGIN CatFeeder =================+
+# LOGO: 
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
+# /STOP
+# PROJECT: CatFeeder
+# FILE: requirements.fonts.txt
+# CREATION DATE: 15-01-2026
+# LAST Modified: 5:33:26 15-01-2026
+# DESCRIPTION: 
+# This is the backend server in charge of making the actual website work.
+# /STOP
+# COPYRIGHT: (c) Cat Feeder
+# PURPOSE: The dependencies required for processing fonts.
+# // AR
+# +==== END CatFeeder =================+
+# 
+
+# Font handlingfr
+fonttools[ufo,lxml,woff,unicode]==4.61.1

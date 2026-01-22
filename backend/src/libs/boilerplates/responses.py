@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: responses.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 9:22:35 11-12-2025
+# LAST Modified: 22:0:37 11-01-2026
 # DESCRIPTION:
-# This is the project in charge of making the connected cat feeder project work.
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File containing boilerplate responses that could be used by the server in it's endpoints_initialised.
@@ -22,7 +22,7 @@
 # +==== END CatFeeder =================+
 """
 
-from typing import Union, Dict, Any, Optional, List
+from typing import Union, Dict, Any, Optional
 from fastapi import Response
 from display_tty import Disp, initialise_logger
 from .non_web import BoilerplateNonHTTP
@@ -97,12 +97,20 @@ class BoilerplateResponses(FinalSingleton):
             )
             json_body[CONST.JSON_LOGGED_IN] = None
         else:
+            self.disp.log_debug(
+                "self.boilerplate_non_http_initialised is initialised"
+            )
             if token:
+                self.disp.log_debug("Token is present")
                 json_body[CONST.JSON_LOGGED_IN] = self.boilerplate_non_http_initialised.is_token_correct(
                     token
                 )
             else:
+                self.disp.log_debug("Token is absent")
                 json_body[CONST.JSON_LOGGED_IN] = False
+            self.disp.log_debug(
+                f"Valid token? {json_body[CONST.JSON_LOGGED_IN]}")
+        self.disp.log_debug(f"Final response: {json_body}")
         return json_body
 
     def invalid_token(self, title: str) -> Response:
@@ -396,3 +404,60 @@ class BoilerplateResponses(FinalSingleton):
             error=True
         )
         return HCI.bad_request(body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
+
+    def missing_variable_in_query(self, title: str, token: Union[str, None] = None) -> Response:
+        """_summary_
+            Function that will return a message saying that there is a missing variable in the provided query.
+
+        Args:
+            title (str): _description_: The name of the endpoint
+            token (Union[str, None], optional): _description_. Defaults to None.: The token of the account.
+        Returns:
+            Response: _description_: The pre-compiled response (ready to go)
+        """
+        body = self.build_response_body(
+            title=title,
+            message="A variable is missing in the query of the request.",
+            resp="Missing variable",
+            token=token,
+            error=True
+        )
+        return HCI.bad_request(body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
+
+    def missing_resource(self, title: str, token: Union[str, None] = None) -> Response:
+        """_summary_
+            Function that will return a message saying that a resource is missing.
+
+        Args:
+            title (str): _description_: The name of the endpoint
+            token (Union[str, None], optional): _description_. Defaults to None.: The token of the account.
+        Returns:
+            Response: _description_: The pre-compiled response (ready to go)
+        """
+        body = self.build_response_body(
+            title=title,
+            message="The requested resource is missing.",
+            resp="Missing resource",
+            token=token,
+            error=True
+        )
+        return HCI.not_found(body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())
+
+    def service_unavailable(self, service: str = "<not specified>", title: str = "<not specified>", token: Union[str, None] = None) -> Response:
+        """_summary_
+            Function that will return a message saying that the service is unavailable.
+
+        Args:
+            title (str): _description_: The name of the endpoint
+            token (Union[str, None], optional): _description_. Defaults to None.: The token of the account.
+        Returns:
+            Response: _description_: The pre-compiled response (ready to go)
+        """
+        body = self.build_response_body(
+            title=title,
+            message=f"The service ({service}) is currently unavailable.",
+            resp="Service unavailable",
+            token=token,
+            error=True
+        )
+        return HCI.service_unavailable(body, content_type=HTTP_DEFAULT_TYPE, headers=self.server_headers_initialised.for_json())

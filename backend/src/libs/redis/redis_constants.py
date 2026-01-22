@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: redis_constants.py
 # CREATION DATE: 17-11-2025
-# LAST Modified: 15:34:26 17-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:51:30 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: These are the constants for the redis class that will allow the class to have descriptive info.
@@ -25,7 +25,11 @@
 # DEFAULT environement variables
 REDIS_SOCKET_KEY: str = "REDIS_SOCKET"
 REDIS_PASSWORD_KEY: str = "REDIS_PASSWORD"
+REDIS_HOST_KEY: str = "REDIS_HOST"
+REDIS_PORT_KEY: str = "REDIS_PORT"
 REDIS_SOCKET_DEFAULT: str = "/run/redis/redis.sock"
+REDIS_HOST_DEFAULT: str = "127.0.0.1"
+REDIS_PORT_DEFAULT: int = 6379
 
 # Seconds
 SEC_1: int = 1

@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: bucket_class_aliases.py
 # CREATION DATE: 19-11-2025
-# LAST Modified: 7:35:6 02-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:41:58 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # Protocol aliases for the S3 bucket wrapper.
 #
 # These lightweight ``typing.Protocol`` classes describe only the subset of the boto3 S3 interface that the bucket wrapper relies on.
@@ -49,6 +49,10 @@ class S3ObjectLike(Protocol):
         """Return the object key (its unique path within the bucket)."""
         raise NotImplementedError
 
+    def get(self) -> Any:
+        """Retrieve the object and return a response containing the object's body and metadata."""
+        raise NotImplementedError
+
 
 class S3ObjectsCollectionLike(Protocol):
     """Iterable collection façade exposing ``all()`` to enumerate objects."""
@@ -67,6 +71,10 @@ class S3BucketLike(Protocol):
 
     def download_file(self, Key: str, Filename: str) -> Any:
         """Download the object at ``Key`` into the local file path ``Filename``."""
+        raise NotImplementedError
+
+    def put_object(self, Key: str, Body: bytes) -> Any:
+        """Upload a byte stream to this bucket under ``Key``."""
         raise NotImplementedError
 
     def delete(self) -> Any:

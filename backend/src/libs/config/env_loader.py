@@ -1,30 +1,20 @@
 """
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..........####...####..........
-# ......###.....#.#########......
-# ....##........#.###########....
-# ...#..........#.############...
-# ...#..........#.#####.######...
-# ..#.....##....#.###..#...####..
-# .#.....#.##...#.##..##########.
-# #.....##########....##...######
-# #.....#...##..#.##..####.######
-# .#...##....##.#.##..###..#####.
-# ..#.##......#.#.####...######..
-# ..#...........#.#############..
-# ..#...........#.#############..
-# ...##.........#.############...
-# ......#.......#.#########......
-# .......#......#.########.......
-# .........#####...#####.........
+# ..............(..../\\
+# ...............)..(.')
+# ..............(../..)
+# ...............\\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
 # /STOP
 # PROJECT: CatFeeder
 # FILE: env_loader.py
 # CREATION DATE: 04-12-2025
-# LAST Modified: 7:59:0 04-12-2025
+# LAST Modified: 21:52:55 14-01-2026
 # DESCRIPTION:
-# This is the project in charge of making the connected cat feeder project work.
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE:
@@ -192,6 +182,17 @@ class EnvLoader:
         result = self._search_directory_for_env(root, 0, max_depth)
         self.disp.log_debug(f"Env search result: {result}")
         return result
+
+    def update_debug(self, debug: bool) -> None:
+        """
+        Update debug status of the loader.
+
+        Args:
+            debug: New debug status
+        """
+        self.debug = debug
+        self.disp.update_disp_debug(debug)
+        self.disp.log_info(f"Debug mode set to {debug}")
 
     def load_env_file(self, force_reload: bool = False, merge_os_environ: bool = True, custom_path: Optional[str] = None) -> Dict[str, str]:
         """

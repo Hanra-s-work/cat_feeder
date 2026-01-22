@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: background_tasks.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:42:15 25-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:43:26 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File in charge of setting up the cron jobs for the server.
@@ -229,7 +229,7 @@ class BackgroundTasks(metaclass=FinalClass):
             seconds (int, optional): _description_. Defaults to 5. The amount of seconds to wait before executing the task again (I don't think it is effective for the cron option)
 
         Returns:
-            Union[int,Job]: _description_: will raise a ValueError when an error occurs, otherwise, returns an instance of Job. 
+            Union[int,Job]: _description_: will raise a ValueError when an error occurs, otherwise, returns an instance of Job.
         """
         if callable(func) is False:
             self.disp.log_error(

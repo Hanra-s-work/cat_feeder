@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: docs_constants.py
 # CREATION DATE: 26-11-2025
-# LAST Modified: 7:25:55 04-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:46:12 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The file containing the constants for the documentation handler.
@@ -70,9 +70,9 @@ OPENAPI_DESCRIPTION: str = TOML.get_toml_variable(
 # Contact information
 CONTACT_INFO: dict = TOML.get_toml_variable(
     "Documentation.contact", "info", {
-        "name": "Cat Feeder Team",
-        "url": "https://github.com/Cat Feeder",
-        "email": "support@Cat Feeder.com",
+        "name": "Asperguide Team",
+        "url": "https://github.com/Asperguide",
+        "email": "support@asperguide.com",
     }
 )
 
@@ -80,7 +80,7 @@ CONTACT_INFO: dict = TOML.get_toml_variable(
 LICENSE_INFO: dict = TOML.get_toml_variable(
     "Documentation.license", "info", {
         "name": "Proprietary",
-        "url": "https://github.com/Cat Feeder/back-end/blob/prod/LICENSE",
+        "url": "https://github.com/Asperguide/back-end/blob/prod/LICENSE",
     }
 )
 
@@ -88,7 +88,7 @@ LICENSE_INFO: dict = TOML.get_toml_variable(
 SERVERS: list = TOML.get_toml_variable(
     "Documentation", "servers", [
         {"url": "http://localhost:5000", "description": "Development server"},
-        {"url": "https://api.Cat Feeder.fr", "description": "Production server"},
+        {"url": "https://api.asperguide.fr", "description": "Production server"},
     ]
 )
 

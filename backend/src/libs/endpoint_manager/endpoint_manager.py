@@ -1,20 +1,29 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
-# ..............(..../\\
-# ...............)..(.')
-# ..............(../..)
-# ...............\\(__)|
-# Inspired by Joan Stark
-# source https://www.asciiart.eu/
-# animals/cats
+# LOGO:
+# ..........####...####..........
+# ......###.....#.#########......
+# ....##........#.###########....
+# ...#..........#.############...
+# ...#..........#.#####.######...
+# ..#.....##....#.###..#...####..
+# .#.....#.##...#.##..##########.
+# #.....##########....##...######
+# #.....#...##..#.##..####.######
+# .#...##....##.#.##..###..#####.
+# ..#.##......#.#.####...######..
+# ..#...........#.#############..
+# ...##.........#.############...
+# ......#.......#.#########......
+# .......#......#.########.......
+# .........#####...#####.........
 # /STOP
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 9:29:20 11-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 6:47:58 12-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: This is the file in charge of storing the endpoints_initialised ready to be imported into the server class.
@@ -25,8 +34,9 @@ from typing import Optional
 from display_tty import Disp, initialise_logger
 from . import endpoint_constants as ENDPOINT_CONST
 from .endpoints import Bonus
-from .endpoints import CatEndpoints
 from .endpoints import UserEndpoints
+from .endpoints import AdminEndpoints
+from .endpoints import TokenEndpoints
 from .endpoints import TestingEndpoints
 from ..path_manager import PathManager
 from ..core import FinalClass
@@ -76,17 +86,22 @@ class EndpointManager(metaclass=FinalClass):
             error=self.error,
             debug=self.debug
         )
-        self.cat: CatEndpoints = CatEndpoints(
-            success=self.success,
-            error=self.error,
-            debug=self.debug
-        )
         self.bonus: Bonus = Bonus(
             success=success,
             error=error,
             debug=debug
         )
+        self.admin: AdminEndpoints = AdminEndpoints(
+            success=success,
+            error=error,
+            debug=debug
+        )
         self.testing_endpoints: TestingEndpoints = TestingEndpoints(
+            success=self.success,
+            error=self.error,
+            debug=self.debug
+        )
+        self.token_endpoints: TokenEndpoints = TokenEndpoints(
             success=self.success,
             error=self.error,
             debug=self.debug
@@ -98,6 +113,9 @@ class EndpointManager(metaclass=FinalClass):
         self.test_endpoint: str = "/testing"
         self.sql_endpoint: str = f"{self.test_endpoint}/sql"
         self.bucket_endpoint: str = f"{self.test_endpoint}/bucket"
+        self.favicon_endpoint: str = f"{self.v1_str}/favicons"
+        self.user_favicon_endpoint: str = f"{self.v1_str}/user_favicon"
+        self.token_endpoint: str = f"{self.v1_str}/token"
         self.disp.log_debug("Initialised")
 
     def _retrieve_path_manager(self) -> Optional[PathManager]:
@@ -165,15 +183,125 @@ class EndpointManager(metaclass=FinalClass):
         )
 
         # |- user favicon handling
-        # self.paths_initialised.add_path(
-        #     f"{self.v1_str}/user_favicon", self.user.put_user_favicon, "PUT"
-        # )
-        # self.paths_initialised.add_path(
-        #     f"{self.v1_str}/user_favicon", self.user.delete_user_favicon, "GET"
-        # )
-        # self.paths_initialised.add_path(
-        #     f"{self.v1_str}/user_favicon", self.user.delete_user_favicon, "DELETE"
-        # )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/user_favicons", self.user.get_user_favicons, [
+                "GET"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/active_user_favicons", self.user.get_active_user_favicons, [
+                "GET"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.user_favicon_endpoint}/{'{id}'}", self.user.put_user_favicon, [
+                "PUT"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.user_favicon_endpoint}/{'{id}'}", self.user.patch_user_favicon, [
+                "PATCH"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.user_favicon_endpoint}/{'{id}'}", self.user.get_user_favicon, [
+                "GET"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.user_favicon_endpoint}/{'{id}'}/image", self.user.get_user_favicon_image, [
+                "GET"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.user_favicon_endpoint}/{'{id}'}", self.user.delete_user_favicon, [
+                "DELETE"]
+        )
+        # review endpoints to allow user to retrieve their profile icons
+        # |- Favicon handling
+        self.paths_initialised.add_path(
+            f"{self.favicon_endpoint}", self.admin.get_favicons, ["GET"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.favicon_endpoint}", self.admin.register_favicon, ["PUT"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.favicon_endpoint}/{'{id}'}", self.admin.register_favicon, [
+                "PUT"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.favicon_endpoint}/{'{id}'}", self.admin.update_favicon, [
+                "PATCH"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.favicon_endpoint}/{'{id}'}", self.admin.get_favicon, [
+                "GET"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.favicon_endpoint}/{'{id}'}", self.admin.delete_favicon, [
+                "DELETE"]
+        )
+        # | |- Favicon image handling
+        self.paths_initialised.add_path(
+            f"{self.favicon_endpoint}/{'{id}'}/image", self.admin.register_favicon_image, [
+                "PUT"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.favicon_endpoint}/{'{id}'}/image", self.admin.update_favicon_image, [
+                "PATCH"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.favicon_endpoint}/{'{id}'}/image", self.admin.get_favicon_image, [
+                "GET"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.favicon_endpoint}/{'{id}'}/image", self.admin.delete_favicon_image, [
+                "DELETE"]
+        )
+        # | |- Favicon gender
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-gender", self.admin.register_favicon_gender, [
+                "PUT"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-gender", self.admin.update_favicon_gender, [
+                "PATCH"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-gender", self.admin.get_favicon_gender, [
+                "GET"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-gender", self.admin.delete_favicon_gender, [
+                "DELETE"]
+        )
+        # | |- Favicon season
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-season", self.admin.register_favicon_season, [
+                "PUT"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-season", self.admin.update_favicon_season, [
+                "PATCH"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-season", self.admin.get_favicon_season, [
+                "GET"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-season", self.admin.delete_favicon_season, [
+                "DELETE"]
+        )
+        # | \- Favicon type
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-type", self.admin.register_favicon_type, [
+                "PUT"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-type", self.admin.update_favicon_type, [
+                "PATCH"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-type", self.admin.get_favicon_type, ["GET"]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/favicon-type", self.admin.delete_favicon_type, [
+                "DELETE"]
+        )
 
         # Bonus routes
         self.paths_initialised.add_path(
@@ -187,7 +315,9 @@ class EndpointManager(metaclass=FinalClass):
             ]
         )
         self.paths_initialised.add_path(
-            f"{self.v1_str}/", self.bonus.get_welcome, "GET"
+            f"{self.v1_str}/", self.bonus.get_welcome, [
+                "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/stop", self.bonus.post_stop_server, "PUT"
@@ -223,25 +353,46 @@ class EndpointManager(metaclass=FinalClass):
             f"{self.oauth_str}/callback", self.oauth_authentication_initialised.oauth_callback, "POST"
         )
         self.paths_initialised.add_path(
-            f"{self.oauth_str}/" + "{provider}",
+            f"{self.oauth_str}/{'{provider}'}",
             self.oauth_authentication_initialised.add_oauth_provider, "POST"
         )
         self.paths_initialised.add_path(
-            f"{self.oauth_str}/" + "{provider}",
+            f"{self.oauth_str}/{'{provider}'}",
             self.oauth_authentication_initialised.update_oauth_provider_data, "PUT"
         )
         self.paths_initialised.add_path(
-            f"{self.oauth_str}/" + "{provider}",
+            f"{self.oauth_str}/{'{provider}'}",
             self.oauth_authentication_initialised.patch_oauth_provider_data, "PATCH"
         )
         self.paths_initialised.add_path(
-            f"{self.oauth_str}/" + "{provider}",
+            f"{self.oauth_str}/{'{provider}'}",
             self.oauth_authentication_initialised.delete_oauth_provider, "DELETE"
+        )
+
+        # Token route
+        self.paths_initialised.add_path(
+            f"{self.token_endpoint}/valid", self.token_endpoints.get_token_valid, "GET"
+        )
+        self.paths_initialised.add_path(
+            f"{self.token_endpoint}/admin", self.token_endpoints.get_admin, "GET"
+        )
+        self.paths_initialised.add_path(
+            f"{self.token_endpoint}/ttl", self.token_endpoints.get_time_to_live, "GET"
+        )
+        self.paths_initialised.add_path(
+            f"{self.token_endpoint}/info", self.token_endpoints.get_token_info, "GET"
+        )
+        self.paths_initialised.add_path(
+            f"{self.token_endpoint}/refresh", self.token_endpoints.post_refresh_token, "POST"
+        )
+        self.paths_initialised.add_path(
+            f"{self.token_endpoint}/revoke_account_tokens", self.token_endpoints.delete_revoke_account_token, "DELETE"
         )
 
         # Testing endpoints (only if enabled in configuration)
         if ENDPOINT_CONST.TEST_ENABLE_TESTING_ENDPOINTS:
             self.disp.log_debug("Testing endpoints enabled")
+            # SQL testing endpoints
             self.paths_initialised.add_path(
                 f"{self.sql_endpoint}/tables", self.testing_endpoints.get_tables, "GET"
             )
@@ -278,11 +429,18 @@ class EndpointManager(metaclass=FinalClass):
             self.paths_initialised.add_path(
                 f"{self.sql_endpoint}/datetime/from-string", self.testing_endpoints.convert_string_to_datetime, "GET"
             )
+            # Bucket testing endpoints
             self.paths_initialised.add_path(
                 f"{self.bucket_endpoint}/buckets", self.testing_endpoints.get_buckets, "GET"
             )
             self.paths_initialised.add_path(
                 f"{self.bucket_endpoint}/connected", self.testing_endpoints.test_bucket_connection, "GET"
+            )
+            self.paths_initialised.add_path(
+                f"{self.bucket_endpoint}/create", self.testing_endpoints.create_test_bucket, "POST"
+            )
+            self.paths_initialised.add_path(
+                f"{self.bucket_endpoint}/upload", self.testing_endpoints.upload_test_file_stream, "POST"
             )
             self.paths_initialised.add_path(
                 f"{self.bucket_endpoint}/files", self.testing_endpoints.get_bucket_files, "GET"
@@ -291,10 +449,13 @@ class EndpointManager(metaclass=FinalClass):
                 f"{self.bucket_endpoint}/files/info", self.testing_endpoints.get_bucket_file_info, "GET"
             )
             self.paths_initialised.add_path(
-                f"{self.bucket_endpoint}/create", self.testing_endpoints.create_test_bucket, "POST"
+                f"{self.bucket_endpoint}/download", self.testing_endpoints.download_test_file_stream, "GET"
             )
             self.paths_initialised.add_path(
                 f"{self.bucket_endpoint}/delete", self.testing_endpoints.delete_test_bucket, "DELETE"
+            )
+            self.paths_initialised.add_path(
+                f"{self.bucket_endpoint}/delete-file", self.testing_endpoints.delete_test_file, "DELETE"
             )
         else:
             self.disp.log_debug("Testing endpoints disabled")

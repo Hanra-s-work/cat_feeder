@@ -1,27 +1,26 @@
-# 
+#
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
-# ..............(..../\
+# LOGO:
+# ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
-# ...............\(__)|
+# ...............\\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
 # /STOP
 # PROJECT: CatFeeder
 # FILE: requirements.config.txt
-# CREATION DATE: 04-12-2025
-# LAST Modified: 18:46:46 04-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# CREATION DATE: 11-10-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The dependencies required to load configuration files.
 # // AR
 # +==== END CatFeeder =================+
-# 
+#
 # For getting toml config files
 # Priority: tomli (PyPI, Python < 3.11) > tomllib (stdlib 3.11+)
 tomli ==2.0.1; python_version < '3.8'  # For very old Python versions
-tomli ==2.3.0; python_version >= '3.8' and python_version < '3.11'  # Modern TOML v1.0.0 parser
+tomli ==2.4.0; python_version >= '3.8' and python_version < '3.11'  # Modern TOML v1.0.0 parser

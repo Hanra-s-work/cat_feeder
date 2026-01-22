@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: final_singleton_class.py
 # CREATION DATE: 22-11-2025
-# LAST Modified: 20:25:10 22-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:43:3 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The file containing the class in charge of acting as a shared instance that cannot contain other instanciated versions of the inheritor class.
@@ -25,7 +25,11 @@
 from __future__ import annotations
 
 import threading
-from typing import TypeVar, Self
+from typing import TypeVar
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 T = TypeVar("T", bound="FinalSingleton")
 

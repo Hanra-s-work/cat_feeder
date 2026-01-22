@@ -1,20 +1,20 @@
 r"""
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..............(..../\
+# ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
-# ...............\(__)|
+# ...............\\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
 # /STOP
 # PROJECT: CatFeeder
 # FILE: test_http_codes_wrapper.py
-# CREATION DATE: 11-12-2025
-# LAST Modified: 5:9:16 11-12-2025
+# CREATION DATE: 14-12-2025
+# LAST Modified: 4:0:13 11-01-2026
 # DESCRIPTION:
-# This is the project in charge of making the connected cat feeder project work.
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File in charge of testing the http class.
@@ -130,7 +130,7 @@ def test_send_message_on_status_packaging_and_headers(hc, tmp_path):
 
     Verifies that different content_type values produce the appropriate
     FastAPI Response subclass (JSONResponse, HTMLResponse, PlainTextResponse,
-    RedirectResponse, FileResponse) with correct status codes, media types,
+    RedirectResponse, FileResponse, StreamingResponse) with correct status codes, media types,
     and custom headers.
     """
     # JSONResponse using key name
@@ -163,12 +163,13 @@ def test_send_message_on_status_packaging_and_headers(hc, tmp_path):
     # RedirectResponse sets Location header
     assert resp.headers.get("location") == "https://example.com"
 
-    # FileResponse requires a real file path
-    tmp_file = tmp_path / "f.txt"
-    tmp_file.write_text("hello")
-    resp = hc.send_message_on_status(200, content=str(
-        tmp_file), content_type="application/octet-stream")
-    assert isinstance(resp, FileResponse)
+    # StreamingResponse with octet-stream (octet-stream is now in STREAMING_TYPES)
+    def gen():
+        yield b"a"
+        yield b"b"
+    resp = hc.send_message_on_status(
+        200, content=gen(), content_type="application/octet-stream")
+    assert isinstance(resp, StreamingResponse)
     assert resp.status_code == 200
 
     # Numeric string status is accepted
@@ -183,23 +184,22 @@ def test_send_message_on_status_packaging_and_headers(hc, tmp_path):
 
 
 def test_streaming_response(hc):
-    """Test that streaming with file MIME types raises TypeError.
+    """Test that streaming with octet-stream MIME type creates StreamingResponse.
 
     Verifies that providing a generator with application/octet-stream
-    (considered a file MIME in this implementation) raises TypeError
-    because FileResponse expects a file path string, not a generator.
+    (now classified in STREAMING_MIME_TYPES) returns a StreamingResponse,
+    allowing generators to be streamed directly.
     """
     # Provide a generator and STREAM mime
     def gen():
         yield b"a"
         yield b"b"
 
-    # Since `application/octet-stream` is considered a file MIME in this
-    # project's constant grouping, providing a generator should raise a
-    # TypeError because FileResponse expects a file path string.
-    with pytest.raises(TypeError):
-        hc.send_message_on_status(
-            200, content=gen(), content_type="application/octet-stream")
+    # application/octet-stream is now in STREAMING_MIME_TYPES, so generators
+    # are properly handled and create StreamingResponse instead of raising TypeError.
+    resp = hc.send_message_on_status(
+        200, content=gen(), content_type="application/octet-stream")
+    assert isinstance(resp, StreamingResponse)
 
 
 def test_httpdatatypes_basic():
@@ -299,7 +299,8 @@ def test_wrapper_methods_match_source_definitions(hc):
 def test_response_class_variants(hc, tmp_path):
     """Test different response class variants based on content type.
 
-    Verifies that RedirectResponse is created for redirect content_type
+    Verifies that RedirectResponse is created for redirect content_type,
+    StreamingResponse is created for octet-stream with generators,
     and FileResponse is created when providing file paths with file MIME types.
     """
     # RedirectResponse via redirect content_type
@@ -308,29 +309,28 @@ def test_response_class_variants(hc, tmp_path):
     assert isinstance(resp, RedirectResponse)
     assert resp.headers.get('location') == "https://example.com"
 
-    # FileResponse when using a file MIME and providing a file path
-    f = tmp_path / 'file.bin'
-    f.write_bytes(b'bin')
-    resp = hc.success(content=str(f), content_type="application/octet-stream")
-    assert isinstance(resp, FileResponse)
+    # StreamingResponse when using octet-stream with a generator
+    def gen():
+        yield b"chunk1"
+        yield b"chunk2"
+    resp = hc.success(content=gen(), content_type="application/octet-stream")
+    assert isinstance(resp, StreamingResponse)
 
 
 def test_streaming_unreachable_branch(hc):
-    """Test that StreamingResponse branch is unreachable with file MIME types.
+    """Test that StreamingResponse is properly created with octet-stream MIME type.
 
-    Verifies that the StreamingResponse code path is shadowed by file MIME
-    type handling (octet-stream is classified as file), so attempting to
-    send a generator with octet-stream raises TypeError instead of creating
-    a StreamingResponse.
+    Verifies that octet-stream (now in STREAMING_MIME_TYPES) properly creates
+    StreamingResponse when provided with a generator, no longer shadowed by FILE handling.
     """
-    # StreamingResponse branch is shadowed by file mime types (octet-stream is file),
-    # therefore trying to send a generator with octet-stream should raise TypeError
+    # StreamingResponse is now properly reachable since octet-stream is in STREAMING_MIME_TYPES
     def gen():
         yield b'a'
+        yield b'b'
 
-    with pytest.raises(TypeError):
-        hc.send_message_on_status(
-            200, content=gen(), content_type='application/octet-stream')
+    resp = hc.send_message_on_status(
+        200, content=gen(), content_type="application/octet-stream")
+    assert isinstance(resp, StreamingResponse)
 
 
 def test_explicit_wrappers_from_the_class_and_make_sure_that_they_return_the_expected_statuses(hc):

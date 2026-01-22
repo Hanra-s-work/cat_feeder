@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,10 +12,10 @@
 # PROJECT: CatFeeder
 # FILE: downloader.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 20:58:55 22-11-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
-# 
+# LAST Modified: 1:59:55 17-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
+#
 # This file raises:
 #     ArchitectureNotSupported: This means that the architecure you are running this file on is unknown to it.
 #     PackageNotSupported: This class informs the user that the system architecture they are using is not supported by this script
@@ -36,8 +36,44 @@ import shutil
 import zipfile
 import tarfile
 import platform
-from typing import Union, Callable
+from typing import Union, Callable, Optional
 from pathlib import Path as PPath
+import importlib.util
+from pathlib import Path
+
+
+# Ensure a missing `audioop` C-extension can be satisfied by a repository
+# shim `pyaudioop.py` (keeps containers/venvs untouched). This tries the
+# stdlib first, then looks for `pyaudioop.py` up the filesystem from this
+# module and injects it into `sys.modules` as both `pyaudioop` and
+# `audioop` so downstream imports (e.g. `pydub`) succeed.
+try:
+    import audioop  # type: ignore
+except Exception:
+    import sys
+    shim_loaded = False
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        candidate = parent / "pyaudioop.py"
+        if candidate.exists():
+            spec = importlib.util.spec_from_file_location(
+                "pyaudioop", str(candidate))
+            if spec and spec.loader:
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)  # type: ignore[attr-defined]
+                sys.modules.setdefault("pyaudioop", mod)
+                sys.modules.setdefault("audioop", mod)
+                shim_loaded = True
+                break
+    if not shim_loaded:
+        # fall back to attempting to import a top-level `pyaudioop` package
+        try:
+            import backend.src.libs.fffamily.pyaudioop as _pa  # type: ignore
+            sys.modules.setdefault("audioop", _pa)
+        except Exception:
+            # leave the original ImportError to be raised later when pydub is imported
+            pass
+
 from pydub import AudioSegment, playback
 import requests
 from .ff_exceptions import ArchitectureNotSupported, PackageNotInstalled, PackageNotSupported
@@ -61,6 +97,13 @@ class FFMPEGDownloader(metaclass=FinalClass):
 
     available_binaries: list = [CONST.FFMPEG_KEY,
                                 CONST.FFPROBE_KEY, CONST.FFPLAY_KEY]
+
+    _instance: Optional["FFMPEGDownloader"] = None
+
+    def __new__(cls, *args, **kwargs) -> "FFMPEGDownloader":
+        if cls._instance is None:
+            cls._instance = super(FFMPEGDownloader, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self, cwd: str = os.getcwd(), query_timeout: int = 10, success: int = 0, error: int = 84, debug: bool = False):
         self.cwd: str = cwd

@@ -1,6 +1,6 @@
-""" 
+"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
@@ -12,9 +12,9 @@
 # PROJECT: CatFeeder
 # FILE: bucket.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 7:41:54 02-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 17:56:8 09-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: File in charge of providing a boiled down interface for interracting with an s3 bucket.
@@ -171,12 +171,11 @@ class Bucket(metaclass=FinalClass):
             assert conn is not None
             conn.meta.client.list_buckets()
             self.disp.log_info(
-                "Connection to S3-compatible service successful.", "connect")
+                "Connection to S3-compatible service successful.")
             return self.success
         except (BotoCoreError, ClientError) as e:
             self.disp.log_error(
-                f"Failed to connect to S3-compatible service: {str(e)}",
-                "connect"
+                f"Failed to connect to S3-compatible service: {str(e)}"
             )
             return self.error
 
@@ -188,18 +187,17 @@ class Bucket(metaclass=FinalClass):
             bool: True if connected, False otherwise.
         """
         if self.connection is None:
-            self.disp.log_error("No connection object found.", "is_connected")
+            self.disp.log_error("No connection object found.")
             return False
 
         try:
             # Attempt to list buckets as a simple test of the connection
             self.connection.meta.client.list_buckets()
-            self.disp.log_info("Connection is active.", "is_connected")
+            self.disp.log_info("Connection is active.")
             return True
         except (BotoCoreError, ClientError, ConnectionError) as e:
             self.disp.log_error(
-                f"Connection check failed: {str(e)}",
-                "is_connected"
+                f"Connection check failed: {str(e)}"
             )
             return False
 
@@ -212,16 +210,14 @@ class Bucket(metaclass=FinalClass):
         """
         if self.connection is None:
             self.disp.log_warning(
-                "No active connection to disconnect.",
-                "disconnect"
+                "No active connection to disconnect."
             )
             return self.error
 
         # Setting to None is safe and should not raise; log and return success
         self.connection = None
         self.disp.log_info(
-            "Disconnected from the S3-compatible service.",
-            "disconnect"
+            "Disconnected from the S3-compatible service."
         )
         return self.success
 
@@ -240,8 +236,7 @@ class Bucket(metaclass=FinalClass):
             return buckets
         except (BotoCoreError, ClientError, ConnectionError) as e:
             self.disp.log_error(
-                f"Error fetching bucket names: {str(e)}",
-                "get_bucket_names"
+                f"Error fetching bucket names: {str(e)}"
             )
             return self.error
 
@@ -261,14 +256,12 @@ class Bucket(metaclass=FinalClass):
                 raise ConnectionError("No connection established.")
             self.connection.create_bucket(Bucket=bucket_name)
             self.disp.log_info(
-                f"Bucket '{bucket_name}' created successfully.",
-                "create_bucket"
+                f"Bucket '{bucket_name}' created successfully."
             )
             return self.success
         except (BotoCoreError, ClientError, ConnectionError) as e:
             self.disp.log_error(
-                f"Failed to create bucket '{bucket_name}': {str(e)}",
-                "create_bucket"
+                f"Failed to create bucket '{bucket_name}': {str(e)}"
             )
             return self.error
 
@@ -294,26 +287,57 @@ class Bucket(metaclass=FinalClass):
             bucket.upload_file(file_path, key_name)
             msg = f"File '{file_path}' uploaded to bucket "
             msg += f"'{bucket_name}' as '{key_name}'."
-            self.disp.log_info(msg, "upload_file")
+            self.disp.log_info(msg)
             return self.success
         except (BotoCoreError, ClientError, ConnectionError) as e:
             msg = f"Failed to upload file '{file_path}' to bucket "
             msg += f"'{bucket_name}': {str(e)}"
-            self.disp.log_error(msg, "upload_file")
+            self.disp.log_error(msg)
             return self.error
 
-    def download_file(self, bucket_name: str, key_name: str, destination_path: str) -> int:
+    def upload_stream(self, bucket_name: str, data: bytes, key_name: Optional[str] = None) -> int:
+        """Upload a file to the specified bucket from a byte stream.
+
+        Args:
+            bucket_name (str): Name of the target bucket.
+            data (bytes): The file content as bytes.
+            key_name (Optional[str]): Name to save the file as in the bucket. Defaults to a generated name if not provided.
+
+        Returns:
+            int: success or error code.
+        """
+        if key_name is None:
+            self.disp.log_error(
+                "key_name must be provided for stream uploads")
+            return self.error
+        try:
+            self._ensure_connected()
+            if self.connection is None:
+                raise ConnectionError("No connection established.")
+            bucket: S3BucketLike = self.connection.Bucket(
+                bucket_name)  # type: ignore[assignment]
+            bucket.put_object(Key=key_name, Body=data)
+            msg = f"File stream uploaded to bucket '{bucket_name}' as '{key_name}' ({len(data)} bytes)."
+            self.disp.log_info(msg)
+            return self.success
+        except (BotoCoreError, ClientError, ConnectionError, RuntimeError) as e:
+            msg = f"Failed to upload file stream to bucket '{bucket_name}' as '{key_name}': {str(e)}"
+            self.disp.log_error(msg)
+            return self.error
+
+    def download_file(self, bucket_name: str, key_name: str, destination_path: Optional[str] = None) -> int:
         """
         Download a file from the specified bucket.
 
         Args:
             bucket_name (str): Name of the target bucket.
             key_name (str): Name of the file to download.
-            destination_path (str): Local path where the file will be saved.
+            destination_path (Optional[str]): Local path where the file will be saved. Defaults to the key_name if not provided.
 
         Returns:
             int: success or error code.
         """
+        destination_path = destination_path or key_name
         try:
             self._ensure_connected()
             if self.connection is None:
@@ -323,12 +347,41 @@ class Bucket(metaclass=FinalClass):
             bucket.download_file(key_name, destination_path)
             msg = f"File '{key_name}' downloaded from bucket "
             msg += f"'{bucket_name}' to '{destination_path}'."
-            self.disp.log_info(msg, "download_file")
+            self.disp.log_info(msg)
             return self.success
         except (BotoCoreError, ClientError, ConnectionError) as e:
             msg = f"Failed to download file '{key_name}'"
             msg += f" from bucket '{bucket_name}': {str(e)}"
-            self.disp.log_error(msg, "download_file")
+            self.disp.log_error(msg)
+            return self.error
+
+    def download_stream(self, bucket_name: str, key_name: str) -> Union[bytes, int]:
+        """Download a file from the specified bucket and return it as a byte stream.
+
+        Args:
+            bucket_name (str): Name of the target bucket.
+            key_name (str): Name of the file to download.
+
+        Returns:
+            Union[bytes, int]: File content as bytes or error code.
+        """
+        try:
+            self._ensure_connected()
+            if self.connection is None:
+                raise ConnectionError("No connection established.")
+            bucket: S3BucketLike = self.connection.Bucket(
+                bucket_name)  # type: ignore[assignment]
+            obj: S3ObjectLike = bucket.Object(
+                key_name)  # type: ignore[assignment]
+            file_data = obj.get()['Body'].read()
+            msg = f"File '{key_name}' downloaded from bucket "
+            msg += f"'{bucket_name}' as stream ({len(file_data)} bytes)."
+            self.disp.log_info(msg)
+            return file_data
+        except (BotoCoreError, ClientError, ConnectionError, RuntimeError) as e:
+            msg = f"Failed to download file '{key_name}' from bucket "
+            msg += f"'{bucket_name}' as stream: {str(e)}"
+            self.disp.log_error(msg)
             return self.error
 
     def delete_file(self, bucket_name: str, key_name: str) -> int:
@@ -350,14 +403,13 @@ class Bucket(metaclass=FinalClass):
                 bucket_name)  # type: ignore[assignment]
             bucket.Object(key_name).delete()
             self.disp.log_info(
-                f"File '{key_name}' deleted from bucket '{bucket_name}'.",
-                "delete_file"
+                f"File '{key_name}' deleted from bucket '{bucket_name}'."
             )
             return self.success
         except (BotoCoreError, ClientError, ConnectionError) as e:
             msg = f"Failed to delete file '{key_name}' from bucket "
             msg += f"'{bucket_name}': {str(e)}"
-            self.disp.log_error(msg, "delete_file")
+            self.disp.log_error(msg)
             return self.error
 
     def delete_bucket(self, bucket_name: str) -> int:
@@ -378,14 +430,12 @@ class Bucket(metaclass=FinalClass):
                 bucket_name)  # type: ignore[assignment]
             bucket.delete()
             self.disp.log_info(
-                f"Bucket '{bucket_name}' deleted successfully.",
-                "delete_bucket"
+                f"Bucket '{bucket_name}' deleted successfully."
             )
             return self.success
         except (BotoCoreError, ClientError, ConnectionError) as e:
             self.disp.log_error(
-                f"Failed to delete bucket '{bucket_name}': {str(e)}",
-                "delete_bucket"
+                f"Failed to delete bucket '{bucket_name}': {str(e)}"
             )
             return self.error
 
@@ -412,7 +462,7 @@ class Bucket(metaclass=FinalClass):
         except (BotoCoreError, ClientError, ConnectionError) as e:
             msg = f"Failed to retrieve files from bucket '{bucket_name}'"
             msg += f": {str(e)}"
-            self.disp.log_error(msg, "get_bucket_files")
+            self.disp.log_error(msg)
             return self.error
 
     def get_bucket_file(self, bucket_name: str, key_name: str) -> Union[Dict[str, Any], int]:
@@ -435,8 +485,8 @@ class Bucket(metaclass=FinalClass):
             obj: S3ObjectLike = bucket.Object(
                 key_name)  # type: ignore[assignment]
             return {'file_path': key_name, 'file_size': obj.content_length}
-        except (BotoCoreError, ClientError, ConnectionError) as e:
-            msg = f"Failed to get file '{key_name}'"
+        except (BotoCoreError, ClientError, ConnectionError, RuntimeError) as e:
+            msg = f"Failed to get file '{key_name}' "
             msg += f"from bucket '{bucket_name}': {str(e)}"
-            self.disp.log_error(msg, "get_bucket_file")
+            self.disp.log_error(msg)
             return self.error

@@ -1,10 +1,10 @@
-r""" 
+r"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
-# ..............(..../\
+# LOGO:
+# ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
-# ...............\(__)|
+# ...............\\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -12,9 +12,9 @@ r"""
 # PROJECT: CatFeeder
 # FILE: conftest.py
 # CREATION DATE: 14-12-2025
-# LAST Modified: 21:57:24 14-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 6:47:33 12-01-2026
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: Configuration for http_codes tests to work from multiple locations.
@@ -81,12 +81,13 @@ class DummyDisp:
         pass
 
 
-def initialise_logger(name, flag=False):
+def initialise_logger(name=None, flag=False, **kwargs):
     """Create and return a dummy display object for testing.
 
     Args:
         name (str): Logger name (ignored in test mock).
         flag (bool): Debug flag (ignored in test mock).
+        **kwargs: Additional keyword arguments (class_name, debug, etc) - ignored in test mock.
 
     Returns:
         DummyDisp: A no-op display object.

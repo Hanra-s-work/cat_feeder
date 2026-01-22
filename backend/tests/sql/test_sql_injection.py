@@ -1,10 +1,10 @@
-r""" 
+r"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
-# ..............(..../\
+# LOGO:
+# ..............(..../\\
 # ...............)..(.')
 # ..............(../..)
-# ...............\(__)|
+# ...............\\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -12,9 +12,9 @@ r"""
 # PROJECT: CatFeeder
 # FILE: test_sql_injection.py
 # CREATION DATE: 11-12-2025
-# LAST Modified: 21:41:51 14-12-2025
-# DESCRIPTION: 
-# This is the project in charge of making the connected cat feeder project work.
+# LAST Modified: 14:55:12 19-12-2025
+# DESCRIPTION:
+# This is the backend server in charge of making the actual website work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
 # PURPOSE: The file in charge of checking the injection prevention measures for sql that are implemented in the sql library binder.
