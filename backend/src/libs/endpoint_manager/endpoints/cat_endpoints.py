@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 19:33:36 22-01-2026
+# LAST Modified: 11:49:31 23-01-2026
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -1122,3 +1122,231 @@ class CatEndpoints:
         """
         # This is essentially the same as post_beacon_location
         return await self.post_beacon_location(request)
+
+    async def put_register_pet(self, request: Request) -> Response:
+        """Register a new pet linked to a beacon.
+
+        Args:
+            request (Request): The incoming request parameters.
+        Returns:
+            Response: The HTTP response to send back to the user.
+        """
+        title = "put_register_pet"
+        data = self._user_connected(request, title)
+        if isinstance(data, Response):
+            return data
+        body = await self.boilerplate_incoming_initialised.get_body(request)
+        elems = ["beacon_id", "name"]
+        for elem in elems:
+            if elem not in body:
+                return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, elem)
+
+        try:
+            beacon_id = int(body["beacon_id"])
+        except (ValueError, TypeError):
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "valid beacon_id")
+
+        # Check if beacon exists and belongs to user
+        beacon_exists = self.database_link.get_data_from_table(
+            self.tab_beacon,
+            ["id"],
+            f"id={beacon_id} AND owner={data.user_id}",
+            beautify=True
+        )
+        if not isinstance(beacon_exists, list) or len(beacon_exists) == 0:
+            return HCI.not_found(
+                self.boilerplate_responses_initialised.build_response_body(
+                    title,
+                    "Beacon not found or not owned by user",
+                    "not_found",
+                    data.token,
+                    error=True
+                )
+            )
+
+        # Check if pet already exists for this beacon
+        present = self.database_link.get_data_from_table(
+            self.tab_pet,
+            ["id"],
+            f"beacon={beacon_id}",
+            beautify=True
+        )
+        if isinstance(present, list) and len(present) > 0:
+            return HCI.conflict(
+                self.boilerplate_responses_initialised.build_response_body(
+                    title,
+                    "Pet already registered for this beacon",
+                    "exists",
+                    data.token,
+                    error=True
+                )
+            )
+
+        cols = self.database_link.get_table_column_names(self.tab_pet)
+        if not isinstance(cols, list):
+            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+        cols = CONST.clean_list(cols, self.cols_to_remove, self.disp)
+
+        sql_data = [
+            beacon_id,
+            body["name"],
+            body.get("food_eaten", 0),
+            body.get("food_max", 100),
+            body.get("food_reset", None),
+            body.get("time_reset_hours", 24),
+            body.get("time_reset_minutes", 0)
+        ]
+
+        resp = self.database_link.insert_data_into_table(
+            self.tab_pet,
+            cols,
+            sql_data
+        )
+        if not isinstance(resp, int):
+            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+
+        bod = self.boilerplate_responses_initialised.build_response_body(
+            title, "Pet registered successfully", "registered", data.token, error=False
+        )
+        return HCI.created(bod)
+
+    async def patch_pet(self, request: Request) -> Response:
+        """Update pet information.
+
+        Args:
+            request (Request): The incoming request parameters.
+        Returns:
+            Response: The HTTP response to send back to the user.
+        """
+        title = "patch_pet"
+        data = self._user_connected(request, title)
+        if isinstance(data, Response):
+            return data
+        body = await self.boilerplate_incoming_initialised.get_body(request)
+
+        if "id" not in body:
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "id")
+
+        try:
+            pet_id = int(body["id"])
+        except (ValueError, TypeError):
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "valid id")
+
+        # Check if pet exists and beacon belongs to user
+        pet_data = self.database_link.get_data_from_table(
+            self.tab_pet,
+            ["beacon"],
+            f"id={pet_id}",
+            beautify=True
+        )
+        if not isinstance(pet_data, list) or len(pet_data) == 0:
+            return HCI.not_found(
+                self.boilerplate_responses_initialised.build_response_body(
+                    title,
+                    "Pet not found",
+                    "not_found",
+                    data.token,
+                    error=True
+                )
+            )
+
+        beacon_id = pet_data[0]["beacon"]
+        beacon_owner = self.database_link.get_data_from_table(
+            self.tab_beacon,
+            ["owner"],
+            f"id={beacon_id}",
+            beautify=True
+        )
+        if not isinstance(beacon_owner, list) or len(beacon_owner) == 0 or beacon_owner[0]["owner"] != data.user_id:
+            return self.boilerplate_responses_initialised.insuffisant_rights(title, data.token)
+
+        # allowed fields to update
+        allowed = {"name", "food_eaten", "food_max", "food_reset",
+                   "time_reset_hours", "time_reset_minutes"}
+
+        cols = self.database_link.get_table_column_names(self.tab_pet)
+        if not isinstance(cols, list):
+            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+
+        # determine which columns from the table we can update based on request body
+        update_cols = [c for c in cols if c in allowed and c in body]
+        if not update_cols:
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "fields to update")
+
+        sql_data = [body[col] for col in update_cols]
+
+        resp = self.database_link.update_data_in_table(
+            self.tab_pet,
+            sql_data,
+            update_cols,
+            where=f"id={pet_id}"
+        )
+        if not isinstance(resp, int):
+            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+
+        bod = self.boilerplate_responses_initialised.build_response_body(
+            title, "Pet updated successfully", "updated", data.token, error=False
+        )
+        return HCI.success(bod)
+
+    async def delete_pet(self, request: Request) -> Response:
+        """Delete a pet from the database.
+
+        Args:
+            request (Request): The incoming request parameters.
+        Returns:
+            Response: The HTTP response to send back to the user.
+        """
+        title = "delete_pet"
+        data = self._user_connected(request, title)
+        if isinstance(data, Response):
+            return data
+        body = await self.boilerplate_incoming_initialised.get_body(request)
+        elem = "id"
+        if elem not in body:
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, elem)
+
+        try:
+            pet_id = int(body["id"])
+        except (ValueError, TypeError):
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "valid id")
+
+        # Check if pet exists and beacon belongs to user
+        pet_data = self.database_link.get_data_from_table(
+            self.tab_pet,
+            ["beacon"],
+            f"id={pet_id}",
+            beautify=True
+        )
+        if not isinstance(pet_data, list) or len(pet_data) == 0:
+            return HCI.not_found(
+                self.boilerplate_responses_initialised.build_response_body(
+                    title,
+                    "Pet not found",
+                    "not_found",
+                    data.token,
+                    error=True
+                )
+            )
+
+        beacon_id = pet_data[0]["beacon"]
+        beacon_owner = self.database_link.get_data_from_table(
+            self.tab_beacon,
+            ["owner"],
+            f"id={beacon_id}",
+            beautify=True
+        )
+        if not isinstance(beacon_owner, list) or len(beacon_owner) == 0 or beacon_owner[0]["owner"] != data.user_id:
+            return self.boilerplate_responses_initialised.insuffisant_rights(title, data.token)
+
+        resp = self.database_link.remove_data_from_table(
+            self.tab_pet,
+            f"id={pet_id}"
+        )
+        if not isinstance(resp, int):
+            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+
+        bod = self.boilerplate_responses_initialised.build_response_body(
+            title, "Pet deleted successfully", "deleted", data.token, error=False
+        )
+        return HCI.success(bod)
