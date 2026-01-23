@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 11:49:31 23-01-2026
+# LAST Modified: 11:55:50 23-01-2026
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -1120,8 +1120,78 @@ class CatEndpoints:
         Returns:
             Response: The HTTP response to send back to the user.
         """
-        # This is essentially the same as post_beacon_location
-        return await self.post_beacon_location(request)
+        title = "post_feeder_visit"
+        body = await self.boilerplate_incoming_initialised.get_body(request)
+
+        # This endpoint might be called with different parameter combinations
+        # It could be called with feeder_mac + beacon_mac, or just beacon_mac if the feeder is making the call
+        if "beacon_mac" not in body:
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, "", "beacon_mac")
+
+        # If feeder_mac is not provided, we might need to identify the feeder differently
+        # For example, by IP address or require it in the request
+        if "feeder_mac" not in body:
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, "", "feeder_mac")
+
+        # Get beacon ID
+        beacon_data = self.database_link.get_data_from_table(
+            self.tab_beacon,
+            ["id"],
+            f"mac='{body['beacon_mac']}'",
+            beautify=True
+        )
+        if not isinstance(beacon_data, list) or len(beacon_data) == 0:
+            return HCI.not_found(
+                self.boilerplate_responses_initialised.build_response_body(
+                    title,
+                    "Beacon not found",
+                    "not_found",
+                    "",
+                    error=True
+                )
+            )
+
+        # Get feeder ID
+        feeder_data = self.database_link.get_data_from_table(
+            self.tab_feeder,
+            ["id"],
+            f"mac='{body['feeder_mac']}'",
+            beautify=True
+        )
+        if not isinstance(feeder_data, list) or len(feeder_data) == 0:
+            return HCI.not_found(
+                self.boilerplate_responses_initialised.build_response_body(
+                    title,
+                    "Feeder not found",
+                    "not_found",
+                    "",
+                    error=True
+                )
+            )
+
+        beacon_id = beacon_data[0]["id"]
+        feeder_id = feeder_data[0]["id"]
+
+        # Insert visit record in location history
+        cols = self.database_link.get_table_column_names(
+            self.tab_location_history)
+        if not isinstance(cols, list):
+            return self.boilerplate_responses_initialised.internal_server_error(title, "")
+        cols = CONST.clean_list(cols, self.cols_to_remove, self.disp)
+        sql_data = [beacon_id, feeder_id]
+
+        resp = self.database_link.insert_data_into_table(
+            self.tab_location_history,
+            cols,
+            sql_data
+        )
+        if not isinstance(resp, int):
+            return self.boilerplate_responses_initialised.internal_server_error(title, "")
+
+        bod = self.boilerplate_responses_initialised.build_response_body(
+            title, "Feeder visit recorded successfully", "recorded", "", error=False
+        )
+        return HCI.created(bod)
 
     async def put_register_pet(self, request: Request) -> Response:
         """Register a new pet linked to a beacon.
