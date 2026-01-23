@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: paths.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 20:15:28 23-01-2026
+# LAST Modified: 20:47:40 23-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -466,12 +466,24 @@ class PathManager(metaclass=FinalClass):
             metadata['public'] = True
             self.disp.log_debug(f"Endpoint {endpoint_name} is public")
 
+        if hasattr(endpoint, '_testing_only') and getattr(endpoint, "_testing_only", None):
+            metadata['testing_only'] = True
+            self.disp.log_debug(f"Endpoint {endpoint_name} is testing-only")
+
         if hasattr(endpoint, '_security_level'):
             metadata['security_level'] = getattr(
                 endpoint, "_security_level", None
             )
             self.disp.log_debug(
                 f"Endpoint {endpoint_name} has security level: {getattr(endpoint, '_security_level', 'unknown')}"
+            )
+
+        if hasattr(endpoint, '_environment'):
+            metadata['environment'] = getattr(
+                endpoint, "_environment", None
+            )
+            self.disp.log_debug(
+                f"Endpoint {endpoint_name} has environment: {getattr(endpoint, '_environment', 'unknown')}"
             )
 
         # Documentation metadata
@@ -611,7 +623,7 @@ class PathManager(metaclass=FinalClass):
                 self.disp.log_debug(
                     f"Successfully extracted metadata for {route_path}"
                 )
-            except Exception as e:
+            except (AttributeError, TypeError, ValueError) as e:
                 self.disp.log_error(
                     f"Failed to extract metadata for {route_path}: {e}"
                 )
@@ -689,7 +701,7 @@ class PathManager(metaclass=FinalClass):
                         f"Fallback injection successful for {route_path}"
                     )
                     successful_injections += 1
-                except Exception as fallback_error:
+                except (ValidationError, ValueError, TypeError, FastAPIError, AttributeError) as fallback_error:
                     self.disp.log_error(
                         f"Fallback injection also failed for {route_path}: {fallback_error}"
                     )
@@ -711,7 +723,7 @@ class PathManager(metaclass=FinalClass):
                         f"Fallback injection successful for {route_path}"
                     )
                     successful_injections += 1
-                except Exception as fallback_error:
+                except (ValidationError, ValueError, TypeError, FastAPIError, AttributeError) as fallback_error:
                     self.disp.log_error(
                         f"Fallback injection also failed for {route_path}: {fallback_error}"
                     )
@@ -725,18 +737,20 @@ class PathManager(metaclass=FinalClass):
                 raise RuntimeError(
                     f"FastAPI app missing required methods: {e}"
                 ) from e
-            except Exception as e:
+            except (ImportError, ModuleNotFoundError) as e:
                 self.disp.log_error(
-                    f"Unexpected error adding route {route_path}: {e}"
+                    f"Import error adding route {route_path}: {e}"
                 )
                 failed_injections += 1
 
         # Log final summary
         self.disp.log_info(
-            f"Route injection completed: {successful_injections} successful, {failed_injections} failed")
+            f"Route injection completed: {successful_injections} successful, {failed_injections} failed"
+        )
         if failed_injections > 0:
             self.disp.log_warning(
-                f"{failed_injections} routes failed to inject properly")
+                f"{failed_injections} routes failed to inject properly"
+            )
         else:
             self.disp.log_info("All routes injected successfully")
 
@@ -751,14 +765,19 @@ class PathManager(metaclass=FinalClass):
         """
         security_notes = []
 
+        if metadata.get('testing_only'):
+            security_notes.append("Testing only - Not available in production")
+
         if metadata.get('public'):
             security_notes.append(
-                "Public endpoint - No authentication required")
+                "Public endpoint - No authentication required"
+            )
         elif metadata.get('requires_admin'):
             security_notes.append("Admin only - Requires admin privileges")
         elif metadata.get('requires_auth'):
             security_notes.append(
-                "Authentication required - Valid token needed")
+                "Authentication required - Valid token needed"
+            )
 
         if security_notes:
             security_description = f"Security: {' | '.join(security_notes)}"
