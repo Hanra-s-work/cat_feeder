@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: http_constants.py
 # CREATION DATE: 19-11-2025
-# LAST Modified: 0:33:21 17-01-2026
+# LAST Modified: 22:21:27 23-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -157,6 +157,7 @@ class DataTypes(str, Enum):
     CSS = 'text/css'
     FORM = 'application/x-www-form-urlencoded'
     FORM_DATA = 'multipart/form-data'
+    MULTIPART = 'multipart/form-data'  # Alias for FORM_DATA
     HTML = 'text/html'
     JAVASCRIPT = 'application/javascript'
     JS = 'application/javascript'
@@ -392,14 +393,18 @@ FILE_TYPES: Tuple[DataTypes, ...] = (
     # Streaming / others
     DataTypes.OGG, DataTypes.STREAM,
     # JavaScript files (served as files, not inline)
-    DataTypes.JAVASCRIPT, DataTypes.JS
+    DataTypes.JAVASCRIPT, DataTypes.JS,
+    # Form data (for file uploads and mixed content)
+    DataTypes.FORM_DATA, DataTypes.MULTIPART
 )
 
 # HTML-like responses
 HTML_TYPES: Tuple[DataTypes, ...] = (
     DataTypes.CSS,
     DataTypes.HTML,
-    DataTypes.XML
+    DataTypes.XML,
+    # Form data for simple form submissions (not file uploads)
+    DataTypes.FORM
 )
 
 # JSON responses

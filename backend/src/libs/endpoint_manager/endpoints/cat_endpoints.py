@@ -1,4 +1,4 @@
-""" 
+r""" 
 # +==== BEGIN CatFeeder =================+
 # LOGO: 
 # ..............(..../\
@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 11:55:50 23-01-2026
+# LAST Modified: 22:47:53 23-01-2026
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -23,13 +23,14 @@
 """
 from typing import TYPE_CHECKING, Union, Optional
 from dataclasses import dataclass
-from display_tty import Disp, initialise_logger
-from fastapi import Request, Response
-from ...core import RuntimeManager, RI
-from ...utils import PasswordHandling, CONST
-from ...e_mail import MailManagement
-from ...http_codes import HCI, HTTP_DEFAULT_TYPE
+
 import requests
+from display_tty import Disp, initialise_logger
+
+from fastapi import Request, Response
+from ...utils import CONST
+from ...core import RuntimeManager, RI
+from ...http_codes import HCI, HTTP_DEFAULT_TYPE
 from datetime import datetime, timezone, timedelta
 
 if TYPE_CHECKING:
@@ -445,7 +446,7 @@ class CatEndpoints:
         )
         return HCI.success(bod)
 
-    async def register_beacon(self, request: Request) -> Response:
+    async def put_register_beacon(self, request: Request) -> Response:
         """Register a beacon signal from a cat feeder.
 
         Args:
@@ -1356,6 +1357,75 @@ class CatEndpoints:
 
         bod = self.boilerplate_responses_initialised.build_response_body(
             title, "Pet updated successfully", "updated", data.token, error=False
+        )
+        return HCI.success(bod)
+
+    async def get_pet(self, request: Request) -> Response:
+        """Get pet information.
+
+        Args:
+            request (Request): The incoming request parameters.
+        Returns:
+            Response: The HTTP response to send back to the user.
+        """
+        title = "get_pet"
+        data = self._user_connected(request, title)
+        if isinstance(data, Response):
+            return data
+        body = await self.boilerplate_incoming_initialised.get_body(request)
+
+        if "id" not in body:
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "id")
+
+        try:
+            pet_id = int(body["id"])
+        except (ValueError, TypeError):
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "valid id")
+
+        # Check if pet exists and beacon belongs to user
+        pet_data = self.database_link.get_data_from_table(
+            self.tab_pet,
+            ["beacon"],
+            f"id={pet_id}",
+            beautify=True
+        )
+        if not isinstance(pet_data, list) or len(pet_data) == 0:
+            return HCI.not_found(
+                self.boilerplate_responses_initialised.build_response_body(
+                    title,
+                    "Pet not found",
+                    "not_found",
+                    data.token,
+                    error=True
+                )
+            )
+
+        beacon_id = pet_data[0]["beacon"]
+        beacon_owner = self.database_link.get_data_from_table(
+            self.tab_beacon,
+            ["owner"],
+            f"id={beacon_id}",
+            beautify=True
+        )
+        if not isinstance(beacon_owner, list) or len(beacon_owner) == 0 or beacon_owner[0]["owner"] != data.user_id:
+            return self.boilerplate_responses_initialised.insuffisant_rights(title, data.token)
+
+        cols = self.database_link.get_table_column_names(self.tab_pet)
+        if not isinstance(cols, list):
+            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+
+        resp = self.database_link.get_data_from_table(
+            self.tab_pet,
+            column=["name", "food_eaten", "food_max", "food_reset",
+                    "time_reset_hours", "time_reset_minutes"],
+            where=f"id={pet_id}",
+            beautify=True
+        )
+        if not isinstance(resp, list):
+            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+
+        bod = self.boilerplate_responses_initialised.build_response_body(
+            title, "Pet retrieved successfully", resp, data.token, error=False
         )
         return HCI.success(bod)
 

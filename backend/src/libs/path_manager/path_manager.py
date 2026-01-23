@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: paths.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 20:47:40 23-01-2026
+# LAST Modified: 0:39:58 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -22,16 +22,16 @@
 # +==== END CatFeeder =================+
 """
 
-import inspect
 from typing import Union, List, Dict, Any, Optional, TYPE_CHECKING, Callable
+import inspect
+from functools import wraps
+
 from display_tty import Disp, initialise_logger
-from starlette.responses import Response
-from fastapi.responses import JSONResponse, HTMLResponse, PlainTextResponse, RedirectResponse
-from fastapi.exceptions import FastAPIError
-from pydantic import ValidationError
 from .path_constants import PATH_KEY, ENDPOINT_KEY,  METHOD_KEY, ALLOWED_METHODS
 from ..core.runtime_manager import RuntimeManager, RI
 from ..core import FinalClass, RuntimeControl
+from .openapi_builder import OpenAPIBuilder
+
 if TYPE_CHECKING:
     from ..endpoint_manager import EndpointManager
 
@@ -71,6 +71,7 @@ class PathManager(metaclass=FinalClass):
         )
         self.runtime_control_initialised: RuntimeControl = self.runtime_manager_initialised.get(
             RuntimeControl)
+        self.openapi_builder = OpenAPIBuilder(debug=debug)
         self.disp.log_debug("Initialised")
 
     def endpoint_valid(self, path: str, endpoint: object, method: Union[str, List[str]]) -> bool:
@@ -291,300 +292,51 @@ class PathManager(metaclass=FinalClass):
 
         self.endpoints_initialised.inject_routes()
 
-    def _extract_endpoint_metadata(self, endpoint: Callable) -> Dict[str, Any]:
-        """Extract metadata from endpoint function for FastAPI documentation.
+    def _wrap_endpoint_to_hide_parameters(self, endpoint: Callable, endpoint_name: str) -> Callable:
+        """Wrap endpoint to hide parameters that FastAPI shouldn't see as query parameters."""
 
-        Args:
-            endpoint: The endpoint function to analyze.
-
-        Returns:
-            Dictionary containing endpoint metadata like response_model, tags, etc.
-        """
-        endpoint_name = getattr(endpoint, '__name__', 'unknown_endpoint')
-        self.disp.log_debug(
-            f"Extracting metadata for endpoint: {endpoint_name}"
-        )
-
-        metadata = {}
-
-        # Extract decorator metadata first
-        decorator_metadata = self._extract_decorator_metadata(endpoint)
-        if decorator_metadata:
-            self.disp.log_debug(
-                f"Found decorator metadata for {endpoint_name}: {list(decorator_metadata.keys())}"
-            )
-        metadata.update(decorator_metadata)
-
-        # Get function signature for parameter inspection - check if inspect module is available
-        if hasattr(inspect, 'signature') and callable(endpoint):
-            signature_result = self._safe_extract_signature(
-                endpoint, endpoint_name
-            )
-            if signature_result:
-                metadata['signature'] = signature_result
-                param_count = len(signature_result.parameters)
-                self.disp.log_debug(
-                    f"Extracted signature for {endpoint_name} with {param_count} parameters"
-                )
-        else:
-            self.disp.log_warning(
-                "Cannot extract signature - inspect.signature not available or endpoint not callable"
-            )
-
-        # Handle description: prefer function docstring, then decorator description
-        function_description = ""
-        if hasattr(endpoint, '__doc__') and endpoint.__doc__:
-            function_description = endpoint.__doc__.strip()
-            self.disp.log_debug(
-                f"Found function docstring for {endpoint_name}"
-            )
-
-        decorator_description = metadata.get('description', "")
-        if decorator_description:
-            self.disp.log_debug(
-                f"Found decorator description for {endpoint_name}"
-            )
-
-        if function_description and decorator_description:
-            # Concatenate both if they're different
-            if function_description != decorator_description:
-                metadata['description'] = f"{function_description}\n\n{decorator_description}"
-                self.disp.log_debug(
-                    f"Combined function and decorator descriptions for {endpoint_name}"
-                )
-            else:
-                metadata['description'] = function_description
-                self.disp.log_debug(
-                    f"Using identical description for {endpoint_name}"
-                )
-        elif function_description:
-            metadata['description'] = function_description
-            self.disp.log_debug(
-                f"Using function description for {endpoint_name}"
-            )
-        elif decorator_description:
-            metadata['description'] = decorator_description
-            self.disp.log_debug(
-                f"Using decorator description for {endpoint_name}"
-            )
-
-        # Extract any existing FastAPI metadata
-        if hasattr(endpoint, '__annotations__'):
-            annotation_count = len(endpoint.__annotations__)
-            self.disp.log_debug(
-                f"Found {annotation_count} annotations for {endpoint_name}"
-            )
-            metadata['annotations'] = endpoint.__annotations__
-
-        # Check for response model in return annotation (if not set by decorator)
-        if 'response_model' not in metadata and 'return' in metadata.get('annotations', {}):
-            return_type = metadata['annotations']['return']
-            self.disp.log_debug(
-                f"Analyzing return type annotation for {endpoint_name}: {return_type}"
-            )
-
-            # Check if return type is a Response object or contains Response
-            if self._is_response_type(return_type):
-                # Don't set response_model for Response types
-                metadata['response_model'] = None
-                self.disp.log_debug(
-                    f"Detected Response type for {endpoint_name}, setting response_model to None"
-                )
-            else:
-                metadata['response_model'] = return_type
-                self.disp.log_debug(
-                    f"Using return type as response_model for {endpoint_name}"
-                )
-
-        self.disp.log_debug(
-            f"Completed metadata extraction for {endpoint_name}"
-        )
-        return metadata
-
-    def _safe_extract_signature(self, endpoint: Callable, endpoint_name: str) -> Optional[inspect.Signature]:
-        """Safely extract function signature without using exceptions.
-
-        Args:
-            endpoint: The endpoint function to analyze.
-            endpoint_name: Name of the endpoint for logging.
-
-        Returns:
-            Signature object if successful, None if failed.
-        """
-        # Check if the endpoint is callable and has the required attributes
-        if not callable(endpoint):
-            self.disp.log_warning(f"Endpoint {endpoint_name} is not callable")
-            return None
-
-        # Check if we can access the function's code object
-        if not hasattr(endpoint, '__code__'):
-            self.disp.log_warning(
-                f"Endpoint {endpoint_name} has no __code__ attribute"
-            )
-            return None
-
-        # Use inspect.signature with validation
+        # Check if the endpoint has parameters that might cause issues
         try:
             sig = inspect.signature(endpoint)
-            return sig
-        except (ValueError, TypeError, AttributeError) as e:
+            params = list(sig.parameters.keys())
+
+            # Filter out 'self' for instance methods
+            if params and params[0] == 'self':
+                params = params[1:]
+
+            # If there are remaining parameters, they'll be treated as query parameters
+            if params:
+                self.disp.log_warning(
+                    f"Endpoint {endpoint_name} has parameters {params} that will become query parameters")
+
+                # Create a wrapper that accepts the request but doesn't expose it to FastAPI
+                @wraps(endpoint)
+                def wrapper(request):
+                    # Call original endpoint with the request parameter
+                    if hasattr(endpoint, '__self__'):
+                        # Instance method - call with self and request
+                        return endpoint(request)
+                    else:
+                        # Static/class method - call with request
+                        return endpoint(request)
+
+                # Override the signature to show no parameters to FastAPI
+                wrapper.__signature__ = inspect.Signature()
+                wrapper.__name__ = f"wrapped_{endpoint_name}"
+                self.disp.log_info(
+                    f"Wrapped endpoint {endpoint_name} to hide parameters")
+                return wrapper
+            else:
+                # No problematic parameters
+                return endpoint
+
+        except Exception as e:
             self.disp.log_warning(
-                f"Could not extract signature from {endpoint_name}: {e}"
-            )
-            return None
-
-    def _extract_decorator_metadata(self, endpoint: Callable) -> Dict[str, Any]:
-        """Extract metadata from decorator attributes.
-
-        Args:
-            endpoint: The endpoint function to analyze.
-
-        Returns:
-            Dictionary containing decorator metadata.
-        """
-        endpoint_name = getattr(endpoint, '__name__', 'unknown_endpoint')
-        self.disp.log_debug(
-            f"Checking for decorator metadata on {endpoint_name}"
-        )
-
-        metadata = {}
-
-        # Security metadata
-        if hasattr(endpoint, '_requires_auth') and getattr(endpoint, "_requires_auth", None):
-            metadata['requires_auth'] = True
-            self.disp.log_debug(
-                f"Endpoint {endpoint_name} requires authentication"
-            )
-
-        if hasattr(endpoint, '_requires_admin') and getattr(endpoint, "_requires_admin", None):
-            metadata['requires_admin'] = True
-            self.disp.log_debug(
-                f"Endpoint {endpoint_name} requires admin privileges"
-            )
-
-        if hasattr(endpoint, '_public') and getattr(endpoint, "_public", None):
-            metadata['public'] = True
-            self.disp.log_debug(f"Endpoint {endpoint_name} is public")
-
-        if hasattr(endpoint, '_testing_only') and getattr(endpoint, "_testing_only", None):
-            metadata['testing_only'] = True
-            self.disp.log_debug(f"Endpoint {endpoint_name} is testing-only")
-
-        if hasattr(endpoint, '_security_level'):
-            metadata['security_level'] = getattr(
-                endpoint, "_security_level", None
-            )
-            self.disp.log_debug(
-                f"Endpoint {endpoint_name} has security level: {getattr(endpoint, '_security_level', 'unknown')}"
-            )
-
-        if hasattr(endpoint, '_environment'):
-            metadata['environment'] = getattr(
-                endpoint, "_environment", None
-            )
-            self.disp.log_debug(
-                f"Endpoint {endpoint_name} has environment: {getattr(endpoint, '_environment', 'unknown')}"
-            )
-
-        # Documentation metadata
-        if hasattr(endpoint, '_tags'):
-            metadata['tags'] = getattr(endpoint, "_tags", None)
-            self.disp.log_debug(
-                f"Endpoint {endpoint_name} has tags: {getattr(endpoint, '_tags', False)}"
-            )
-
-        if hasattr(endpoint, '_description'):
-            metadata['description'] = getattr(endpoint, "_description", None)
-            self.disp.log_debug(
-                f"Endpoint {endpoint_name} has decorator description"
-            )
-
-        if hasattr(endpoint, '_summary'):
-            metadata['summary'] = getattr(endpoint, "_summary", None)
-            self.disp.log_debug(
-                f"Endpoint {endpoint_name} has summary: {getattr(endpoint, '_summary', 'None')}"
-            )
-
-        # Response metadata
-        if hasattr(endpoint, '_response_model'):
-            metadata['response_model'] = getattr(
-                endpoint, "_response_model", None
-            )
-            self.disp.log_debug(
-                f"Endpoint {endpoint_name} has decorator response_model"
-            )
-
-        if metadata:
-            self.disp.log_debug(
-                f"Found decorator metadata for {endpoint_name}: {list(metadata.keys())}"
-            )
-        else:
-            self.disp.log_debug(
-                f"No decorator metadata found for {endpoint_name}"
-            )
-
-        return metadata
-
-    def _is_response_type(self, type_hint: Any) -> bool:
-        """Check if a type hint represents a Response type that should not be used as Pydantic model.
-
-        Args:
-            type_hint: The type annotation to check.
-
-        Returns:
-            True if the type is a Response type, False otherwise.
-        """
-        # Check if it's directly a Response type - avoid exception by checking type first
-        response_types = (
-            Response, JSONResponse, HTMLResponse,
-            PlainTextResponse, RedirectResponse
-        )
-        if type_hint in response_types:
-            return True
-
-        # Check if it's a string representation of a Response type
-        if isinstance(type_hint, str):
-            response_type_names = [
-                'Response', 'JSONResponse',
-                'HTMLResponse', 'PlainTextResponse', 'RedirectResponse'
-            ]
-            return any(resp_type in type_hint for resp_type in response_type_names)
-
-        # Check if it has __name__ attribute and matches Response types
-        if hasattr(type_hint, '__name__'):
-            response_names = [
-                'Response', 'JSONResponse',
-                'HTMLResponse', 'PlainTextResponse', 'RedirectResponse'
-            ]
-            return type_hint.__name__ in response_names
-
-        # Check if it's a Union type containing Response
-        if hasattr(type_hint, '__origin__') and hasattr(type_hint, '__args__'):
-            if type_hint.__origin__ is Union:
-                return any(self._is_response_type(arg) for arg in type_hint.__args__)
-
-        # Fallback check for string representation - avoid exception
-        if hasattr(type_hint, '__str__'):
-            type_str = str(type_hint)
-            if 'Response' in type_str:
-                # More specific check to avoid false positives
-                response_indicators = [
-                    'starlette.responses', 'fastapi.responses', 'Response'
-                ]
-                return any(indicator in type_str for indicator in response_indicators)
-
-        return False
+                f"Could not inspect endpoint {endpoint_name}: {e}")
+            return endpoint
 
     def inject_routes(self) -> None:
-        """Inject all registered routes into the FastAPI application.
-
-        Iterates through all registered routes and adds them to the FastAPI
-        app instance using add_api_route(). Routes must be registered before
-        calling this method. Preserves endpoint metadata for proper documentation.
-
-        Raises:
-            RuntimeError: If FastAPI app instance is not found or doesn't have add_api_route method.
-        """
+        """Inject all registered routes into the FastAPI application."""
         self.disp.log_info("Starting route injection process")
         self.disp.log_info(f"Total routes to inject: {len(self.routes)}")
 
@@ -592,17 +344,14 @@ class PathManager(metaclass=FinalClass):
 
         if not app:
             self.disp.log_critical(
-                "No FastAPI app instance found in RuntimeControl"
-            )
+                "No FastAPI app instance found in RuntimeControl")
             raise RuntimeError(
-                "No instance was found in the app variable of the RuntimeControl instance"
-            )
+                "No instance was found in the app variable of the RuntimeControl instance")
 
         if not hasattr(app, "add_api_route"):
             self.disp.log_critical("FastAPI app missing add_api_route method")
             raise RuntimeError(
-                "No add_api_route function was found in the app variable of the RuntimeControl instance"
-            )
+                "No add_api_route function was found in the app variable of the RuntimeControl instance")
 
         successful_injections = 0
         failed_injections = 0
@@ -612,178 +361,38 @@ class PathManager(metaclass=FinalClass):
             route_methods = route[METHOD_KEY]
 
             self.disp.log_debug(
-                f"Processing route {i}/{len(self.routes)}: {route_path} [{', '.join(route_methods)}]"
-            )
+                f"Processing route {i}/{len(self.routes)}: {route_path} [{', '.join(route_methods)}]")
 
-            # Extract endpoint metadata for better FastAPI documentation
+            # Log the endpoint signature to debug the issue
+            original_endpoint = route[ENDPOINT_KEY]
+            endpoint_name = getattr(
+                original_endpoint, '__name__', 'unknown_endpoint')
+
             try:
-                endpoint_metadata = self._extract_endpoint_metadata(
-                    route[ENDPOINT_KEY]
-                )
+                sig = inspect.signature(original_endpoint)
                 self.disp.log_debug(
-                    f"Successfully extracted metadata for {route_path}"
-                )
-            except (AttributeError, TypeError, ValueError) as e:
-                self.disp.log_error(
-                    f"Failed to extract metadata for {route_path}: {e}"
-                )
-                endpoint_metadata = {}
+                    f"Endpoint {endpoint_name} signature: {sig}")
+            except Exception as e:
+                self.disp.log_warning(
+                    f"Could not get signature for {endpoint_name}: {e}")
 
-            # Build kwargs for add_api_route with preserved metadata
-            route_kwargs = {
-                'methods': route[METHOD_KEY]
-            }
+            endpoint_to_use = original_endpoint
 
-            # Add description if available
-            if 'description' in endpoint_metadata:
-                route_kwargs['description'] = endpoint_metadata['description']
-                self.disp.log_debug(f"Added description to {route_path}")
-
-            # Add summary if available
-            if 'summary' in endpoint_metadata:
-                route_kwargs['summary'] = endpoint_metadata['summary']
-                self.disp.log_debug(f"Added summary to {route_path}")
-
-            # Handle response model - explicitly set to None for Response types
-            if 'response_model' in endpoint_metadata:
-                route_kwargs['response_model'] = endpoint_metadata['response_model']
-                self.disp.log_debug(f"Set response_model for {route_path}")
-            else:
-                # If no response model detected, set to None to prevent auto-inference issues
-                route_kwargs['response_model'] = None
-                self.disp.log_debug(
-                    f"Set response_model to None for {route_path}"
-                )
-
-            # Add tags if available
-            if 'tags' in endpoint_metadata:
-                route_kwargs['tags'] = endpoint_metadata['tags']
-                self.disp.log_debug(
-                    f"Added tags to {route_path}: {endpoint_metadata['tags']}"
-                )
-
-            # Add security information to description for better documentation
-            security_info = self._build_security_description(endpoint_metadata)
-            if security_info:
-                if 'description' in route_kwargs:
-                    route_kwargs['description'] += f"\n\n{security_info}"
-                else:
-                    route_kwargs['description'] = security_info
-                self.disp.log_debug(
-                    f"Added security information to {route_path}"
-                )
-
-            # Add the route with metadata
             try:
+                # Ultra-minimal route registration - let FastAPI handle everything automatically
                 app.add_api_route(
                     route[PATH_KEY],
-                    route[ENDPOINT_KEY],
-                    **route_kwargs
+                    endpoint_to_use,
+                    methods=route[METHOD_KEY]
                 )
                 self.disp.log_info(
-                    f"Successfully injected route: {route_path} [{', '.join(route_methods)}]"
-                )
+                    f"Successfully injected route: {route_path} [{', '.join(route_methods)}]")
                 successful_injections += 1
 
-            except (ValidationError, ValueError, TypeError) as e:
-                self.disp.log_error(
-                    f"Validation/Parameter error adding route {route_path}: {e}"
-                )
-                # Try adding route with minimal configuration as fallback
-                try:
-                    app.add_api_route(
-                        route[PATH_KEY],
-                        route[ENDPOINT_KEY],
-                        methods=route[METHOD_KEY],
-                        response_model=None
-                    )
-                    self.disp.log_warning(
-                        f"Fallback injection successful for {route_path}"
-                    )
-                    successful_injections += 1
-                except (ValidationError, ValueError, TypeError, FastAPIError, AttributeError) as fallback_error:
-                    self.disp.log_error(
-                        f"Fallback injection also failed for {route_path}: {fallback_error}"
-                    )
-                    failed_injections += 1
-
-            except FastAPIError as e:
-                self.disp.log_error(
-                    f"FastAPI error adding route {route_path}: {e}"
-                )
-                # Try adding route with minimal configuration as fallback
-                try:
-                    app.add_api_route(
-                        route[PATH_KEY],
-                        route[ENDPOINT_KEY],
-                        methods=route[METHOD_KEY],
-                        response_model=None
-                    )
-                    self.disp.log_warning(
-                        f"Fallback injection successful for {route_path}"
-                    )
-                    successful_injections += 1
-                except (ValidationError, ValueError, TypeError, FastAPIError, AttributeError) as fallback_error:
-                    self.disp.log_error(
-                        f"Fallback injection also failed for {route_path}: {fallback_error}"
-                    )
-                    failed_injections += 1
-
-            except AttributeError as e:
-                self.disp.log_critical(
-                    f"Attribute error adding route {route_path}: {e}"
-                )
-                failed_injections += 1
-                raise RuntimeError(
-                    f"FastAPI app missing required methods: {e}"
-                ) from e
-            except (ImportError, ModuleNotFoundError) as e:
-                self.disp.log_error(
-                    f"Import error adding route {route_path}: {e}"
-                )
+            except Exception as e:
+                self.disp.log_error(f"Error adding route {route_path}: {e}")
                 failed_injections += 1
 
         # Log final summary
         self.disp.log_info(
-            f"Route injection completed: {successful_injections} successful, {failed_injections} failed"
-        )
-        if failed_injections > 0:
-            self.disp.log_warning(
-                f"{failed_injections} routes failed to inject properly"
-            )
-        else:
-            self.disp.log_info("All routes injected successfully")
-
-    def _build_security_description(self, metadata: Dict[str, Any]) -> str:
-        """Build security description from metadata.
-
-        Args:
-            metadata: Extracted endpoint metadata.
-
-        Returns:
-            Security description string or empty string.
-        """
-        security_notes = []
-
-        if metadata.get('testing_only'):
-            security_notes.append("Testing only - Not available in production")
-
-        if metadata.get('public'):
-            security_notes.append(
-                "Public endpoint - No authentication required"
-            )
-        elif metadata.get('requires_admin'):
-            security_notes.append("Admin only - Requires admin privileges")
-        elif metadata.get('requires_auth'):
-            security_notes.append(
-                "Authentication required - Valid token needed"
-            )
-
-        if security_notes:
-            security_description = f"Security: {' | '.join(security_notes)}"
-            self.disp.log_debug(
-                f"Built security description: {security_description}"
-            )
-            return security_description
-
-        return ""
+            f"Route injection process completed: {successful_injections} successful, {failed_injections} failed")

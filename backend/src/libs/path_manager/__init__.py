@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: __init__.py
 # CREATION DATE: 22-11-2025
-# LAST Modified: 14:51:8 19-12-2025
+# LAST Modified: 20:42:12 23-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -23,10 +23,12 @@
 """
 
 from .path_manager import PathManager
+from . import decorators
 
 ServerPaths = PathManager
 
 __all__ = [
     "PathManager",
-    "ServerPaths"
+    "ServerPaths",
+    "decorators"
 ]

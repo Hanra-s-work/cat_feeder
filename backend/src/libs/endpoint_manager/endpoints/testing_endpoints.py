@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: testing_endpoints.py
 # CREATION DATE: 30-11-2025
-# LAST Modified: 23:5:15 10-01-2026
+# LAST Modified: 21:56:40 23-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -87,6 +87,27 @@ class TestingEndpoints:
         )
         self.disp.log_debug("Initialised")
 
+    def _get_admin_token(self, title: str, request: Request) -> Union[Response, str]:
+        """Get the token of the user if they are administrator, otherwise, return the correct http response.
+
+        Args:
+            title (str): The title of the endpoint calling this function.
+            request (Request): The incoming request parameters
+
+        Returns:
+            Union[Response, str]: The response if an error occurred, the token otherwise.
+        """
+        token = self.boilerplate_incoming_initialised.get_token_if_present(
+            request
+        )
+        if not token:
+            return self.boilerplate_responses_initialised.invalid_token(title)
+        if not self.boilerplate_non_http_initialised.is_token_correct(token):
+            return self.boilerplate_responses_initialised.invalid_token(title)
+        if not self.boilerplate_non_http_initialised.is_token_admin(token):
+            return self.boilerplate_responses_initialised.insuffisant_rights(title, token)
+        return token
+
     # SQL testing
 
     async def get_tables(self, request: Request) -> Response:
@@ -98,6 +119,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON list of table names or error response.
         """
+        token = self._get_admin_token("Get tables", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL",
             self.sql_connection
@@ -123,6 +147,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON list of column names or error response.
         """
+        token = self._get_admin_token("Get table columns", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL", self.sql_connection)
         if not self.sql_connection:
@@ -149,6 +176,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON with table schema information or error response.
         """
+        token = self._get_admin_token("Describe table", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL", self.sql_connection)
         if not self.sql_connection:
@@ -172,6 +202,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON with database version or error response.
         """
+        token = self._get_admin_token("Get database version", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL", self.sql_connection)
         if not self.sql_connection:
@@ -192,6 +225,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON with connection status.
         """
+        token = self._get_admin_token("Test sql connection", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL", self.sql_connection)
         if not self.sql_connection:
@@ -219,6 +255,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON with row count or error response.
         """
+        token = self._get_admin_token("Get table size", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL", self.sql_connection)
         if not self.sql_connection:
@@ -242,6 +281,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON with triggers dictionary or error response.
         """
+        token = self._get_admin_token("Get triggers", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL", self.sql_connection)
         if not self.sql_connection:
@@ -262,6 +304,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON list of trigger names or error response.
         """
+        token = self._get_admin_token("Get trigger names", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL", self.sql_connection)
         if not self.sql_connection:
@@ -282,6 +327,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON with current datetime string.
         """
+        token = self._get_admin_token("Get current datetime", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL", self.sql_connection)
         if not self.sql_connection:
@@ -300,6 +348,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON with current date string.
         """
+        token = self._get_admin_token("Get current date", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL", self.sql_connection)
         if not self.sql_connection:
@@ -323,6 +374,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON with formatted datetime string or error response.
         """
+        token = self._get_admin_token("Convert datetime to string", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL", self.sql_connection)
         if not self.sql_connection:
@@ -357,6 +411,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON with ISO format datetime or error response.
         """
+        token = self._get_admin_token("Convert string to datetime", request)
+        if isinstance(token, Response):
+            return token
         self.sql_connection = self.runtime_manager.get_if_exists(
             "SQL", self.sql_connection)
         if not self.sql_connection:
@@ -387,6 +444,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON list of bucket names or error response.
         """
+        token = self._get_admin_token("Get buckets", request)
+        if isinstance(token, Response):
+            return token
         self.bucket_connection = self.runtime_manager.get_if_exists(
             "Bucket",
             self.bucket_connection
@@ -409,6 +469,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON with connection status.
         """
+        token = self._get_admin_token("test bucket connection", request)
+        if isinstance(token, Response):
+            return token
         self.bucket_connection = self.runtime_manager.get_if_exists(
             "Bucket",
             self.bucket_connection
@@ -438,6 +501,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON list of file names or error response.
         """
+        token = self._get_admin_token("Get bucket files", request)
+        if isinstance(token, Response):
+            return token
         self.bucket_connection = self.runtime_manager.get_if_exists(
             "Bucket",
             self.bucket_connection
@@ -467,6 +533,9 @@ class TestingEndpoints:
         Returns:
             Response: JSON with file metadata or error response.
         """
+        token = self._get_admin_token("Get bucket file info", request)
+        if isinstance(token, Response):
+            return token
         self.bucket_connection = self.runtime_manager.get_if_exists(
             "Bucket",
             self.bucket_connection
@@ -498,6 +567,9 @@ class TestingEndpoints:
         Returns:
             Response: Success or error response.
         """
+        token = self._get_admin_token("Create test bucket", request)
+        if isinstance(token, Response):
+            return token
         self.bucket_connection = self.runtime_manager.get_if_exists(
             "Bucket",
             self.bucket_connection
@@ -526,6 +598,9 @@ class TestingEndpoints:
         Returns:
             Response: Success or error response.
         """
+        token = self._get_admin_token("Delete test bucket", request)
+        if isinstance(token, Response):
+            return token
         self.bucket_connection = self.runtime_manager.get_if_exists(
             "Bucket",
             self.bucket_connection
@@ -557,6 +632,9 @@ class TestingEndpoints:
         Returns:
             Response: Success or error response.
         """
+        token = self._get_admin_token("Upload test file stream", request)
+        if isinstance(token, Response):
+            return token
         self.bucket_connection = self.runtime_manager.get_if_exists(
             "Bucket",
             self.bucket_connection
@@ -596,6 +674,9 @@ class TestingEndpoints:
         Returns:
             Response: File content as bytes or error response.
         """
+        token = self._get_admin_token("Download test file stream", request)
+        if isinstance(token, Response):
+            return token
         self.bucket_connection = self.runtime_manager.get_if_exists(
             "Bucket",
             self.bucket_connection
@@ -646,6 +727,9 @@ class TestingEndpoints:
         Returns:
             Response: Success or error response.
         """
+        token = self._get_admin_token("Delete test file", request)
+        if isinstance(token, Response):
+            return token
         self.bucket_connection = self.runtime_manager.get_if_exists(
             "Bucket",
             self.bucket_connection
