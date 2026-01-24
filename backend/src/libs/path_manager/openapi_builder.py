@@ -438,3 +438,60 @@ class OpenAPIBuilder:
                     param_list.append(f"`{param}` - {desc}")
                 param_descriptions.append(
                     f"**Path Parameters:** {'; '.join(param_list)}")
+
+    def extract_route_metadata(self, endpoint: Callable) -> Dict[str, Any]:
+        """Extract route metadata from decorated endpoint for FastAPI route configuration.
+
+        Args:
+            endpoint: The decorated endpoint function to extract metadata from.
+
+        Returns:
+            Dictionary containing FastAPI route configuration parameters.
+        """
+        metadata = {}
+
+        # Extract all possible metadata attributes
+        metadata_attrs = {
+            'operation_id': '__name__',  # FastAPI uses __name__ for operation_id
+            'tags': '_tags',
+            'summary': '_summary',
+            'description': '_description',
+            'response_model': '_response_model',
+            'responses': '_responses',
+            'dependencies': '_dependencies',
+            'status_code': '_status_code',
+            'deprecated': '_deprecated',
+            'include_in_schema': '_include_in_schema'
+        }
+
+        for fastapi_param, attr_name in metadata_attrs.items():
+            if hasattr(endpoint, attr_name):
+                value = getattr(endpoint, attr_name)
+                if value is not None:
+                    metadata[fastapi_param] = value
+                    self.disp.log_debug(f"Found {fastapi_param}: {value}")
+
+        # Special handling for authentication metadata
+        if hasattr(endpoint, '_requires_auth') and getattr(endpoint, '_requires_auth'):
+            metadata['dependencies'] = metadata.get('dependencies', [])
+            # Add auth dependency if needed
+
+        if hasattr(endpoint, '_requires_admin') and getattr(endpoint, '_requires_admin'):
+            metadata['dependencies'] = metadata.get('dependencies', [])
+            # Add admin dependency if needed
+
+        # Handle JSON body metadata for better request body detection
+        if hasattr(endpoint, '_accepts_json_body') and getattr(endpoint, '_accepts_json_body'):
+            # This helps FastAPI detect request body requirements
+            metadata['include_in_schema'] = True
+
+        # Handle bearer auth metadata
+        if hasattr(endpoint, '_requires_bearer_auth') and getattr(endpoint, '_requires_bearer_auth'):
+            # Add security dependency for Bearer auth
+            metadata['dependencies'] = metadata.get('dependencies', [])
+
+        # Ensure include_in_schema defaults to True
+        if 'include_in_schema' not in metadata:
+            metadata['include_in_schema'] = True
+
+        return metadata

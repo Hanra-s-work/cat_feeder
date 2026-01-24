@@ -1,12 +1,33 @@
-"""
-Constants for API endpoint decorators.
-
-Provides enums and constants to ensure consistency and reduce spelling mistakes
-in decorator usage.
+r""" 
+# +==== BEGIN CatFeeder =================+
+# LOGO: 
+# ..............(..../\
+# ...............)..(.')
+# ..............(../..)
+# ...............\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
+# /STOP
+# PROJECT: CatFeeder
+# FILE: decorator_constants.py
+# CREATION DATE: 24-01-2026
+# LAST Modified: 1:23:31 24-01-2026
+# DESCRIPTION: 
+# This is the project in charge of making the connected cat feeder project work.
+# /STOP
+# COPYRIGHT: (c) Cat Feeder
+# PURPOSE: This is the file containing the constants for the decorators.
+# Constants for API endpoint decorators.
+# 
+# Provides enums and constants to ensure consistency and reduce spelling mistakes in decorator usage.
+# // AR
+# +==== END CatFeeder =================+
 """
 
 from enum import Enum
-from ...http_codes import HttpDataTypes
+# Fix the import - use the actual DataTypes from http_constants
+from ...http_codes.http_constants import DataTypes as ContentType
 
 
 class AuthScheme(Enum):
@@ -29,10 +50,6 @@ class CommonHeaders(Enum):
     USER_AGENT = "User-Agent"
     ACCEPT = "Accept"
     ACCEPT_LANGUAGE = "Accept-Language"
-
-
-# Use the existing HttpDataTypes instead of creating a new ContentType enum
-ContentType = HttpDataTypes
 
 
 class SecurityLevel(Enum):
@@ -125,10 +142,10 @@ PUBLIC_TAG = TagCategory.PUBLIC.value
 USER_TAG = TagCategory.USERS.value
 ADMIN_TAG = TagCategory.ADMIN.value
 
-# Common content types from HttpDataTypes
-JSON_CONTENT = HttpDataTypes.JSON
-FORM_CONTENT = HttpDataTypes.FORM
-MULTIPART_CONTENT = HttpDataTypes.MULTIPART
-TEXT_CONTENT = HttpDataTypes.TEXT
-HTML_CONTENT = HttpDataTypes.HTML
-BINARY_CONTENT = HttpDataTypes.OCTET_STREAM
+# Common content types from ContentType
+JSON_CONTENT = ContentType.JSON
+FORM_CONTENT = ContentType.FORM
+MULTIPART_CONTENT = ContentType.MULTIPART
+TEXT_CONTENT = ContentType.TEXT
+HTML_CONTENT = ContentType.HTML
+BINARY_CONTENT = ContentType.OCTET_STREAM

@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: paths.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 0:39:58 24-01-2026
+# LAST Modified: 1:34:20 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -134,26 +134,21 @@ class PathManager(metaclass=FinalClass):
         return {PATH_KEY: path, ENDPOINT_KEY: endpoint, METHOD_KEY: methods}
 
     def add_path(self, path: str, endpoint: object, method: Union[str, List[str]], *, decorators: Optional[List[Callable]] = None) -> int:
-        """Add or update a path in the routes list.
-
-        If the same path with the same endpoint function already exists,
-        merges the new method(s) with existing ones. Otherwise, adds a new route.
-
-        Args:
-            path: The path to call for the endpoint to be triggered.
-            endpoint: The function that represents the endpoint.
-            method: The HTTP method(s) used (GET, PUT, POST, etc.).
-            decorators: Optional list of decorators to apply to the endpoint.
-
-        Returns:
-            success if it succeeded, error if there was an error in the data.
-        """
+        """Add or update a path in the routes list."""
         self.disp.log_debug(f"Adding path <{path}> with methods {method}")
 
         # Apply decorators if provided
         if decorators:
             self.disp.log_debug(
                 f"Applying {len(decorators)} decorator(s) to {path}")
+
+            # Log the original endpoint signature
+            try:
+                orig_sig = inspect.signature(endpoint)
+                self.disp.log_debug(f"Original endpoint signature: {orig_sig}")
+            except Exception as e:
+                self.disp.log_warning(f"Could not get original signature: {e}")
+
             for i, decorator in enumerate(decorators):
                 decorator_name = getattr(
                     decorator, '__name__', f'decorator_{i}')
@@ -170,9 +165,16 @@ class PathManager(metaclass=FinalClass):
                 decorated_endpoint = decorator(endpoint)
                 if not callable(decorated_endpoint):
                     self.disp.log_error(
-                        f"Decorator {decorator_name} did not return callable for {path}"
-                    )
+                        f"Decorator {decorator_name} did not return callable for {path}")
                     return self.error
+
+                # Log the signature after each decorator
+                try:
+                    new_sig = inspect.signature(decorated_endpoint)
+                    self.disp.log_debug(f"After {decorator_name}: {new_sig}")
+                except Exception as e:
+                    self.disp.log_warning(
+                        f"Could not get signature after {decorator_name}: {e}")
 
                 endpoint = decorated_endpoint
         else:
@@ -321,7 +323,7 @@ class PathManager(metaclass=FinalClass):
                         return endpoint(request)
 
                 # Override the signature to show no parameters to FastAPI
-                wrapper.__signature__ = inspect.Signature()
+                setattr(wrapper, "__signature__", inspect.Signature())
                 wrapper.__name__ = f"wrapped_{endpoint_name}"
                 self.disp.log_info(
                     f"Wrapped endpoint {endpoint_name} to hide parameters")
@@ -363,7 +365,6 @@ class PathManager(metaclass=FinalClass):
             self.disp.log_debug(
                 f"Processing route {i}/{len(self.routes)}: {route_path} [{', '.join(route_methods)}]")
 
-            # Log the endpoint signature to debug the issue
             original_endpoint = route[ENDPOINT_KEY]
             endpoint_name = getattr(
                 original_endpoint, '__name__', 'unknown_endpoint')
@@ -376,23 +377,34 @@ class PathManager(metaclass=FinalClass):
                 self.disp.log_warning(
                     f"Could not get signature for {endpoint_name}: {e}")
 
-            endpoint_to_use = original_endpoint
+            # Use OpenAPIBuilder to extract metadata - this is its responsibility
+            route_kwargs = self.openapi_builder.extract_route_metadata(
+                original_endpoint)
+            route_kwargs['methods'] = route_methods
+
+            self.disp.log_debug(
+                f"Route metadata for {route_path}: {route_kwargs}")
 
             try:
-                # Ultra-minimal route registration - let FastAPI handle everything automatically
                 app.add_api_route(
-                    route[PATH_KEY],
-                    endpoint_to_use,
-                    methods=route[METHOD_KEY]
-                )
+                    route_path, original_endpoint, **route_kwargs)
                 self.disp.log_info(
                     f"Successfully injected route: {route_path} [{', '.join(route_methods)}]")
                 successful_injections += 1
 
             except Exception as e:
                 self.disp.log_error(f"Error adding route {route_path}: {e}")
-                failed_injections += 1
+                # Fallback with minimal config
+                try:
+                    app.add_api_route(
+                        route_path, original_endpoint, methods=route_methods)
+                    self.disp.log_warning(
+                        f"Fallback injection successful for {route_path}")
+                    successful_injections += 1
+                except Exception as fallback_error:
+                    self.disp.log_error(
+                        f"Fallback injection failed for {route_path}: {fallback_error}")
+                    failed_injections += 1
 
-        # Log final summary
         self.disp.log_info(
-            f"Route injection process completed: {successful_injections} successful, {failed_injections} failed")
+            f"Route injection completed: {successful_injections} successful, {failed_injections} failed")

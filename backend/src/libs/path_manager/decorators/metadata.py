@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: metadata.py
 # CREATION DATE: 23-01-2026
-# LAST Modified: 22:17:50 23-01-2026
+# LAST Modified: 1:26:22 24-01-2026
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -149,6 +149,29 @@ def set_summary(summary: str) -> Callable:
                 getattr(func, "_response_model")
             )
 
+        return wrapper
+    return decorator
+
+
+def set_operation_id(operation_id: str) -> Callable:
+    """Set custom operation ID for the endpoint.
+
+    Args:
+        operation_id: Custom operation ID for OpenAPI schema.
+
+    Returns:
+        Decorator function.
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        # FastAPI uses __name__ for operation_id
+        setattr(wrapper, "__name__", operation_id)
+
+        # Preserve existing metadata
+        _preserve_metadata(func, wrapper)
         return wrapper
     return decorator
 
