@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: bonus.py
 # CREATION DATE: 19-11-2025
-# LAST Modified: 2:5:18 24-01-2026
+# LAST Modified: 3:1:13 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -269,3 +269,90 @@ class Bonus:
             content_type=HTTP_DEFAULT_TYPE,
             headers=self.server_headers_initialised.for_json()
         )
+
+    # Dedicated beacon endpoint functions to avoid OpenAPI Operation ID conflicts
+    async def root_beacon_get(self, request: Request) -> Response:
+        """Root GET beacon endpoint."""
+        return await self.get_welcome(request)
+    
+    async def root_beacon_post(self, request: Request) -> Response:
+        """Root POST beacon endpoint.""" 
+        return await self.get_welcome(request)
+    
+    async def root_beacon_put(self, request: Request) -> Response:
+        """Root PUT beacon endpoint."""
+        return await self.get_welcome(request)
+    
+    async def root_beacon_patch(self, request: Request) -> Response:
+        """Root PATCH beacon endpoint."""
+        return await self.get_welcome(request)
+    
+    async def root_beacon_delete(self, request: Request) -> Response:
+        """Root DELETE beacon endpoint."""
+        return await self.get_welcome(request)
+    
+    async def root_beacon_head(self, request: Request) -> Response:
+        """Root HEAD beacon endpoint."""
+        return await self.get_welcome(request)
+    
+    async def root_beacon_options(self, request: Request) -> Response:
+        """Root OPTIONS beacon endpoint."""
+        return await self.get_welcome(request)
+
+    # Home beacon functions
+    async def home_beacon_get(self, request: Request) -> Response:
+        """Home GET beacon endpoint."""
+        return await self.get_root(request)
+    
+    async def home_beacon_post(self, request: Request) -> Response:
+        """Home POST beacon endpoint."""
+        return await self.get_root(request)
+    
+    async def home_beacon_put(self, request: Request) -> Response:
+        """Home PUT beacon endpoint."""
+        return await self.get_root(request)
+    
+    async def home_beacon_patch(self, request: Request) -> Response:
+        """Home PATCH beacon endpoint."""
+        return await self.get_root(request)
+    
+    async def home_beacon_delete(self, request: Request) -> Response:
+        """Home DELETE beacon endpoint."""
+        return await self.get_root(request)
+    
+    async def home_beacon_head(self, request: Request) -> Response:
+        """Home HEAD beacon endpoint."""
+        return await self.get_root(request)
+    
+    async def home_beacon_options(self, request: Request) -> Response:
+        """Home OPTIONS beacon endpoint."""
+        return await self.get_root(request)
+
+    # API v1 beacon functions
+    async def api_v1_beacon_get(self, request: Request) -> Response:
+        """API v1 GET beacon endpoint."""
+        return await self.get_api_v1(request)
+    
+    async def api_v1_beacon_post(self, request: Request) -> Response:
+        """API v1 POST beacon endpoint."""
+        return await self.get_api_v1(request)
+    
+    async def api_v1_beacon_put(self, request: Request) -> Response:
+        """API v1 PUT beacon endpoint."""
+        return await self.get_api_v1(request)
+    
+    async def api_v1_beacon_patch(self, request: Request) -> Response:
+        """API v1 PATCH beacon endpoint."""
+        return await self.get_api_v1(request)
+    
+    async def api_v1_beacon_delete(self, request: Request) -> Response:
+        """API v1 DELETE beacon endpoint."""
+        return await self.get_api_v1(request)
+    
+    async def api_v1_beacon_head(self, request: Request) -> Response:
+        """API v1 HEAD beacon endpoint."""
+        return await self.get_api_v1(request)
+    
+    async def api_v1_beacon_options(self, request: Request) -> Response:
+        """API v1 OPTIONS beacon endpoint."""
+        return await self.get_api_v1(request)

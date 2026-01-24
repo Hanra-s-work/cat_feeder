@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:1:22 24-01-2026
+# LAST Modified: 3:18:31 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -321,42 +321,110 @@ class EndpointManager(metaclass=FinalClass):
             ]
         )
 
-        # Bonus routes - BEACON ENDPOINTS: Let FastAPI auto-generate operation IDs for multi-method
+        # Bonus routes - BEACON ENDPOINTS: Use individual functions to avoid Operation ID conflicts
         self.paths_initialised.add_path_if_not_exists(
-            "", self.bonus.get_welcome, [
-                "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
-            ], decorators=[
-                decorators.public_endpoint(),
-                decorators.system_endpoint,
-                # Remove set_operation_id for multi-method - let FastAPI auto-generate
-                decorators.set_summary("Root beacon endpoint"),
-                decorators.set_description(
-                    "Server alive beacon - responds to any HTTP method")
-            ]
+            "", self.bonus.root_beacon_get, "GET",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
         )
         self.paths_initialised.add_path_if_not_exists(
-            "/", self.bonus.get_root, [
-                "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
-            ], decorators=[
-                decorators.public_endpoint(),
-                decorators.system_endpoint,
-                # Remove set_operation_id for multi-method - let FastAPI auto-generate
-                decorators.set_summary("Home beacon endpoint"),
-                decorators.set_description(
-                    "Server alive beacon - responds to any HTTP method")
-            ]
+            "", self.bonus.root_beacon_post, "POST",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
         )
         self.paths_initialised.add_path_if_not_exists(
-            f"{self.v1_str}/", self.bonus.get_api_v1, [
-                "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
-            ], decorators=[
-                decorators.public_endpoint(),
-                decorators.system_endpoint,
-                # Remove set_operation_id for multi-method - let FastAPI auto-generate
-                decorators.set_summary("API v1 beacon endpoint"),
-                decorators.set_description(
-                    "Server alive beacon - responds to any HTTP method")
-            ]
+            "", self.bonus.root_beacon_put, "PUT",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            "", self.bonus.root_beacon_patch, "PATCH",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            "", self.bonus.root_beacon_delete, "DELETE",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            "", self.bonus.root_beacon_head, "HEAD",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            "", self.bonus.root_beacon_options, "OPTIONS",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+
+        # Home beacon endpoints
+        self.paths_initialised.add_path_if_not_exists(
+            "/", self.bonus.home_beacon_get, "GET",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            "/", self.bonus.home_beacon_post, "POST",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            "/", self.bonus.home_beacon_put, "PUT",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            "/", self.bonus.home_beacon_patch, "PATCH",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            "/", self.bonus.home_beacon_delete, "DELETE",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            "/", self.bonus.home_beacon_head, "HEAD",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            "/", self.bonus.home_beacon_options, "OPTIONS",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+
+        # API v1 beacon endpoints
+        self.paths_initialised.add_path_if_not_exists(
+            f"{self.v1_str}/", self.bonus.api_v1_beacon_get, "GET",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            f"{self.v1_str}/", self.bonus.api_v1_beacon_post, "POST",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            f"{self.v1_str}/", self.bonus.api_v1_beacon_put, "PUT",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            f"{self.v1_str}/", self.bonus.api_v1_beacon_patch, "PATCH",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            f"{self.v1_str}/", self.bonus.api_v1_beacon_delete, "DELETE",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+        self.paths_initialised.add_path_if_not_exists(
+            f"{self.v1_str}/", self.bonus.api_v1_beacon_head, "HEAD",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
         )
         self.paths_initialised.add_path_if_not_exists(
             f"{self.v1_str}/stop", self.bonus.post_stop_server, "PUT",
