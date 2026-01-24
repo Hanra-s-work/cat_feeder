@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: paths.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:9:57 24-01-2026
+# LAST Modified: 3:39:15 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -24,7 +24,6 @@
 
 from typing import Union, List, Dict, Any, Optional, TYPE_CHECKING, Callable
 import inspect
-from functools import wraps
 
 from display_tty import Disp, initialise_logger
 from .path_constants import PATH_KEY, ENDPOINT_KEY,  METHOD_KEY, ALLOWED_METHODS
