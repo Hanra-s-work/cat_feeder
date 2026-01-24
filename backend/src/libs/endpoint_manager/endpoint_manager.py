@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 2:28:13 24-01-2026
+# LAST Modified: 3:1:22 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -215,6 +215,7 @@ class EndpointManager(metaclass=FinalClass):
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/ip", self.cat_endpoints.put_feeder_ip, "PUT",
             decorators=[
+                decorators.public_endpoint(),  # Changed: feeder calls this directly
                 decorators.cat_endpoint,
                 decorators.json_body(
                     "Feeder IP update - called by feeder itself after reboot",
@@ -223,6 +224,7 @@ class EndpointManager(metaclass=FinalClass):
                         "ip_address": "192.168.1.100"
                     }
                 ),
+                decorators.set_operation_id("update_feeder_ip_address"),
                 decorators.set_summary("Update feeder IP address"),
                 decorators.set_description(
                     "Allows feeder to update its IP address after reboot")
@@ -319,16 +321,17 @@ class EndpointManager(metaclass=FinalClass):
             ]
         )
 
-        # Bonus routes - Use conditional registration to avoid conflicts
+        # Bonus routes - BEACON ENDPOINTS: Let FastAPI auto-generate operation IDs for multi-method
         self.paths_initialised.add_path_if_not_exists(
             "", self.bonus.get_welcome, [
                 "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
             ], decorators=[
                 decorators.public_endpoint(),
                 decorators.system_endpoint,
-                # decorators.set_operation_id("root_welcome_multi"),
-                decorators.set_summary("Root endpoint"),
-                decorators.set_description("Welcome message for root path")
+                # Remove set_operation_id for multi-method - let FastAPI auto-generate
+                decorators.set_summary("Root beacon endpoint"),
+                decorators.set_description(
+                    "Server alive beacon - responds to any HTTP method")
             ]
         )
         self.paths_initialised.add_path_if_not_exists(
@@ -337,9 +340,10 @@ class EndpointManager(metaclass=FinalClass):
             ], decorators=[
                 decorators.public_endpoint(),
                 decorators.system_endpoint,
-                # decorators.set_operation_id("home_welcome_multi"),
-                decorators.set_summary("Home endpoint"),
-                decorators.set_description("Welcome message for home path")
+                # Remove set_operation_id for multi-method - let FastAPI auto-generate
+                decorators.set_summary("Home beacon endpoint"),
+                decorators.set_description(
+                    "Server alive beacon - responds to any HTTP method")
             ]
         )
         self.paths_initialised.add_path_if_not_exists(
@@ -348,9 +352,10 @@ class EndpointManager(metaclass=FinalClass):
             ], decorators=[
                 decorators.public_endpoint(),
                 decorators.system_endpoint,
-                # decorators.set_operation_id("api_v1_welcome_multi"),
-                decorators.set_summary("API v1 endpoint"),
-                decorators.set_description("Welcome message for API v1 path")
+                # Remove set_operation_id for multi-method - let FastAPI auto-generate
+                decorators.set_summary("API v1 beacon endpoint"),
+                decorators.set_description(
+                    "Server alive beacon - responds to any HTTP method")
             ]
         )
         self.paths_initialised.add_path_if_not_exists(
