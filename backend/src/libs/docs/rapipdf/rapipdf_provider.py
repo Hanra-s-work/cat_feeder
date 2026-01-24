@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: rapipdf_provider.py
 # CREATION DATE: 26-11-2025
-# LAST Modified: 14:45:19 19-12-2025
+# LAST Modified: 2:10:5 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -198,7 +198,7 @@ class RapiPDFProvider:
         Returns:
             int: Success or error code from the path registration.
         """
-        return path_handler.add_path(
+        return path_handler.add_path_if_not_exists(
             RAPIPDF_CONST.RAPIPDF_CDN_JS_ENDPOINT,
             self.get_rapipdf_cdn_js_ressource,
             "GET"

@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: docs_handler.py
 # CREATION DATE: 26-11-2025
-# LAST Modified: 14:46:16 19-12-2025
+# LAST Modified: 2:9:10 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -21,7 +21,7 @@
 # // AR
 # +==== END CatFeeder =================+
 """
-from typing import Optional, Dict, Any, TYPE_CHECKING
+from typing import Optional, Dict, Any
 from fastapi import FastAPI, Request, Response
 from fastapi.openapi.utils import get_openapi
 from display_tty import Disp, initialise_logger
@@ -395,7 +395,7 @@ class DocumentationHandler(metaclass=FinalClass):
                 "Initialized providers during inject()", func_title
             )
 
-        result = self.path_manager_initialised.add_path(
+        result = self.path_manager_initialised.add_path_if_not_exists(
             path=self.openapi_url,
             endpoint=self._custom_openapi_wrapper,
             method="GET"
@@ -412,7 +412,7 @@ class DocumentationHandler(metaclass=FinalClass):
         )
 
         if DOCS_CONST.ENABLE_OAUTH2_DOCS:
-            result = self.path_manager_initialised.add_path(
+            result = self.path_manager_initialised.add_path_if_not_exists(
                 path=DOCS_CONST.OAUTH2_REDIRECT_URL,
                 endpoint=self._oauth2_redirect_handler,
                 method="GET"
@@ -443,7 +443,7 @@ class DocumentationHandler(metaclass=FinalClass):
 
                 handler_func = self._create_provider_handler(provider_instance)
 
-                result = self.path_manager_initialised.add_path(
+                result = self.path_manager_initialised.add_path_if_not_exists(
                     path=doc_url,
                     endpoint=handler_func,
                     method="GET"
@@ -470,7 +470,7 @@ class DocumentationHandler(metaclass=FinalClass):
 
                 handler_func = self._create_provider_handler(provider_instance)
 
-                result = self.path_manager_initialised.add_path(
+                result = self.path_manager_initialised.add_path_if_not_exists(
                     path=doc_url,
                     endpoint=handler_func,
                     method="GET"
