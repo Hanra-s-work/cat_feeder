@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: paths.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 1:44:14 24-01-2026
+# LAST Modified: 3:5:35 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -23,6 +23,7 @@
 """
 
 from typing import Union, List, Dict, Any, Optional, TYPE_CHECKING, Callable
+import uuid
 import inspect
 from functools import wraps
 
@@ -387,6 +388,24 @@ class PathManager(metaclass=FinalClass):
                 f"Could not inspect endpoint {endpoint_name}: {e}")
             return endpoint
 
+    def _create_uuid_wrapper(self, original_func: Callable, endpoint_name: str) -> Callable:
+        """Create a wrapper with unique UUID-based name for multi-method endpoints.
+
+        Args:
+            original_func: The original endpoint function.
+            endpoint_name: Base name for the endpoint.
+
+        Returns:
+            Wrapper function with unique UUID-based name.
+        """
+        def uuid_wrapper(*args, **kwargs):
+            return original_func(*args, **kwargs)
+
+        # Generate unique name with UUID suffix
+        unique_id = str(uuid.uuid4()).replace('-', '')[:8]  # Short UUID
+        uuid_wrapper.__name__ = f"{endpoint_name}_{unique_id}"
+        return uuid_wrapper
+
     def inject_routes(self) -> None:
         """Inject all registered routes into the FastAPI application."""
         self.disp.log_info("Starting route injection process")
@@ -417,19 +436,21 @@ class PathManager(metaclass=FinalClass):
 
             original_endpoint = route[ENDPOINT_KEY]
             endpoint_name = getattr(
-                original_endpoint, '__name__', 'unknown_endpoint')
+                original_endpoint, '__name__', 'unknown_endpoint'
+            )
 
-            try:
-                sig = inspect.signature(original_endpoint)
+            # For multi-method endpoints, make function name unique with UUID
+            endpoint_to_register = original_endpoint
+            if len(route_methods) > 1:
+                endpoint_to_register = self._create_uuid_wrapper(
+                    original_endpoint, endpoint_name)
                 self.disp.log_debug(
-                    f"Endpoint {endpoint_name} signature: {sig}")
-            except Exception as e:
-                self.disp.log_warning(
-                    f"Could not get signature for {endpoint_name}: {e}")
+                    f"Created UUID wrapper: {endpoint_to_register.__name__}"
+                )
 
-            # Use OpenAPIBuilder to extract metadata - this is its responsibility
+            # Use OpenAPIBuilder to extract metadata
             route_kwargs = self.openapi_builder.extract_route_metadata(
-                original_endpoint)
+                endpoint_to_register)
             route_kwargs['methods'] = route_methods
 
             self.disp.log_debug(
@@ -437,7 +458,7 @@ class PathManager(metaclass=FinalClass):
 
             try:
                 app.add_api_route(
-                    route_path, original_endpoint, **route_kwargs)
+                    route_path, endpoint_to_register, **route_kwargs)
                 self.disp.log_info(
                     f"Successfully injected route: {route_path} [{', '.join(route_methods)}]")
                 successful_injections += 1
