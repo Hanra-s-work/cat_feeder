@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: openapi_builder.py
 # CREATION DATE: 23-01-2026
-# LAST Modified: 23:51:26 23-01-2026
+# LAST Modified: 3:12:29 24-01-2026
 # DESCRIPTION:
 # OpenAPI schema builder for FastAPI route documentation
 # /STOP
@@ -25,6 +25,7 @@
 
 import inspect
 import json
+import uuid
 from typing import Dict, Any, List, Callable, Optional
 from display_tty import Disp, initialise_logger
 
@@ -440,19 +441,11 @@ class OpenAPIBuilder:
                     f"**Path Parameters:** {'; '.join(param_list)}")
 
     def extract_route_metadata(self, endpoint: Callable) -> Dict[str, Any]:
-        """Extract route metadata from decorated endpoint for FastAPI route configuration.
-
-        Args:
-            endpoint: The decorated endpoint function to extract metadata from.
-
-        Returns:
-            Dictionary containing FastAPI route configuration parameters.
-        """
+        """Extract route metadata from decorated endpoint for FastAPI route configuration."""
         metadata = {}
 
         # Extract all possible metadata attributes
         metadata_attrs = {
-            'operation_id': '__name__',  # FastAPI uses __name__ for operation_id
             'tags': '_tags',
             'summary': '_summary',
             'description': '_description',
@@ -464,6 +457,19 @@ class OpenAPIBuilder:
             'include_in_schema': '_include_in_schema'
         }
 
+        # Handle operation_id specially - DON'T set it for multi-method endpoints
+        # FastAPI will auto-generate unique operation IDs per method
+        if hasattr(endpoint, '_operation_id_base'):
+            # This is a multi-method endpoint - let FastAPI auto-generate operation_id
+            self.disp.log_debug(
+                "Multi-method endpoint detected - skipping operation_id to avoid duplicates")
+        elif hasattr(endpoint, '_operation_id'):
+            # Single-method endpoint - use custom operation_id
+            metadata['operation_id'] = getattr(endpoint, '_operation_id')
+            self.disp.log_debug(
+                f"Found operation_id: {metadata['operation_id']}")
+        # Don't set operation_id at all if neither condition is met - let FastAPI auto-generate
+
         for fastapi_param, attr_name in metadata_attrs.items():
             if hasattr(endpoint, attr_name):
                 value = getattr(endpoint, attr_name)
@@ -471,23 +477,27 @@ class OpenAPIBuilder:
                     metadata[fastapi_param] = value
                     self.disp.log_debug(f"Found {fastapi_param}: {value}")
 
+        # Handle request body metadata for proper schema generation
+        if hasattr(endpoint, '_accepts_json_body') and getattr(endpoint, '_accepts_json_body'):
+            metadata['include_in_schema'] = True
+
+            # Add request body info to metadata for better documentation
+            if hasattr(endpoint, '_json_body_description'):
+                body_desc = getattr(endpoint, '_json_body_description')
+                if 'description' not in metadata:
+                    metadata['description'] = body_desc
+                else:
+                    metadata['description'] += f"\n\nRequest Body: {body_desc}"
+
         # Special handling for authentication metadata
         if hasattr(endpoint, '_requires_auth') and getattr(endpoint, '_requires_auth'):
             metadata['dependencies'] = metadata.get('dependencies', [])
-            # Add auth dependency if needed
 
         if hasattr(endpoint, '_requires_admin') and getattr(endpoint, '_requires_admin'):
             metadata['dependencies'] = metadata.get('dependencies', [])
-            # Add admin dependency if needed
-
-        # Handle JSON body metadata for better request body detection
-        if hasattr(endpoint, '_accepts_json_body') and getattr(endpoint, '_accepts_json_body'):
-            # This helps FastAPI detect request body requirements
-            metadata['include_in_schema'] = True
 
         # Handle bearer auth metadata
         if hasattr(endpoint, '_requires_bearer_auth') and getattr(endpoint, '_requires_bearer_auth'):
-            # Add security dependency for Bearer auth
             metadata['dependencies'] = metadata.get('dependencies', [])
 
         # Ensure include_in_schema defaults to True
@@ -495,3 +505,81 @@ class OpenAPIBuilder:
             metadata['include_in_schema'] = True
 
         return metadata
+
+    def create_uuid_wrapper(self, original_func: Callable, endpoint_name: str) -> Callable:
+        """Create a wrapper with unique UUID-based name for multi-method endpoints.
+
+        Args:
+            original_func: The original endpoint function.
+            endpoint_name: Base name for the endpoint.
+
+        Returns:
+            Wrapper function with unique UUID-based name.
+        """
+        # Generate unique ID first
+        unique_id = str(uuid.uuid4()).replace('-', '')[:8]  # Short UUID
+        unique_name = f"{endpoint_name}_{unique_id}"
+
+        # Create a proper wrapper function that copies all metadata
+        if hasattr(original_func, '__await__'):
+            # Async function
+            async def uuid_wrapper(*args, **kwargs):
+                return await original_func(*args, **kwargs)
+        else:
+            # Sync function
+            def uuid_wrapper(*args, **kwargs):
+                return original_func(*args, **kwargs)
+
+        # Copy ALL function metadata to make it appear as a completely different function
+        uuid_wrapper.__name__ = unique_name
+        uuid_wrapper.__qualname__ = unique_name
+        uuid_wrapper.__doc__ = getattr(original_func, '__doc__', None)
+        uuid_wrapper.__module__ = getattr(original_func, '__module__', None)
+        uuid_wrapper.__annotations__ = getattr(
+            original_func, '__annotations__', {})
+
+        # Copy any decorator metadata
+        self._copy_decorator_metadata(original_func, uuid_wrapper)
+
+        # Make sure FastAPI sees this as a completely different function
+        try:
+            uuid_wrapper.__code__ = original_func.__code__
+        except AttributeError:
+            # Some functions might not have __code__, that's fine
+            pass
+
+        return uuid_wrapper
+
+    def _copy_decorator_metadata(self, original_func: Callable, wrapper_func: Callable) -> None:
+        """Copy decorator metadata from original function to wrapper.
+
+        Args:
+            original_func: The original endpoint function.
+            wrapper_func: The wrapper function to copy metadata to.
+        """
+        metadata_attrs = [
+            '_tags', '_summary', '_description', '_response_model',
+            '_requires_auth', '_requires_admin', '_public', '_testing_only',
+            '_security_level', '_environment', '_operation_id', '_accepts_json_body',
+            '_json_body_description', '_json_body_example', '_requires_bearer_auth'
+        ]
+
+        for attr in metadata_attrs:
+            if hasattr(original_func, attr):
+                setattr(wrapper_func, attr, getattr(original_func, attr))
+
+    def prepare_endpoint_for_multi_method(self, endpoint: Callable, methods: List[str]) -> Callable:
+        """Prepare endpoint for multi-method registration to avoid Operation ID conflicts.
+
+        Args:
+            endpoint: The original endpoint function.
+            methods: List of HTTP methods for this endpoint.
+
+        Returns:
+            Original endpoint if single method, UUID wrapper if multi-method.
+        """
+        if len(methods) <= 1:
+            return endpoint
+
+        endpoint_name = getattr(endpoint, '__name__', 'unknown_endpoint')
+        return self.create_uuid_wrapper(endpoint, endpoint_name)

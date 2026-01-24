@@ -356,17 +356,22 @@ class DocumentationHandler(metaclass=FinalClass):
 """
         return HCI.success(content=html_content, content_type=HttpDataTypes.HTML)
 
-    def _create_provider_handler(self, provider_instance: Any) -> Any:
+    def _create_provider_handler(self, provider_instance: Any, provider_name: str) -> Any:
         """Create an async handler function for a documentation provider.
 
         Args:
             provider_instance (Any): The provider instance to create a handler for.
+            provider_name (str): Name of the provider for unique operation ID.
 
         Returns:
-            Any: An async handler function.
+            Any: An async handler function with unique name.
         """
         async def handler(request: Request) -> Response:
             return await provider_instance.get_documentation(request)
+
+        # Give each handler a unique name to avoid duplicate Operation IDs
+        handler.__name__ = f"{provider_name}_documentation_handler"
+
         return handler
 
     def inject(self, providers: Optional[tuple[DOCS_CONST.DocumentationProvider, ...]] = None) -> int:
@@ -427,7 +432,7 @@ class DocumentationHandler(metaclass=FinalClass):
                 f"Registered OAuth2 redirect endpoint: {DOCS_CONST.OAUTH2_REDIRECT_URL}", func_title)
 
         for provider_name, provider_instance in self.providers.items():
-            if provider_name in [DOCS_CONST.DocumentationProvider.SWAGGER, DOCS_CONST.DocumentationProvider.REDOC]:
+            if provider_name in [DOCS_CONST.DocumentationProvider.SWAGGER.value, DOCS_CONST.DocumentationProvider.REDOC.value]:
                 inject_result = provider_instance.inject()
                 if inject_result != self.success:
                     self.disp.log_error(
@@ -438,10 +443,11 @@ class DocumentationHandler(metaclass=FinalClass):
                 self.disp.log_debug(
                     f"Injected {provider_name} endpoints via inject() method", func_title
                 )
-            elif provider_name in [DOCS_CONST.DocumentationProvider.RAPIPDF]:
+            elif provider_name in [DOCS_CONST.DocumentationProvider.RAPIPDF.value]:
                 doc_url = provider_instance.get_url()
 
-                handler_func = self._create_provider_handler(provider_instance)
+                handler_func = self._create_provider_handler(
+                    provider_instance, provider_name)
 
                 result = self.path_manager_initialised.add_path_if_not_exists(
                     path=doc_url,
@@ -468,7 +474,8 @@ class DocumentationHandler(metaclass=FinalClass):
             else:
                 doc_url = provider_instance.get_url()
 
-                handler_func = self._create_provider_handler(provider_instance)
+                handler_func = self._create_provider_handler(
+                    provider_instance, provider_name)
 
                 result = self.path_manager_initialised.add_path_if_not_exists(
                     path=doc_url,

@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:18:31 24-01-2026
+# LAST Modified: 3:19:53 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -426,6 +426,13 @@ class EndpointManager(metaclass=FinalClass):
             decorators=[decorators.public_endpoint(),
                         decorators.system_endpoint]
         )
+        self.paths_initialised.add_path_if_not_exists(
+            f"{self.v1_str}/", self.bonus.api_v1_beacon_options, "OPTIONS",
+            decorators=[decorators.public_endpoint(),
+                        decorators.system_endpoint]
+        )
+
+        # The endpoint to stop the server
         self.paths_initialised.add_path_if_not_exists(
             f"{self.v1_str}/stop", self.bonus.post_stop_server, "PUT",
             decorators=[

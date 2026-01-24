@@ -167,8 +167,10 @@ def set_operation_id(operation_id: str) -> Callable:
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        # FastAPI uses __name__ for operation_id
-        setattr(wrapper, "__name__", operation_id)
+        # Set both __name__ and _operation_id to ensure it works
+        wrapper.__name__ = operation_id
+        setattr(wrapper, "_operation_id", operation_id)
+        setattr(wrapper, "_operation_id_base", operation_id)  # Store base for multi-method endpoints
 
         # Preserve existing metadata
         _preserve_metadata(func, wrapper)
@@ -205,7 +207,9 @@ def _preserve_metadata(func: Callable, wrapper: Callable) -> None:
     """Helper function to preserve existing metadata attributes."""
     metadata_attrs = [
         '_requires_auth', '_requires_admin', '_public', '_testing_only',
-        '_security_level', '_environment', '_description', '_summary', '_response_model'
+        '_security_level', '_environment', '_description', '_summary', 
+        '_response_model', '_operation_id', '_accepts_json_body',
+        '_json_body_description', '_json_body_example', '_requires_bearer_auth'
     ]
 
     for attr in metadata_attrs:

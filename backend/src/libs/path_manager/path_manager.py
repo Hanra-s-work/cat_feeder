@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: paths.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:5:35 24-01-2026
+# LAST Modified: 3:9:57 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -23,7 +23,6 @@
 """
 
 from typing import Union, List, Dict, Any, Optional, TYPE_CHECKING, Callable
-import uuid
 import inspect
 from functools import wraps
 
@@ -345,67 +344,6 @@ class PathManager(metaclass=FinalClass):
 
         self.endpoints_initialised.inject_routes()
 
-    def _wrap_endpoint_to_hide_parameters(self, endpoint: Callable, endpoint_name: str) -> Callable:
-        """Wrap endpoint to hide parameters that FastAPI shouldn't see as query parameters."""
-
-        # Check if the endpoint has parameters that might cause issues
-        try:
-            sig = inspect.signature(endpoint)
-            params = list(sig.parameters.keys())
-
-            # Filter out 'self' for instance methods
-            if params and params[0] == 'self':
-                params = params[1:]
-
-            # If there are remaining parameters, they'll be treated as query parameters
-            if params:
-                self.disp.log_warning(
-                    f"Endpoint {endpoint_name} has parameters {params} that will become query parameters")
-
-                # Create a wrapper that accepts the request but doesn't expose it to FastAPI
-                @wraps(endpoint)
-                def wrapper(request):
-                    # Call original endpoint with the request parameter
-                    if hasattr(endpoint, '__self__'):
-                        # Instance method - call with self and request
-                        return endpoint(request)
-                    else:
-                        # Static/class method - call with request
-                        return endpoint(request)
-
-                # Override the signature to show no parameters to FastAPI
-                setattr(wrapper, "__signature__", inspect.Signature())
-                wrapper.__name__ = f"wrapped_{endpoint_name}"
-                self.disp.log_info(
-                    f"Wrapped endpoint {endpoint_name} to hide parameters")
-                return wrapper
-            else:
-                # No problematic parameters
-                return endpoint
-
-        except Exception as e:
-            self.disp.log_warning(
-                f"Could not inspect endpoint {endpoint_name}: {e}")
-            return endpoint
-
-    def _create_uuid_wrapper(self, original_func: Callable, endpoint_name: str) -> Callable:
-        """Create a wrapper with unique UUID-based name for multi-method endpoints.
-
-        Args:
-            original_func: The original endpoint function.
-            endpoint_name: Base name for the endpoint.
-
-        Returns:
-            Wrapper function with unique UUID-based name.
-        """
-        def uuid_wrapper(*args, **kwargs):
-            return original_func(*args, **kwargs)
-
-        # Generate unique name with UUID suffix
-        unique_id = str(uuid.uuid4()).replace('-', '')[:8]  # Short UUID
-        uuid_wrapper.__name__ = f"{endpoint_name}_{unique_id}"
-        return uuid_wrapper
-
     def inject_routes(self) -> None:
         """Inject all registered routes into the FastAPI application."""
         self.disp.log_info("Starting route injection process")
@@ -435,18 +373,14 @@ class PathManager(metaclass=FinalClass):
                 f"Processing route {i}/{len(self.routes)}: {route_path} [{', '.join(route_methods)}]")
 
             original_endpoint = route[ENDPOINT_KEY]
-            endpoint_name = getattr(
-                original_endpoint, '__name__', 'unknown_endpoint'
-            )
 
-            # For multi-method endpoints, make function name unique with UUID
-            endpoint_to_register = original_endpoint
-            if len(route_methods) > 1:
-                endpoint_to_register = self._create_uuid_wrapper(
-                    original_endpoint, endpoint_name)
+            # Let OpenAPIBuilder handle multi-method endpoint preparation
+            endpoint_to_register = self.openapi_builder.prepare_endpoint_for_multi_method(
+                original_endpoint, route_methods)
+
+            if endpoint_to_register != original_endpoint:
                 self.disp.log_debug(
-                    f"Created UUID wrapper: {endpoint_to_register.__name__}"
-                )
+                    f"OpenAPIBuilder created wrapper: {endpoint_to_register.__name__}")
 
             # Use OpenAPIBuilder to extract metadata
             route_kwargs = self.openapi_builder.extract_route_metadata(
