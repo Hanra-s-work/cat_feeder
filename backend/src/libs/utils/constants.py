@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: constants.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 22:18:36 14-01-2026
+# LAST Modified: 1:54:33 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # Backend server constants and configuration management.
@@ -247,12 +247,12 @@ USER_INFO_ADMIN_NODE: str = "admin"
 
 # The path to the server icon
 ICON_PATH: str = str(
-    ASSETS_DIRECTORY / "icon" / "asperguide" / "favicon.ico"
+    ASSETS_DIRECTORY / "icon" / "cat_feeder" / "favicon.ico"
 )
 
 # Path to the png version of the icon
 PNG_ICON_PATH: str = str(
-    ASSETS_DIRECTORY / "icon" / "asperguide" / "logo_256x256.png"
+    ASSETS_DIRECTORY / "icon" / "cat_feeder" / "logo_256x256.png"
 )
 
 # Columns to ignore
