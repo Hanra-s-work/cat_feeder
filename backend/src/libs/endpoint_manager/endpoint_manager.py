@@ -1,4 +1,4 @@
-"""
+r"""
 # +==== BEGIN CatFeeder =================+
 # LOGO:
 # ..............(..../\
@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 1:26:28 24-01-2026
+# LAST Modified: 2:4:30 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -259,8 +259,10 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.cat_endpoint,
                 decorators.json_body(
                     "Pet registration data with beacon_id and name",
-                    example={"beacon_id": 123, "name": "Whiskers",
-                             "food_max": 100, "time_reset_hours": 24}
+                    example={
+                        "beacon_id": 123, "name": "Whiskers",
+                        "food_max": 100, "time_reset_hours": 24
+                    }
                 ),
                 decorators.requires_bearer_auth()
             ]
@@ -272,8 +274,10 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.cat_endpoint,
                 decorators.json_body(
                     "Pet update data with id and fields to update",
-                    example={"id": 123, "name": "Whiskers Updated",
-                             "food_max": 150}
+                    example={
+                        "id": 123, "name": "Whiskers Updated",
+                        "food_max": 150
+                    }
                 ),
                 decorators.requires_bearer_auth()
             ]
@@ -303,48 +307,50 @@ class EndpointManager(metaclass=FinalClass):
             ]
         )
 
-        # Bonus routes - FIX: Use unique operation IDs
-        self.paths_initialised.add_path(
+        # Bonus routes - Use conditional registration to avoid conflicts
+        self.paths_initialised.add_path_if_not_exists(
             "", self.bonus.get_welcome, [
                 "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
             ], decorators=[
                 decorators.public_endpoint(),
                 decorators.system_endpoint,
-                decorators.set_operation_id("root_welcome"),
+                decorators.set_operation_id("root_welcome_multi"),
                 decorators.set_summary("Root endpoint"),
                 decorators.set_description("Welcome message for root path")
             ]
         )
-        self.paths_initialised.add_path(
-            "/", self.bonus.get_welcome, [
+        self.paths_initialised.add_path_if_not_exists(
+            "/", self.bonus.get_root, [
                 "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
             ], decorators=[
                 decorators.public_endpoint(),
                 decorators.system_endpoint,
-                decorators.set_operation_id("home_welcome"),
+                decorators.set_operation_id("home_welcome_multi"),
                 decorators.set_summary("Home endpoint"),
                 decorators.set_description("Welcome message for home path")
             ]
         )
-        self.paths_initialised.add_path(
-            f"{self.v1_str}/", self.bonus.get_welcome, [
+        self.paths_initialised.add_path_if_not_exists(
+            f"{self.v1_str}/", self.bonus.get_api_v1, [
                 "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
             ], decorators=[
                 decorators.public_endpoint(),
                 decorators.system_endpoint,
-                decorators.set_operation_id("api_v1_welcome"),
+                decorators.set_operation_id("api_v1_welcome_multi"),
                 decorators.set_summary("API v1 endpoint"),
                 decorators.set_description("Welcome message for API v1 path")
             ]
         )
-        self.paths_initialised.add_path(
+        self.paths_initialised.add_path_if_not_exists(
             f"{self.v1_str}/stop", self.bonus.post_stop_server, "PUT",
-            decorators=[decorators.admin_endpoint(),
-                        decorators.system_endpoint]
+            decorators=[
+                decorators.admin_endpoint(),
+                decorators.system_endpoint
+            ]
         )
 
-        # Health check endpoint
-        self.paths_initialised.add_path(
+        # Health check endpoint - use conditional registration
+        self.paths_initialised.add_path_if_not_exists(
             "/health", self.bonus.get_health, "GET",
             decorators=[
                 decorators.public_endpoint(),
@@ -353,17 +359,21 @@ class EndpointManager(metaclass=FinalClass):
         )
 
         # favicon.ico support
-        self.paths_initialised.add_path(
+        self.paths_initialised.add_path_if_not_exists(
             "/favicon.ico", self.bonus.get_favicon, "GET",
-            decorators=[decorators.public_endpoint(),
-                        decorators.system_endpoint]
+            decorators=[
+                decorators.public_endpoint(),
+                decorators.system_endpoint
+            ]
         )
 
         # /static/logo.png support
-        self.paths_initialised.add_path(
+        self.paths_initialised.add_path_if_not_exists(
             "/static/logo.png", self.bonus.get_static_logo, "GET",
-            decorators=[decorators.public_endpoint(),
-                        decorators.system_endpoint]
+            decorators=[
+                decorators.public_endpoint(),
+                decorators.system_endpoint
+            ]
         )
 
         # Oauth routes

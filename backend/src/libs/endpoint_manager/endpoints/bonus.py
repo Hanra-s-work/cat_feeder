@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: bonus.py
 # CREATION DATE: 19-11-2025
-# LAST Modified: 22:27:53 11-01-2026
+# LAST Modified: 2:5:18 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -73,7 +73,7 @@ class Bonus:
 
     async def get_welcome(self, request: Request) -> Response:
         """_summary_
-            The endpoint corresponding to '/'.
+            The endpoint corresponding to ''.
 
         Returns:
             Response: _description_: The data to send back to the user as a response.
@@ -81,11 +81,68 @@ class Bonus:
         title = "get_welcome"
         token = self.boilerplate_incoming_initialised.get_token_if_present(
             request)
-        self.disp.log_debug(f'(get_welcome) token = {token}', title)
         body = self.boilerplate_responses_initialised.build_response_body(
             title="Home",
-            message="Welcome to the control server.",
+            message="Welcome to the cat_feeder server.",
             resp="",
+            token=token,
+            error=False
+        )
+        self.disp.log_debug(f"sent body : {body}", title)
+        self.disp.log_debug(
+            f"header = {self.server_headers_initialised.for_json()}", title
+        )
+        outgoing = HCI.success(
+            content=body,
+            content_type=HTTP_DEFAULT_TYPE,
+            headers=self.server_headers_initialised.for_json()
+        )
+        self.disp.log_debug(f"ready_to_go: {outgoing}", title)
+        return outgoing
+
+    async def get_root(self, request: Request) -> Response:
+        """_summary_
+            The endpoint corresponding to '/'.
+
+        Returns:
+            Response: _description_: The data to send back to the user as a response.
+        """
+        title = "get_root"
+        token = self.boilerplate_incoming_initialised.get_token_if_present(
+            request)
+        body = self.boilerplate_responses_initialised.build_response_body(
+            title="root",
+            message="Welcome to the cat_feeder server.",
+            resp="/",
+            token=token,
+            error=False
+        )
+        self.disp.log_debug(f"sent body : {body}", title)
+        self.disp.log_debug(
+            f"header = {self.server_headers_initialised.for_json()}", title
+        )
+        outgoing = HCI.success(
+            content=body,
+            content_type=HTTP_DEFAULT_TYPE,
+            headers=self.server_headers_initialised.for_json()
+        )
+        self.disp.log_debug(f"ready_to_go: {outgoing}", title)
+        return outgoing
+
+    async def get_api_v1(self, request: Request) -> Response:
+        """_summary_
+            The endpoint corresponding to '/'.
+
+        Returns:
+            Response: _description_: The data to send back to the user as a response.
+        """
+        title = "get_api_v1"
+        token = self.boilerplate_incoming_initialised.get_token_if_present(
+            request)
+        body = self.boilerplate_responses_initialised.build_response_body(
+            title="api_v1",
+            message="Welcome to the cat_feeder server.",
+            resp="/api/v1",
             token=token,
             error=False
         )
