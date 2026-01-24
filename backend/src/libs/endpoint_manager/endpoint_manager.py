@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:19:53 24-01-2026
+# LAST Modified: 21:24:47 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -29,6 +29,7 @@ from .endpoints import CatEndpoints
 from .endpoints import UserEndpoints
 from .endpoints import AdminEndpoints
 from .endpoints import TokenEndpoints
+from .endpoints import FrontEndManager
 from .endpoints import TestingEndpoints
 from ..path_manager import PathManager, decorators
 from ..core import FinalClass
@@ -94,6 +95,11 @@ class EndpointManager(metaclass=FinalClass):
             debug=debug
         )
         self.testing_endpoints: TestingEndpoints = TestingEndpoints(
+            success=self.success,
+            error=self.error,
+            debug=self.debug
+        )
+        self.front_end_manager: FrontEndManager = FrontEndManager(
             success=self.success,
             error=self.error,
             debug=self.debug
@@ -320,6 +326,9 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.requires_bearer_auth()
             ]
         )
+
+        # Front-end endpoints
+        self.front_end_manager.inject_paths(self.paths_initialised)
 
         # Bonus routes - BEACON ENDPOINTS: Use individual functions to avoid Operation ID conflicts
         self.paths_initialised.add_path_if_not_exists(
