@@ -1,10 +1,13 @@
+import pytest
+from unittest.mock import MagicMock, patch
+from datetime import datetime, timedelta
 r"""
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..............(..../\\
+# ..............(..../\
 # ...............)..(.')
 # ..............(../..)
-# ...............\\(__)|
+# ...............\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -21,9 +24,6 @@ r"""
 # // AR
 # +==== END CatFeeder =================+
 """
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
-import pytest
 
 try:
     from libs.endpoint_manager.endpoints.token import TokenEndpoints, TokenInfo, DEFAULT_DATE_PLACEHOLDER

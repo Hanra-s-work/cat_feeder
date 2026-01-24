@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: decorator_constants.py
 # CREATION DATE: 24-01-2026
-# LAST Modified: 1:23:31 24-01-2026
+# LAST Modified: 23:49:49 24-01-2026
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -83,15 +83,17 @@ class HttpMethod(Enum):
 
 class TagCategory(Enum):
     """Enumeration of common API endpoint categories for tagging."""
-    PUBLIC = "Public"
-    AUTHENTICATED = "Authenticated"
     ADMIN = "Admin"
     USERS = "Users"
-    CAT_MANAGEMENT = "Cat Management"
     OAUTH = "OAuth"
-    AUTHENTICATION = "Authentication"
+    PUBLIC = "Public"
     SYSTEM = "System"
     TESTING = "Testing"
+    FRONT_END = "Front-End"
+    AUTHENTICATED = "Authenticated"
+    CAT_MANAGEMENT = "Cat Management"
+    AUTHENTICATION = "Authentication"
+    FRONT_END_ASSETS = "Front-End Assets"
 
 
 class StatusCode(Enum):

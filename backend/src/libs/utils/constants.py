@@ -1,10 +1,10 @@
-"""
+r"""
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..............(..../\\
+# ..............(..../\
 # ...............)..(.')
 # ..............(../..)
-# ...............\\(__)|
+# ...............\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: constants.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 1:54:33 24-01-2026
+# LAST Modified: 21:43:41 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # Backend server constants and configuration management.
@@ -264,6 +264,19 @@ TABLE_COLUMNS_TO_IGNORE_USER: Tuple[str, ...] = (
 
 # Bucket info
 BUCKET_NAME: str = ENV.get_environment_variable("BUCKET_NAME")
+
+# The front-end assets directories
+STYLE_DIRECTORY: Path = ASSETS_DIRECTORY / "css"
+HTML_DIRECTORY: Path = ASSETS_DIRECTORY / "html"
+JS_DIRECTORY: Path = ASSETS_DIRECTORY / "js" / "web"
+IMG_DIRECTORY: Path = ASSETS_DIRECTORY / "icon" / "img"
+
+try:
+    GOOGLE_SITE_VERIFICATION_CODE: str = ENV.get_environment_variable(
+        "GOOGLE_SITE_VERIFICATION_CODE"
+    )
+except ValueError:
+    GOOGLE_SITE_VERIFICATION_CODE = ""
 
 
 def clean_list(raw_input: List[Any], items: Tuple[Any, ...], disp: Disp) -> List[Any]:

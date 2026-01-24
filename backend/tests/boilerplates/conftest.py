@@ -1,10 +1,14 @@
+import pytest
+import types
+import sys
+import os
 r"""
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..............(..../\\
+# ..............(..../\
 # ...............)..(.')
 # ..............(../..)
-# ...............\\(__)|
+# ...............\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -21,10 +25,6 @@ r"""
 # // AR
 # +==== END CatFeeder =================+
 """
-import os
-import sys
-import types
-import pytest
 
 # Determine project root relative to this test file
 test_file_dir = os.path.dirname(__file__)

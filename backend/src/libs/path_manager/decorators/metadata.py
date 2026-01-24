@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: metadata.py
 # CREATION DATE: 23-01-2026
-# LAST Modified: 1:26:22 24-01-2026
+# LAST Modified: 23:49:53 24-01-2026
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -170,7 +170,8 @@ def set_operation_id(operation_id: str) -> Callable:
         # Set both __name__ and _operation_id to ensure it works
         wrapper.__name__ = operation_id
         setattr(wrapper, "_operation_id", operation_id)
-        setattr(wrapper, "_operation_id_base", operation_id)  # Store base for multi-method endpoints
+        # Store base for multi-method endpoints
+        setattr(wrapper, "_operation_id_base", operation_id)
 
         # Preserve existing metadata
         _preserve_metadata(func, wrapper)
@@ -186,6 +187,16 @@ def user_endpoint(func: Callable) -> Callable:
 def cat_endpoint(func: Callable) -> Callable:
     """Mark endpoint as belonging to cat management category."""
     return set_tags(TagCategory.CAT_MANAGEMENT)(func)
+
+
+def front_end_endpoint(func: Callable) -> Callable:
+    """Mark endpoint as belonging to front-end management category."""
+    return set_tags(TagCategory.FRONT_END)(func)
+
+
+def front_end_assets_endpoint(func: Callable) -> Callable:
+    """Mark endpoint as belonging to front-end assets management category."""
+    return set_tags(TagCategory.FRONT_END_ASSETS)(func)
 
 
 def oauth_endpoint(func: Callable) -> Callable:
@@ -207,7 +218,7 @@ def _preserve_metadata(func: Callable, wrapper: Callable) -> None:
     """Helper function to preserve existing metadata attributes."""
     metadata_attrs = [
         '_requires_auth', '_requires_admin', '_public', '_testing_only',
-        '_security_level', '_environment', '_description', '_summary', 
+        '_security_level', '_environment', '_description', '_summary',
         '_response_model', '_operation_id', '_accepts_json_body',
         '_json_body_description', '_json_body_example', '_requires_bearer_auth'
     ]

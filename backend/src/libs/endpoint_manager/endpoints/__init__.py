@@ -1,10 +1,10 @@
-"""
+r"""
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..............(..../\\
+# ..............(..../\
 # ...............)..(.')
 # ..............(../..)
-# ...............\\(__)|
+# ...............\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: __init__.py
 # CREATION DATE: 21-11-2025
-# LAST Modified: 15:46:45 22-01-2026
+# LAST Modified: 20:1:1 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -27,6 +27,7 @@
 from .bonus import Bonus
 from .admin import AdminEndpoints
 from .token import TokenEndpoints
+from .front_end import FrontEndManager
 from .cat_endpoints import CatEndpoints
 from .user_endpoints import UserEndpoints
 from .testing_endpoints import TestingEndpoints
@@ -36,5 +37,6 @@ __all__ = [
     "UserEndpoints",
     "AdminEndpoints",
     "TokenEndpoints",
+    "FrontEndManager",
     "TestingEndpoints",
 ]

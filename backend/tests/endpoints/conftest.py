@@ -1,10 +1,16 @@
+import pytest
+from unittest.mock import Mock, MagicMock
+from types import SimpleNamespace
+from datetime import datetime, timedelta
+import sys
+import os
 r"""
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..............(..../\\
+# ..............(..../\
 # ...............)..(.')
 # ..............(../..)
-# ...............\\(__)|
+# ...............\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -21,12 +27,6 @@ r"""
 # // AR
 # +==== END CatFeeder =================+
 """
-import os
-import sys
-from datetime import datetime, timedelta
-from types import SimpleNamespace
-from unittest.mock import Mock, MagicMock
-import pytest
 
 # Determine project root relative to this test file
 test_file_dir = os.path.dirname(__file__)

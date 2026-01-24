@@ -1,10 +1,12 @@
+from unittest.mock import Mock, MagicMock
+import pytest
 r"""
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..............(..../\\
+# ..............(..../\
 # ...............)..(.')
 # ..............(../..)
-# ...............\\(__)|
+# ...............\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -21,8 +23,6 @@ r"""
 # // AR
 # +==== END CatFeeder =================+
 """
-import pytest
-from unittest.mock import Mock, MagicMock
 
 try:
     # Import path when running from project root

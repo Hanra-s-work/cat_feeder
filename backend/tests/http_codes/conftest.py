@@ -1,10 +1,14 @@
+import pytest
+import types
+import sys
+import os
 r"""
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..............(..../\\
+# ..............(..../\
 # ...............)..(.')
 # ..............(../..)
-# ...............\\(__)|
+# ...............\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -21,10 +25,6 @@ r"""
 # // AR
 # +==== END CatFeeder =================+
 """
-import os
-import sys
-import types
-import pytest
 
 # Dynamically determine paths relative to this test file
 # Structure: <root>/tests/http_codes/conftest.py -> go up 2 levels to get <root>

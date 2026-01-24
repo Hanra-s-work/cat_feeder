@@ -1,10 +1,20 @@
+from pathlib import Path
+import pytest
+import sys
+import io
+import os
+import re
+from fastapi.responses import (
+    Response, FileResponse, HTMLResponse, JSONResponse,
+    PlainTextResponse, RedirectResponse, StreamingResponse
+)
 r"""
 # +==== BEGIN CatFeeder =================+
 # LOGO:
-# ..............(..../\\
+# ..............(..../\
 # ...............)..(.')
 # ..............(../..)
-# ...............\\(__)|
+# ...............\(__)|
 # Inspired by Joan Stark
 # source https://www.asciiart.eu/
 # animals/cats
@@ -21,18 +31,7 @@ r"""
 # // AR
 # +==== END CatFeeder =================+
 """
-from fastapi.responses import (
-    Response, FileResponse, HTMLResponse, JSONResponse,
-    PlainTextResponse, RedirectResponse, StreamingResponse
-)
 
-import re
-import os
-import io
-import sys
-import pytest
-
-from pathlib import Path
 
 # Flexible import pattern matching SQL tests approach
 # conftest.py sets up sys.path, try libs first (works from backend/),
