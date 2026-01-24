@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: paths.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 1:34:20 24-01-2026
+# LAST Modified: 1:44:14 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -230,6 +230,56 @@ class PathManager(metaclass=FinalClass):
             return False
 
         return endpoint_config in self.routes
+
+    def is_path_registered(self, path: str, method: Optional[Union[str, List[str]]] = None) -> bool:
+        """Check if a path is already registered, optionally with specific method(s).
+
+        Args:
+            path: The endpoint path to check.
+            method: Optional HTTP method(s) to check. If None, checks if path exists with any method.
+
+        Returns:
+            True if path is registered (with optional method match), False otherwise.
+        """
+        for route in self.routes:
+            if route[PATH_KEY] == path:
+                if method is None:
+                    # Just checking if path exists, regardless of methods
+                    return True
+
+                # Check if specific method(s) are registered
+                if isinstance(method, str):
+                    methods_to_check = [method.upper()]
+                else:
+                    methods_to_check = [m.upper() for m in method]
+
+                route_methods = [m.upper() for m in route[METHOD_KEY]]
+
+                # Check if any of the requested methods are already registered
+                for check_method in methods_to_check:
+                    if check_method in route_methods:
+                        return True
+
+        return False
+
+    def add_path_if_not_exists(self, path: str, endpoint: object, method: Union[str, List[str]], *, decorators: Optional[List[Callable]] = None) -> int:
+        """Add path only if it doesn't already exist.
+
+        Args:
+            path: The path to call for the endpoint to be triggered.
+            endpoint: The function that represents the endpoint.
+            method: The HTTP method(s) used (GET, PUT, POST, etc.).
+            decorators: Optional list of decorators to apply.
+
+        Returns:
+            success if it succeeded or already exists, error if there was an error.
+        """
+        if self.is_path_registered(path, method):
+            self.disp.log_debug(
+                f"Path {path} with method(s) {method} already registered, skipping")
+            return self.success
+
+        return self.add_path(path, endpoint, method, decorators=decorators)
 
     def _find_route_index(self, path: str, endpoint: object) -> int:
         """Find the index of a route by path and endpoint function.
