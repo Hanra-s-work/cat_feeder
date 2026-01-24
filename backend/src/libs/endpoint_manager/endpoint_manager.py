@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 2:4:30 24-01-2026
+# LAST Modified: 2:28:13 24-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -213,8 +213,20 @@ class EndpointManager(metaclass=FinalClass):
             decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
         )
         self.paths_initialised.add_path(
-            f"{self.v1_str}/feeder/ip", self.cat_endpoints.put_register_feeder, "PUT",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            f"{self.v1_str}/feeder/ip", self.cat_endpoints.put_feeder_ip, "PUT",
+            decorators=[
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Feeder IP update - called by feeder itself after reboot",
+                    example={
+                        "mac": "AA:BB:CC:DD:EE:FF",
+                        "ip_address": "192.168.1.100"
+                    }
+                ),
+                decorators.set_summary("Update feeder IP address"),
+                decorators.set_description(
+                    "Allows feeder to update its IP address after reboot")
+            ]
         )
         # Beacon routes
         self.paths_initialised.add_path(
@@ -314,7 +326,7 @@ class EndpointManager(metaclass=FinalClass):
             ], decorators=[
                 decorators.public_endpoint(),
                 decorators.system_endpoint,
-                decorators.set_operation_id("root_welcome_multi"),
+                # decorators.set_operation_id("root_welcome_multi"),
                 decorators.set_summary("Root endpoint"),
                 decorators.set_description("Welcome message for root path")
             ]
@@ -325,7 +337,7 @@ class EndpointManager(metaclass=FinalClass):
             ], decorators=[
                 decorators.public_endpoint(),
                 decorators.system_endpoint,
-                decorators.set_operation_id("home_welcome_multi"),
+                # decorators.set_operation_id("home_welcome_multi"),
                 decorators.set_summary("Home endpoint"),
                 decorators.set_description("Welcome message for home path")
             ]
@@ -336,7 +348,7 @@ class EndpointManager(metaclass=FinalClass):
             ], decorators=[
                 decorators.public_endpoint(),
                 decorators.system_endpoint,
-                decorators.set_operation_id("api_v1_welcome_multi"),
+                # decorators.set_operation_id("api_v1_welcome_multi"),
                 decorators.set_summary("API v1 endpoint"),
                 decorators.set_description("Welcome message for API v1 path")
             ]

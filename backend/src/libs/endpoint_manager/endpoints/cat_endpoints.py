@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 22:47:53 23-01-2026
+# LAST Modified: 2:26:26 24-01-2026
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -21,8 +21,9 @@ r"""
 # // AR
 # +==== END CatFeeder =================+
 """
-from typing import TYPE_CHECKING, Union, Optional
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Union, Optional
+from datetime import datetime, timezone, timedelta
 
 import requests
 from display_tty import Disp, initialise_logger
@@ -31,7 +32,6 @@ from fastapi import Request, Response
 from ...utils import CONST
 from ...core import RuntimeManager, RI
 from ...http_codes import HCI, HTTP_DEFAULT_TYPE
-from datetime import datetime, timezone, timedelta
 
 if TYPE_CHECKING:
     from typing import List, Dict, Tuple
@@ -393,6 +393,94 @@ class CatEndpoints:
                 error=True
             )
             return HCI.internal_server_error(bod)
+
+    async def put_feeder_ip(self, request: Request) -> Response:
+        """Update the IP address of the feeder (called by feeder itself)
+
+        Args:
+            request (Request): The incoming request with MAC and new IP
+
+        Returns:
+            Response: Success/error response
+        """
+        title = "put_feeder_ip"
+
+        body = await self.boilerplate_incoming_initialised.get_body(request)
+
+        # Require MAC and new IP address
+        required_fields = ["mac", "ip_address"]
+        for field in required_fields:
+            if field not in body:
+                return self.boilerplate_responses_initialised.missing_variable_in_body(
+                    title, "", field
+                )
+
+        # Find feeder by MAC (no user authentication needed - feeder calls this)
+        feeder_rows = self.database_link.get_data_from_table(
+            self.tab_feeder,
+            ["id"],
+            # Fixed: was looking for name instead of mac
+            f"mac='{body['mac']}'",
+            beautify=True
+        )
+
+        if not isinstance(feeder_rows, list) or len(feeder_rows) == 0:
+            return HCI.not_found(
+                self.boilerplate_responses_initialised.build_response_body(
+                    title,
+                    "Feeder not found with this MAC",
+                    "not_found",
+                    "",
+                    error=True
+                )
+            )
+
+        feeder_id = feeder_rows[0]["id"]
+        new_ip = body["ip_address"]
+
+        # Insert or update IP record for this feeder
+        cols = self.database_link.get_table_column_names(self.tab_feeder_ip)
+        if not isinstance(cols, list):
+            return self.boilerplate_responses_initialised.internal_server_error(title, "")
+
+        cols = CONST.clean_list(cols, self.cols_to_remove, self.disp)
+
+        # Try to update existing record first
+        existing_ip = self.database_link.get_data_from_table(
+            self.tab_feeder_ip,
+            ["id"],
+            f"feeder_id={feeder_id}",
+            beautify=True
+        )
+
+        if isinstance(existing_ip, list) and len(existing_ip) > 0:
+            # Update existing record
+            resp = self.database_link.update_data_in_table(
+                self.tab_feeder_ip,
+                [new_ip],
+                ["ip_address"],
+                where=f"feeder_id={feeder_id}"
+            )
+        else:
+            # Insert new record
+            sql_data = [feeder_id, new_ip]
+            resp = self.database_link.insert_data_into_table(
+                self.tab_feeder_ip,
+                cols,
+                sql_data
+            )
+
+        if not isinstance(resp, int):
+            return self.boilerplate_responses_initialised.internal_server_error(title, "")
+
+        bod = self.boilerplate_responses_initialised.build_response_body(
+            title,
+            f"Feeder IP updated to {new_ip}",
+            "updated",
+            "",
+            error=False
+        )
+        return HCI.success(bod)
 
     async def delete_feeder(self, request: Request) -> Response:
         """Delete a cat feeder from the database.
