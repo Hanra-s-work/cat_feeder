@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 6:33:23 25-01-2026
+# LAST Modified: 7:16:38 25-01-2026
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -102,10 +102,16 @@ class CatEndpoints:
             return self.boilerplate_responses_initialised.invalid_token(title)
         if not self.boilerplate_non_http_initialised.is_token_correct(token):
             return self.boilerplate_responses_initialised.invalid_token(title)
+        user_id = self.boilerplate_non_http_initialised.get_user_id_from_token(
+            title, token)
+        if isinstance(user_id, Response):
+            return user_id
+        if not user_id or user_id is None:
+            return self.boilerplate_responses_initialised.user_not_found(title, token)
         usr_data = self.database_link.get_data_from_table(
             CONST.TAB_ACCOUNTS,
-            ["id", "username", "email", "admin"],
-            f"token={token}",
+            "*",
+            f"id={user_id}",
             beautify=True
         )
         if not isinstance(usr_data, list) or len(usr_data) == 0:
