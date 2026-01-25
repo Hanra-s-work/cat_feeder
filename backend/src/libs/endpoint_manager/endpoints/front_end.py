@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: front_end.py
 # CREATION DATE: 24-01-2026
-# LAST Modified: 4:43:53 25-01-2026
+# LAST Modified: 5:34:27 25-01-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -105,6 +105,13 @@ class FrontEndManager:
         self.front_end_assets_css_pico: str = f"{self.front_end_assets_css}/pico.min.css"
         self.front_end_assets_css_custom: str = f"{self.front_end_assets_css}/custom.css"
         self.front_end_assets_css_emoji_font: str = f"{self.front_end_assets_css}/noto-emoji.css"
+        # ====================== CSS asset files
+        self.front_end_assets_css_emoji_font_static: str = f"{self.front_end_assets_css}/static"
+        self.front_end_assets_css_emoji_font_static_regular: str = f"{self.front_end_assets_css_emoji_font_static}/NotoEmoji-Regular.ttf"
+        self.front_end_assets_css_emoji_font_static_light: str = f"{self.front_end_assets_css_emoji_font_static}/NotoEmoji-Light.ttf"
+        self.front_end_assets_css_emoji_font_static_medium: str = f"{self.front_end_assets_css_emoji_font_static}/NotoEmoji-Medium.ttf"
+        self.front_end_assets_css_emoji_font_static_semi_bold: str = f"{self.front_end_assets_css_emoji_font_static}/NotoEmoji-SemiBold.ttf"
+        self.front_end_assets_css_emoji_font_static_bold: str = f"{self.front_end_assets_css_emoji_font_static}/NotoEmoji-Bold.ttf"
         # ====================== Image asset files
         self.front_end_assets_images: str = f"{self.front_end_assets}/images"
         self.front_end_assets_images_favicon: str = f"{self.front_end_assets_images}/favicon.ico"
@@ -122,8 +129,24 @@ class FrontEndManager:
         self.source_css_custom: str = str(
             CONST.STYLE_DIRECTORY / "style.css"
         )
-        self.source_css_emojy_font: str = str(
+        self.source_css_emoji_font: str = str(
             CONST.STYLE_DIRECTORY / "Noto_Emoji" / "noto-emoji.css"
+        )
+        # ======================= Font Files
+        self.source_css_emoji_font_regular: str = str(
+            CONST.STYLE_DIRECTORY / "Noto_Emoji" / "static" / "NotoEmoji-Regular.ttf"
+        )
+        self.source_css_emoji_font_light: str = str(
+            CONST.STYLE_DIRECTORY / "Noto_Emoji" / "static" / "NotoEmoji-Light.ttf"
+        )
+        self.source_css_emoji_font_medium: str = str(
+            CONST.STYLE_DIRECTORY / "Noto_Emoji" / "static" / "NotoEmoji-Medium.ttf"
+        )
+        self.source_css_emoji_font_semi_bold: str = str(
+            CONST.STYLE_DIRECTORY / "Noto_Emoji" / "static" / "NotoEmoji-SemiBold.ttf"
+        )
+        self.source_css_emoji_font_bold: str = str(
+            CONST.STYLE_DIRECTORY / "Noto_Emoji" / "static" / "NotoEmoji-Bold.ttf"
         )
         # ======================= Javascript Modules
         self.source_js_module: Path = CONST.JS_DIRECTORY / "modules"
@@ -168,7 +191,7 @@ class FrontEndManager:
         self.source_files: Dict[str, str] = {
             self.front_end_assets_css_pico: self.source_css_pico,
             self.front_end_assets_css_custom: self.source_css_custom,
-            self.front_end_assets_css_emoji_font: self.source_css_emojy_font,
+            self.front_end_assets_css_emoji_font: self.source_css_emoji_font,
             self.front_end_assets_js_module_cookies: self.source_js_module_cookies,
             self.front_end_assets_js_module_indexdb: self.source_js_module_indexdb,
             self.front_end_assets_js_module_querier: self.source_js_module_querier,
@@ -226,7 +249,7 @@ class FrontEndManager:
             expiration_date = datetime.now() + expiration
             try:
                 file_content = self._get_file_content(path)
-            except OSError as e:
+            except (OSError, UnicodeDecodeError) as e:
                 self.disp.log_error(f"Failed to load file {path}: {e}")
                 continue
             self.file_cache[endpoint] = CacheEntry(
@@ -254,9 +277,10 @@ class FrontEndManager:
                 expiration_date = datetime.now() + self.cache_expiration
                 try:
                     file_content = self._get_file_content(cache_entry.source)
-                except OSError as e:
+                except (OSError, UnicodeDecodeError) as e:
                     self.disp.log_error(
-                        f"Failed to load file {cache_entry.source}: {e}")
+                        f"Failed to load file {cache_entry.source}: {e}"
+                    )
                     continue
                 self.file_cache[endpoint] = CacheEntry(
                     data=file_content,
@@ -524,6 +548,78 @@ class FrontEndManager:
             return css_content
         return HCI.success(css_content, content_type=HttpDataTypes.CSS, headers=self.server_headers_initialised.for_css())
 
+    def get_css_emoji_regular(self) -> Response:
+        """Get the Emoji regular font file
+
+        Returns:
+            Response: FastAPI Response with the Emoji font file
+        """
+        file_content = self._get_cache(
+            self.front_end_assets_css_emoji_font_static_regular)
+        if isinstance(file_content, Response):
+            if os.path.isfile(self.source_css_emoji_font_regular):
+                return HCI.success(self.source_css_emoji_font_regular, content_type=HttpDataTypes.TTF, headers=self.server_headers_initialised.for_file())
+            return file_content
+        return HCI.success(file_content, content_type=HttpDataTypes.TTF, headers=self.server_headers_initialised.for_file())
+
+    def get_css_emoji_light(self) -> Response:
+        """Get the Emoji light font file
+
+        Returns:
+            Response: FastAPI Response with the Emoji font file
+        """
+        file_content = self._get_cache(
+            self.front_end_assets_css_emoji_font_static_light
+        )
+        if isinstance(file_content, Response):
+            if os.path.isfile(self.source_css_emoji_font_light):
+                return HCI.success(self.source_css_emoji_font_light, content_type=HttpDataTypes.TTF, headers=self.server_headers_initialised.for_file())
+            return file_content
+        return HCI.success(file_content, content_type=HttpDataTypes.TTF, headers=self.server_headers_initialised.for_file())
+
+    def get_css_emoji_medium(self) -> Response:
+        """Get the Emoji medium font file
+
+        Returns:
+            Response: FastAPI Response with the Emoji font file
+        """
+        file_content = self._get_cache(
+            self.front_end_assets_css_emoji_font_static_medium)
+        if isinstance(file_content, Response):
+            if os.path.isfile(self.source_css_emoji_font_medium):
+                return HCI.success(self.source_css_emoji_font_medium, content_type=HttpDataTypes.TTF, headers=self.server_headers_initialised.for_file())
+            return file_content
+        return HCI.success(file_content, content_type=HttpDataTypes.TTF, headers=self.server_headers_initialised.for_file())
+
+    def get_css_emoji_semi_bold(self) -> Response:
+        """Get the Emoji regular font file
+
+        Returns:
+            Response: FastAPI Response with the Emoji font file
+        """
+        file_content = self._get_cache(
+            self.front_end_assets_css_emoji_font_static_semi_bold
+        )
+        if isinstance(file_content, Response):
+            if os.path.isfile(self.source_css_emoji_font_semi_bold):
+                return HCI.success(self.source_css_emoji_font_semi_bold, content_type=HttpDataTypes.TTF, headers=self.server_headers_initialised.for_file())
+            return file_content
+        return HCI.success(file_content, content_type=HttpDataTypes.TTF, headers=self.server_headers_initialised.for_file())
+
+    def get_css_emoji_bold(self) -> Response:
+        """Get the Emoji regular font file
+
+        Returns:
+            Response: FastAPI Response with the Emoji font file
+        """
+        file_content = self._get_cache(
+            self.front_end_assets_css_emoji_font_static_bold)
+        if isinstance(file_content, Response):
+            if os.path.isfile(self.source_css_emoji_font_bold):
+                return HCI.success(self.source_css_emoji_font_bold, content_type=HttpDataTypes.TTF, headers=self.server_headers_initialised.for_file())
+            return file_content
+        return HCI.success(file_content, content_type=HttpDataTypes.TTF, headers=self.server_headers_initialised.for_file())
+
     def get_cookies_module(self) -> Response:
         """Get the cookies JavaScript module content.
 
@@ -648,6 +744,11 @@ class FrontEndManager:
             self.front_end_assets_css_pico: self.get_pico,
             self.front_end_assets_css_custom: self.get_custom_css,
             self.front_end_assets_css_emoji_font: self.get_css_emoji_font,
+            self.front_end_assets_css_emoji_font_static_regular: self.get_css_emoji_regular,
+            self.front_end_assets_css_emoji_font_static_light: self.get_css_emoji_light,
+            self.front_end_assets_css_emoji_font_static_medium: self.get_css_emoji_medium,
+            self.front_end_assets_css_emoji_font_static_semi_bold: self.get_css_emoji_semi_bold,
+            self.front_end_assets_css_emoji_font_static_bold: self.get_css_emoji_bold,
             self.front_end_assets_js_module_cookies: self.get_cookies_module,
             self.front_end_assets_js_module_indexdb: self.get_indexeddb_module,
             self.front_end_assets_js_module_querier: self.get_querier_module,
