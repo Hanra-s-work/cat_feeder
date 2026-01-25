@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 2:26:26 24-01-2026
+# LAST Modified: 6:33:23 25-01-2026
 # DESCRIPTION: 
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -31,7 +31,7 @@ from display_tty import Disp, initialise_logger
 from fastapi import Request, Response
 from ...utils import CONST
 from ...core import RuntimeManager, RI
-from ...http_codes import HCI, HTTP_DEFAULT_TYPE
+from ...http_codes import HCI
 
 if TYPE_CHECKING:
     from typing import List, Dict, Tuple
@@ -102,11 +102,9 @@ class CatEndpoints:
             return self.boilerplate_responses_initialised.invalid_token(title)
         if not self.boilerplate_non_http_initialised.is_token_correct(token):
             return self.boilerplate_responses_initialised.invalid_token(title)
-        if not self.boilerplate_non_http_initialised.is_token_admin(token):
-            return self.boilerplate_responses_initialised.insuffisant_rights(title, token)
         usr_data = self.database_link.get_data_from_table(
             CONST.TAB_ACCOUNTS,
-            ["id", "username", "email", "is_admin"],
+            ["id", "username", "email", "admin"],
             f"token={token}",
             beautify=True
         )
@@ -534,6 +532,33 @@ class CatEndpoints:
         )
         return HCI.success(bod)
 
+    async def get_feeders(self, request: Request) -> Response:
+        """Get all feeders for the authenticated user.
+
+        Args:
+            request (Request): The incoming request parameters.
+
+        Returns:
+            Response: The HTTP response with the list of feeders.
+        """
+        title = "get_feeders"
+        data = self._user_connected(request, title)
+        if isinstance(data, Response):
+            return data
+        feeders = self.database_link.get_data_from_table(
+            self.tab_feeder,
+            ["id", "name", "mac", "latitude", "longitude",
+                "city_locality", "country", "created_at", "updated_at"],
+            f"user_id={data.user_id}",
+            beautify=True
+        )
+        if not isinstance(feeders, list):
+            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+        bod = self.boilerplate_responses_initialised.build_response_body(
+            title, "The feeders have been gathered", feeders, data.token, error=False
+        )
+        return HCI.success(bod)
+
     async def put_register_beacon(self, request: Request) -> Response:
         """Register a beacon signal from a cat feeder.
 
@@ -742,6 +767,33 @@ class CatEndpoints:
 
         bod = self.boilerplate_responses_initialised.build_response_body(
             title, "Beacon deleted successfully", "deleted", data.token, error=False
+        )
+        return HCI.success(bod)
+
+    async def get_beacons(self, request: Request) -> Response:
+        """Get all beacons for the authenticated user.
+
+        Args:
+            request (Request): The incoming request parameters.
+
+        Returns:
+            Response: The HTTP response with the list of beacons.
+        """
+        title = "get_beacons"
+        data = self._user_connected(request, title)
+        if isinstance(data, Response):
+            return data
+        beacons = self.database_link.get_data_from_table(
+            self.tab_beacon,
+            ["id", "name", "mac", "latitude", "longitude",
+                "city_locality", "country", "created_at", "updated_at"],
+            f"owner={data.user_id}",
+            beautify=True
+        )
+        if not isinstance(beacons, list):
+            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+        bod = self.boilerplate_responses_initialised.build_response_body(
+            title, "The beacons have been gathered", beacons, data.token, error=False
         )
         return HCI.success(bod)
 
@@ -1576,5 +1628,32 @@ class CatEndpoints:
 
         bod = self.boilerplate_responses_initialised.build_response_body(
             title, "Pet deleted successfully", "deleted", data.token, error=False
+        )
+        return HCI.success(bod)
+
+    async def get_pets(self, request: Request) -> Response:
+        """Get all pets for the authenticated user.
+
+        Args:
+            request (Request): The incoming request parameters.
+
+        Returns:
+            Response: The HTTP response with the list of pets.
+        """
+        title = "get_pets"
+        data = self._user_connected(request, title)
+        if isinstance(data, Response):
+            return data
+        pets = self.database_link.get_data_from_table(
+            self.tab_pet,
+            ["id", "name", "breed", "age", "weight", "color",
+                "microchip_id", "created_at", "updated_at"],
+            f"owner={data.user_id}",
+            beautify=True
+        )
+        if not isinstance(pets, list):
+            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+        bod = self.boilerplate_responses_initialised.build_response_body(
+            title, "The pets have been gathered.", pets,  data.token, error=False
         )
         return HCI.success(bod)
