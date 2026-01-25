@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: http_codes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 22:25:14 10-01-2026
+# LAST Modified: 1:16:38 25-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -156,7 +156,7 @@ class HttpCodes(metaclass=FinalClass):
             Union[Response, FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse, UJSONResponse, ORJSONResponse]: _description_
         """
         # Returning the content as a response if the payload data is bytes.
-        if isinstance(content, bytes):
+        if isinstance(content, bytes) or (isinstance(content, str) and not os.path.isfile(content)):
             return Response(
                 content=content,
                 status_code=status,
