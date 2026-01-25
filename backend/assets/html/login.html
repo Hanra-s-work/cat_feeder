@@ -1,0 +1,72 @@
+<!-- 
+-- +==== BEGIN CatFeeder =================+
+-- LOGO: 
+-- ..............(..../\
+-- ...............)..(.')
+-- ..............(../..)
+-- ...............\(__)|
+-- Inspired by Joan Stark
+-- source https://www.asciiart.eu/
+-- animals/cats
+-- /STOP
+-- PROJECT: CatFeeder
+-- FILE: login.html
+-- CREATION DATE: 25-01-2026
+-- LAST Modified: 3:5:53 25-01-2026
+-- DESCRIPTION: 
+-- This is the project in charge of making the connected cat feeder project work.
+-- /STOP
+-- COPYRIGHT: (c) Cat Feeder
+-- PURPOSE: This is the html file that will contain the code for the login/register file.
+-- // AR
+-- +==== END CatFeeder =================+
+-->
+<main class="container">
+    <div class="auth-toggle">
+        <button id="show-login" class="active">Login</button>
+        <button id="show-register">Register</button>
+    </div>
+    <div id="login-section" class="auth-section">
+        <h2>Login</h2>
+        <form id="login-form">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" name="email" required>
+
+            <label for="login-password">Password</label>
+            <div class="password-field">
+                <input type="password" id="login-password" name="password" required>
+                <button type="button" id="toggle-login-password" aria-label="Toggle password visibility" class="password-toggle">👁️</button>
+            </div>
+
+            <button type="submit">Login</button>
+        </form>
+        <div id="login-message"></div>
+    </div>
+
+    <div id="register-section" class="auth-section" style="display: none;">
+        <h2>Register</h2>
+        <form id="register-form">
+            <label for="register-email">Email</label>
+            <input type="email" id="register-email" name="email" required>
+
+            <label for="register-password">Password</label>
+            <div class="password-field">
+                <input type="password" id="register-password" name="password" required>
+                <button type="button" id="toggle-register-password" aria-label="Toggle password visibility" class="password-toggle">👁️</button>
+            </div>
+
+            <label for="register-age">Age</label>
+            <input type="number" id="register-age" name="age" min="0" max="99" required>
+
+            <label for="register-gender">Gender</label>
+            <select id="register-gender" name="gender" required>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Rather Not Say">Rather Not Say</option>
+            </select>
+
+            <button type="submit">Register</button>
+        </form>
+        <div id="register-message"></div>
+    </div>
+</main>
