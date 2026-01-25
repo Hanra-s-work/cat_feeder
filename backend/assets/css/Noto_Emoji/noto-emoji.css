@@ -1,3 +1,26 @@
+/* 
+* +==== BEGIN CatFeeder =================+
+* LOGO: 
+* ..............(..../\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: noto-emoji.css
+* CREATION DATE: 25-01-2026
+* LAST Modified: 13:19:40 25-01-2026
+* DESCRIPTION: 
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: This is the file containing the emoji font.
+* // AR
+* +==== END CatFeeder =================+
+*/
 /* Noto Emoji Font Faces */
 @font-face {
     font-family: 'Noto Emoji';
@@ -35,6 +58,10 @@
 }
 
 /* Apply Noto Emoji as fallback for emoji */
-body {
+/* body {
     font-family: 'Noto Emoji', sans-serif;
+} */
+
+.emoji_text {
+    font-family: 'Noto Emoji', sans-serif, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }

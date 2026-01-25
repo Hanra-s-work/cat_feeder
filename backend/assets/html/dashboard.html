@@ -21,3 +21,132 @@
 -- // AR
 -- +==== END CatFeeder =================+
 -->
+<main class="container">
+    <h1>Cat Feeder Dashboard</h1>
+
+    <section id="feeders">
+        <h2>Feeders</h2>
+        <button id="add-feeder">Add New Feeder</button>
+        <ul id="feeders-list"></ul>
+        <div id="feeder-form" style="display: none;">
+            <h3>Register Feeder</h3>
+            <form id="register-feeder-form">
+                <label for="feeder-name">Name</label>
+                <input type="text" id="feeder-name" required>
+
+                <label for="feeder-mac">MAC Address</label>
+                <input type="text" id="feeder-mac" required>
+
+                <label for="feeder-latitude">Latitude</label>
+                <input type="number" step="any" id="feeder-latitude" required>
+
+                <label for="feeder-longitude">Longitude</label>
+                <input type="number" step="any" id="feeder-longitude" required>
+
+                <label for="feeder-city">City</label>
+                <input type="text" id="feeder-city" required>
+
+                <label for="feeder-country">Country</label>
+                <input type="text" id="feeder-country" required>
+
+                <button type="submit">Register</button>
+                <button type="button" id="cancel-feeder">Cancel</button>
+            </form>
+        </div>
+        <h3>Check Feeder Status</h3>
+        <form id="check-feeder-status-form">
+            <label for="check-feeder-name">Feeder Name</label>
+            <input type="text" id="check-feeder-name" required>
+            <button type="submit">Check Status</button>
+        </form>
+        <h3>Feed</h3>
+        <form id="feed-form">
+            <label for="feed-feeder-name">Feeder Name</label>
+            <input type="text" id="feed-feeder-name" required>
+            <label for="feed-amount">Amount (grams)</label>
+            <input type="number" id="feed-amount" min="1" required>
+            <button type="submit">Feed</button>
+        </form>
+    </section>
+
+    <section id="beacons">
+        <h2>Beacons</h2>
+        <button id="add-beacon">Add New Beacon</button>
+        <ul id="beacons-list"></ul>
+        <div id="beacon-form" style="display: none;">
+            <h3>Register Beacon</h3>
+            <form id="register-beacon-form">
+                <label for="beacon-name">Name</label>
+                <input type="text" id="beacon-name" required>
+
+                <label for="beacon-mac">MAC Address</label>
+                <input type="text" id="beacon-mac" required>
+
+                <label for="beacon-latitude">Latitude</label>
+                <input type="number" step="any" id="beacon-latitude" required>
+
+                <label for="beacon-longitude">Longitude</label>
+                <input type="number" step="any" id="beacon-longitude" required>
+
+                <label for="beacon-city">City</label>
+                <input type="text" id="beacon-city" required>
+
+                <label for="beacon-country">Country</label>
+                <input type="text" id="beacon-country" required>
+
+                <button type="submit">Register</button>
+                <button type="button" id="cancel-beacon">Cancel</button>
+            </form>
+        </div>
+        <h3>Check Beacon Status</h3>
+        <form id="check-beacon-status-form">
+            <label for="check-beacon-name">Beacon Name</label>
+            <input type="text" id="check-beacon-name" required>
+            <button type="submit">Check Status</button>
+        </form>
+    </section>
+
+    <section id="pets">
+        <h2>Pets</h2>
+        <button id="add-pet">Add New Pet</button>
+        <ul id="pets-list"></ul>
+        <div id="pet-form" style="display: none;">
+            <h3>Register Pet</h3>
+            <form id="register-pet-form">
+                <label for="pet-name">Name</label>
+                <input type="text" id="pet-name" required>
+
+                <label for="pet-breed">Breed</label>
+                <input type="text" id="pet-breed" required>
+
+                <label for="pet-age">Age</label>
+                <input type="number" id="pet-age" min="0" required>
+
+                <label for="pet-weight">Weight (kg)</label>
+                <input type="number" step="any" id="pet-weight" required>
+
+                <label for="pet-color">Color</label>
+                <input type="text" id="pet-color" required>
+
+                <label for="pet-microchip">Microchip ID</label>
+                <input type="text" id="pet-microchip">
+
+                <button type="submit">Register</button>
+                <button type="button" id="cancel-pet">Cancel</button>
+            </form>
+        </div>
+        <h3>Get Pet Info</h3>
+        <form id="get-pet-form">
+            <label for="get-pet-id">Pet ID</label>
+            <input type="number" id="get-pet-id" required>
+            <button type="submit">Get Info</button>
+        </form>
+    </section>
+
+    <section id="activity">
+        <h2>Recent Activity</h2>
+        <div id="activity-list">Loading activity...</div>
+    </section>
+
+    <div id="message"></div>
+</main>
