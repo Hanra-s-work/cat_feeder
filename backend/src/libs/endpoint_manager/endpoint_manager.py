@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 21:24:47 24-01-2026
+# LAST Modified: 4:57:26 25-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -196,15 +196,48 @@ class EndpointManager(metaclass=FinalClass):
         # Cat Endpoints
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder", self.cat_endpoints.put_register_feeder, "PUT",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Register a new cat feeder with location and details",
+                    example={
+                        "latitude": 48.8566,
+                        "longitude": 2.3522,
+                        "city_locality": "Paris",
+                        "country": "France",
+                        "mac": "AA:BB:CC:DD:EE:FF",
+                        "name": "My Feeder"
+                    }
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder", self.cat_endpoints.patch_feeder, "PATCH",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Update feeder details - provide id or mac, and fields to update",
+                    example={
+                        "id": 123,
+                        "name": "Updated Feeder Name",
+                        "latitude": 48.8566,
+                        "longitude": 2.3522
+                    }
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/status", self.cat_endpoints.get_feeder_status, "GET",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Get feeder status by name",
+                    example={"name": "My Feeder"}
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder", self.cat_endpoints.delete_feeder, "DELETE",
@@ -212,11 +245,29 @@ class EndpointManager(metaclass=FinalClass):
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/feed", self.cat_endpoints.get_distribute_food, "GET",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Get food distribution status",
+                    example={"feeder_name": "My Feeder"}
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/fed", self.cat_endpoints.post_distribute_food, "POST",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Distribute food to feeder",
+                    example={
+                        "feeder_name": "My Feeder",
+                        "amount": 50,
+                        "unit": "grams"
+                    }
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/ip", self.cat_endpoints.put_feeder_ip, "PUT",
@@ -239,15 +290,48 @@ class EndpointManager(metaclass=FinalClass):
         # Beacon routes
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/beacon", self.cat_endpoints.put_register_beacon, "PUT",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Register a new beacon for a feeder",
+                    example={
+                        "feeder_id": 123,
+                        "name": "Beacon1",
+                        "latitude": 48.8566,
+                        "longitude": 2.3522,
+                        "city_locality": "Paris",
+                        "country": "France",
+                        "mac": "AA:BB:CC:DD:EE:FF"
+                    }
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/beacon/status", self.cat_endpoints.get_beacon_status, "GET",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Get beacon status by name",
+                    example={"name": "Beacon1"}
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/beacon", self.cat_endpoints.patch_beacon, "PATCH",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Update beacon details - provide id or name, and fields to update",
+                    example={
+                        "id": 123,
+                        "name": "Updated Beacon",
+                        "latitude": 48.8566
+                    }
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/beacon", self.cat_endpoints.delete_beacon, "DELETE",
@@ -256,19 +340,60 @@ class EndpointManager(metaclass=FinalClass):
         # location endpoints
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/beacon/locations", self.cat_endpoints.get_beacon_locations, "GET",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Get beacon location history",
+                    example={"beacon_id": 123}
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/beacon/location", self.cat_endpoints.post_beacon_location, "POST",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Post new beacon location",
+                    example={
+                        "beacon_id": 123,
+                        "latitude": 48.8566,
+                        "longitude": 2.3522,
+                        "city_locality": "Paris",
+                        "country": "France",
+                        "timestamp": "2023-10-01T12:00:00Z"
+                    }
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/visits", self.cat_endpoints.get_feeder_visits, "GET",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Get feeder visit history",
+                    example={"feeder_name": "My Feeder"}
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/visit", self.cat_endpoints.post_feeder_visit, "POST",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Record a feeder visit by a pet",
+                    example={
+                        "feeder_name": "My Feeder",
+                        "pet_id": 456,
+                        "timestamp": "2023-10-01T12:00:00Z",
+                        "amount_fed": 20,
+                        "unit": "grams"
+                    }
+                )
+            ]
         )
 
         # Pet endpoints
