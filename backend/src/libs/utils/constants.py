@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: constants.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 21:43:41 24-01-2026
+# LAST Modified: 1:31:11 25-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # Backend server constants and configuration management.
@@ -182,6 +182,11 @@ RANDOM_MAX = int(TOML.get_toml_variable(
 # |- Services
 API_REQUEST_DELAY = int(TOML.get_toml_variable(
     "Services", "api_request_delay", 5
+))
+
+# |- Front-end assets
+FRONT_END_ASSETS_REFRESH: int = int(TOML.get_toml_variable(
+    "Frontend", "asset_cache_refresh_interval", 300
 ))
 
 # Json default keys

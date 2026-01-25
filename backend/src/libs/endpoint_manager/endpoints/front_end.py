@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: front_end.py
 # CREATION DATE: 24-01-2026
-# LAST Modified: 0:17:52 25-01-2026
+# LAST Modified: 4:43:53 25-01-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -26,6 +26,7 @@ import os
 from typing import TYPE_CHECKING, Dict, Union
 from datetime import datetime, timedelta
 from dataclasses import dataclass
+from enum import Enum
 
 from pathlib import Path
 from fastapi import Response
@@ -41,7 +42,7 @@ if TYPE_CHECKING:
     from ...server_header import ServerHeaders
     from ...boilerplates import BoilerplateIncoming, BoilerplateResponses, BoilerplateNonHTTP
 
-CACHE_LIFETIME: timedelta = timedelta(minutes=10)
+CACHE_LIFETIME: timedelta = timedelta(seconds=CONST.FRONT_END_ASSETS_REFRESH)
 
 
 @dataclass
@@ -51,6 +52,13 @@ class CacheEntry:
     data: str = ""
     timestamp: datetime = datetime.now() + CACHE_LIFETIME
     source: str = ""
+
+
+class Pages(Enum):
+    DEFAULT = "default"
+    LOGIN = "login"
+    DASHBOARD = "dashboard"
+    LOGOUT = "logout"
 
 
 class FrontEndManager:
@@ -87,6 +95,7 @@ class FrontEndManager:
         self.front_end_assets_js_module_cookies: str = f"{self.front_end_assets_js_modules}/cookies.mjs"
         self.front_end_assets_js_module_indexdb: str = f"{self.front_end_assets_js_modules}/indexeddb_manager.mjs"
         self.front_end_assets_js_module_querier: str = f"{self.front_end_assets_js_modules}/querier.mjs"
+        self.front_end_assets_js_module_general: str = f"{self.front_end_assets_js_modules}/general.mjs"
         self.front_end_assets_js_theme_pico: str = f"{self.front_end_assets_js_theme}/minimal-theme-switcher.min.js"
         self.front_end_assets_js_dashboard: str = f"{self.front_end_assets_js}/dashboard.js"
         self.front_end_assets_js_login: str = f"{self.front_end_assets_js}/login.js"
@@ -95,6 +104,7 @@ class FrontEndManager:
         self.front_end_assets_css: str = f"{self.front_end_assets}/css"
         self.front_end_assets_css_pico: str = f"{self.front_end_assets_css}/pico.min.css"
         self.front_end_assets_css_custom: str = f"{self.front_end_assets_css}/custom.css"
+        self.front_end_assets_css_emoji_font: str = f"{self.front_end_assets_css}/noto-emoji.css"
         # ====================== Image asset files
         self.front_end_assets_images: str = f"{self.front_end_assets}/images"
         self.front_end_assets_images_favicon: str = f"{self.front_end_assets_images}/favicon.ico"
@@ -112,6 +122,9 @@ class FrontEndManager:
         self.source_css_custom: str = str(
             CONST.STYLE_DIRECTORY / "style.css"
         )
+        self.source_css_emojy_font: str = str(
+            CONST.STYLE_DIRECTORY / "Noto_Emoji" / "noto-emoji.css"
+        )
         # ======================= Javascript Modules
         self.source_js_module: Path = CONST.JS_DIRECTORY / "modules"
         self.source_js_theme: Path = CONST.JS_DIRECTORY / "theme"
@@ -123,6 +136,9 @@ class FrontEndManager:
         )
         self.source_js_module_querier: str = str(
             self.source_js_module / "querier.mjs"
+        )
+        self.source_js_module_general: str = str(
+            self.source_js_module / "general.mjs"
         )
         # ======================= Javascript Theme
         self.source_js_theme_pico: str = str(
@@ -152,9 +168,11 @@ class FrontEndManager:
         self.source_files: Dict[str, str] = {
             self.front_end_assets_css_pico: self.source_css_pico,
             self.front_end_assets_css_custom: self.source_css_custom,
+            self.front_end_assets_css_emoji_font: self.source_css_emojy_font,
             self.front_end_assets_js_module_cookies: self.source_js_module_cookies,
             self.front_end_assets_js_module_indexdb: self.source_js_module_indexdb,
             self.front_end_assets_js_module_querier: self.source_js_module_querier,
+            self.front_end_assets_js_module_general: self.source_js_module_general,
             self.front_end_assets_js_theme_pico: self.source_js_theme_pico,
             self.front_end_assets_js_dashboard: self.source_js_dashboard,
             self.front_end_assets_js_login: self.source_js_login,
@@ -182,6 +200,7 @@ class FrontEndManager:
         # ---------------------------- Finalisation ----------------------------
         self.disp.log_debug("Initialised")
 
+    # ---------------------------- Cache management ----------------------------
     def _get_file_content(self, file_path: str) -> str:
         """Read the content of a file.
 
@@ -202,10 +221,16 @@ class FrontEndManager:
         self.cache_expiration = expiration
         for endpoint, path in self.source_files.items():
             self.disp.log_debug(
-                f"Caching front-end file: {path} for endpoint: {endpoint}")
+                f"Caching front-end file: {path} for endpoint: {endpoint}"
+            )
             expiration_date = datetime.now() + expiration
+            try:
+                file_content = self._get_file_content(path)
+            except OSError as e:
+                self.disp.log_error(f"Failed to load file {path}: {e}")
+                continue
             self.file_cache[endpoint] = CacheEntry(
-                data=self._get_file_content(path),
+                data=file_content,
                 timestamp=expiration_date,
                 source=path
             )
@@ -227,8 +252,14 @@ class FrontEndManager:
                     f"Refreshing cache for front-end file: {cache_entry.source} at endpoint: {endpoint}"
                 )
                 expiration_date = datetime.now() + self.cache_expiration
+                try:
+                    file_content = self._get_file_content(cache_entry.source)
+                except OSError as e:
+                    self.disp.log_error(
+                        f"Failed to load file {cache_entry.source}: {e}")
+                    continue
                 self.file_cache[endpoint] = CacheEntry(
-                    data=self._get_file_content(cache_entry.source),
+                    data=file_content,
                     timestamp=expiration_date,
                     source=cache_entry.source
                 )
@@ -276,6 +307,8 @@ class FrontEndManager:
             )
         self.disp.log_debug(f"Retrieved front-end file from cache: {path}")
         return data.data
+    # -------------------------- End Cache management --------------------------
+    # ------------------------------ HTML Snippets -----------------------------
 
     def _get_headers(self, page_title: str) -> str:
         """Generate HTML headers for front-end pages.
@@ -299,8 +332,10 @@ class FrontEndManager:
     <meta name="googlebot" content="index,follow,snippet" />
     <meta name="google" content="translate,sitelinkssearchbox" />
     <link rel="stylesheet" href="{self.front_end_assets_css_pico}">
-    <meta name="copyright" content=\"&copy; {self.author} {self.year}"/>
+    <link rel="stylesheet" href="{self.front_end_assets_css_custom}">
+    <link rel="stylesheet" href="{self.front_end_assets_css_emoji_font}">
     <meta name="google-site-verification" content="{verification}" />
+    <meta name="copyright" content=\"&copy; {self.author} {self.year}"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="index,follow,max-image-preview:standard" />
     <link rel="icon" type="image/png" href="{self.front_end_assets_image_favicon_png}" />
@@ -310,17 +345,86 @@ class FrontEndManager:
 """
         return headers
 
-    def _get_footers(self) -> str:
+    def _get_theme_toggler(self) -> str:
+        """Generate HTML theme toggler for front-end pages.
+
+        Returns:
+            str: HTML theme toggler as a string.
+        """
+        toggler = """<div class="theme-toggler">
+    <label for="theme-select">Theme:</label>
+    <select id="theme-select" aria-label="Theme selector">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+    </select>
+</div>
+"""
+        return toggler
+
+    def _get_heading(self, page_title: str, show_logout: bool = False) -> str:
+        """Generate HTML heading for front-end pages.
+
+        Args:
+            page_title: Title of the page.
+            show_logout: Whether to show the logout button.
+        Returns:
+            str: HTML heading as a string.
+        """
+        theme_toggle = self._get_theme_toggler()
+        logout_button = ""
+        if show_logout:
+            logout_button = '<div class="logout-container"><button onclick="logout()">Logout</button></div>'
+        heading = f"""<header class="page-header">
+    <h1 class="page-title">{self.server_headers_initialised.app_name} - {page_title}</h1>
+    <div class="theme-container">{theme_toggle}</div>
+    {logout_button}
+</header>
+"""
+        return heading
+
+    def _get_footers(self, page_type: Pages = Pages.DEFAULT) -> str:
         """Generate HTML footers for front-end pages.
 
+        Args:
+            page_type: Type of the page (Pages enum).
         Returns:
             str: HTML footers as a string.
         """
+        host: str = self.server_headers_initialised.host
+        if host == "0.0.0.0":
+            host = "http://127.0.0.1"
+        if not host.startswith("http"):
+            host = f"http://{host}"
+        port: int = self.server_headers_initialised.port
+        if port == 0:
+            port = -1
+        name: str = self.server_headers_initialised.app_name.lower().replace(" ", "_")
+        page_scripts = ""
+        if page_type == Pages.LOGIN:
+            page_scripts += f'<script type="text/JavaScript" src="{self.front_end_assets_js_login}" data-dashboard-url="{self.front_end_dashboard}"></script>'
+        if page_type == Pages.DASHBOARD:
+            page_scripts += f'<script type="text/JavaScript" src="{self.front_end_assets_js_dashboard}" data-login-url="{self.front_end_login}" data-logout-url="{self.front_end_logout}"></script>'
+        if page_type == Pages.LOGOUT:
+            page_scripts += f'<script type="text/JavaScript" src="{self.front_end_assets_js_logout}" data-login-url="{self.front_end_login}"></script>'
         footers = f"""<div class="footer">
     <hr/>
     <p>&copy; {self.author} {self.year}</p>
+    <script type="module" src="{self.front_end_assets_js_module_cookies}"></script>
+    <script type="module" src="{self.front_end_assets_js_module_indexdb}" data-db-name="{name}" data-store-name="keyValueStore"></script>
+    <script type="module" src="{self.front_end_assets_js_module_querier}" data-api-url="{host}" data-api-port="{port}"></script>
+    <script id="general-module" type="module" src="{self.front_end_assets_js_module_general}" data-theme-cookie-name="theme" data-cookie-expires-days="365"></script>
+    <script type="text/JavaScript" src="{self.front_end_assets_js_theme_pico}"></script>
+    {page_scripts}
+    <script type="module">
+        const moduleScript = document.getElementById('general-module');
+        const opts = moduleScript ? moduleScript.dataset : {"{}"};
+        window.general_scripts.initThemeToggler(opts);
+    </script>
 </div>"""
         return footers
+    # --------------------------- End HTML Snippets ----------------------------
+    # ------------------------------- HTML Pages -------------------------------
 
     def serve_login(self) -> Response:
         """Serve the login page.
@@ -330,11 +434,13 @@ class FrontEndManager:
         """
         page_title = "Login"
         page_header = self._get_headers(page_title)
-        page_footer = self._get_footers()
+        page_heading = self._get_heading(page_title)
+        page_body = self._get_cache(self.front_end_assets_html_login)
+        page_footer = self._get_footers(Pages.LOGIN)
         page_content = f"""{page_header}
-<body>\n
-    <h1>{page_title} Page</h1>\n"
-    <a href='{self.front_end_dashboard}'>dashboard</a>\n"
+<body>
+    {page_heading}
+    {page_body}
     {page_footer}
 </body>
 </html>
@@ -349,11 +455,13 @@ class FrontEndManager:
         """
         page_title = "Dashboard"
         page_header = self._get_headers(page_title)
-        page_footer = self._get_footers()
+        page_heading = self._get_heading(page_title, show_logout=True)
+        page_body = self._get_cache(self.front_end_assets_html_dashboard)
+        page_footer = self._get_footers(Pages.DASHBOARD)
         page_content = f"""{page_header}
-<body>\n
-    <h1>{page_title} Page</h1>\n"
-    <a href='{self.front_end_logout}'>logout</a>\n"
+<body>
+    {page_heading}
+    {page_body}
     {page_footer}
 </body>
 </html>
@@ -368,17 +476,20 @@ class FrontEndManager:
         """
         page_title = "Logout"
         page_header = self._get_headers(page_title)
-        page_footer = self._get_footers()
+        page_heading = self._get_heading(page_title)
+        page_body = self._get_cache(self.front_end_assets_html_logout)
+        page_footer = self._get_footers(Pages.LOGOUT)
         page_content = f"""{page_header}
 <body>\n
-    <h1>{page_title} Page</h1>\n"
-    <a href='{self.front_end_login}'>login</a>\n"
+    {page_heading}
+    {page_body}
     {page_footer}
 </body>
 </html>
 """
         return HCI.success(page_content, content_type=HttpDataTypes.HTML, headers=self.server_headers_initialised.for_html())
-    # Assets endpoints
+    # ----------------------------- End HTML Pages -----------------------------
+    # ---------------------------- Assets endpoints ----------------------------
 
     def get_pico(self) -> Response:
         """Get the Pico CSS content.
@@ -398,6 +509,17 @@ class FrontEndManager:
             Response: FastAPI Response with Pico CSS content.
         """
         css_content = self._get_cache(self.front_end_assets_css_custom)
+        if isinstance(css_content, Response):
+            return css_content
+        return HCI.success(css_content, content_type=HttpDataTypes.CSS, headers=self.server_headers_initialised.for_css())
+
+    def get_css_emoji_font(self) -> Response:
+        """Get the Emoji font CSS content.
+
+        Returns:
+            Response: FastAPI Response with Emoji font CSS content.
+        """
+        css_content = self._get_cache(self.front_end_assets_css_emoji_font)
         if isinstance(css_content, Response):
             return css_content
         return HCI.success(css_content, content_type=HttpDataTypes.CSS, headers=self.server_headers_initialised.for_css())
@@ -431,6 +553,16 @@ class FrontEndManager:
             Response: FastAPI Response with Querier JS module content.
         """
         js_content = self._get_cache(self.front_end_assets_js_module_querier)
+        if isinstance(js_content, Response):
+            return js_content
+        return HCI.success(js_content, content_type=HttpDataTypes.JAVASCRIPT, headers=self.server_headers_initialised.for_javascript())
+
+    def get_general_module(self) -> Response:
+        """Get the General JavaScript module content.
+        Returns:
+            Response: FastAPI Response with General JS module content.
+        """
+        js_content = self._get_cache(self.front_end_assets_js_module_general)
         if isinstance(js_content, Response):
             return js_content
         return HCI.success(js_content, content_type=HttpDataTypes.JAVASCRIPT, headers=self.server_headers_initialised.for_javascript())
@@ -500,10 +632,11 @@ class FrontEndManager:
         icon = CONST.PNG_ICON_PATH
         self.disp.log_debug(f"Static logo path: {icon}")
         if os.path.isfile(icon):
-            return HCI.success(icon, content_type=HttpDataTypes.PNG)
+            return HCI.success(icon, content_type=HttpDataTypes.PNG, headers=self.server_headers_initialised.for_image())
         return HCI.not_found("Icon not found in the expected directory", content_type=HttpDataTypes.TEXT)
+    # ---------------------------- Assets endpoints ----------------------------
+    # ----------------------------- Path Injection -----------------------------
 
-    # Inject paths into PathManager
     def _inject_assets(self, path_manager: "PathManager") -> None:
         """Inject front-end asset paths into the PathManager.
 
@@ -514,9 +647,11 @@ class FrontEndManager:
         assets = {
             self.front_end_assets_css_pico: self.get_pico,
             self.front_end_assets_css_custom: self.get_custom_css,
+            self.front_end_assets_css_emoji_font: self.get_css_emoji_font,
             self.front_end_assets_js_module_cookies: self.get_cookies_module,
             self.front_end_assets_js_module_indexdb: self.get_indexeddb_module,
             self.front_end_assets_js_module_querier: self.get_querier_module,
+            self.front_end_assets_js_module_general: self.get_general_module,
             self.front_end_assets_js_theme_pico: self.get_pico_theme,
             self.front_end_assets_js_dashboard: self.get_dashboard_js,
             self.front_end_assets_js_login: self.get_login_js,
@@ -553,3 +688,4 @@ class FrontEndManager:
                         decorators.front_end_endpoint]
         )
         self._inject_assets(path_manager)
+    # --------------------------- End Path Injection ---------------------------

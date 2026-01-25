@@ -1,0 +1,112 @@
+/* 
+* +==== BEGIN CatFeeder =================+
+* LOGO: 
+* ..............(..../\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: style.css
+* CREATION DATE: 25-01-2026
+* LAST Modified: 2:56:48 25-01-2026
+* DESCRIPTION: 
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: This is the file in charge of containing custom css for the websites.
+* // AR
+* +==== END CatFeeder =================+
+*/
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #ccc;
+    background-color: #f8f9fa;
+}
+
+.page-title {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.theme-container {
+    display: flex;
+    align-items: center;
+}
+
+.logout-container {
+    display: flex;
+    align-items: center;
+    margin-left: 1rem;
+}
+
+.theme-toggler {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.theme-toggler label {
+    font-weight: bold;
+    color: #555;
+}
+
+.theme-toggler select {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.auth-toggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.auth-toggle button {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ccc;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.auth-toggle button.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.auth-toggle button:not(.active):hover {
+    background-color: #e9ecef;
+}
+
+.auth-section {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.password-field {
+    display: flex;
+    align-items: center;
+}
+
+.password-field input {
+    flex: 1;
+}
+
+.password-toggle {
+    margin-left: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+}
