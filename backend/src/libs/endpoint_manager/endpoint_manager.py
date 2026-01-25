@@ -244,6 +244,16 @@ class EndpointManager(metaclass=FinalClass):
             decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
         )
         self.paths_initialised.add_path(
+            f"{self.v1_str}/feeders", self.cat_endpoints.get_feeders, "GET",
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.set_operation_id("get_feeders"),
+                decorators.set_summary("Get all feeders"),
+                decorators.set_description("Retrieve a list of all feeders registered by the authenticated user")
+            ]
+        )
+        self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/feed", self.cat_endpoints.get_distribute_food, "GET",
             decorators=[
                 decorators.auth_endpoint(),
@@ -336,6 +346,16 @@ class EndpointManager(metaclass=FinalClass):
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/beacon", self.cat_endpoints.delete_beacon, "DELETE",
             decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/beacons", self.cat_endpoints.get_beacons, "GET",
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.set_operation_id("get_beacons"),
+                decorators.set_summary("Get all beacons"),
+                decorators.set_description("Retrieve a list of all beacons registered by the authenticated user")
+            ]
         )
         # location endpoints
         self.paths_initialised.add_path(
@@ -449,6 +469,16 @@ class EndpointManager(metaclass=FinalClass):
                     example={"id": 123}
                 ),
                 decorators.requires_bearer_auth()
+            ]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/pets", self.cat_endpoints.get_pets, "GET",
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.set_operation_id("get_pets"),
+                decorators.set_summary("Get all pets"),
+                decorators.set_description("Retrieve a list of all pets registered by the authenticated user")
             ]
         )
 
