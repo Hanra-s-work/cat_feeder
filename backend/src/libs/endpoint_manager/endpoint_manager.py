@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 4:57:26 25-01-2026
+# LAST Modified: 7:8:1 25-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -250,11 +250,12 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.cat_endpoint,
                 decorators.set_operation_id("get_feeders"),
                 decorators.set_summary("Get all feeders"),
-                decorators.set_description("Retrieve a list of all feeders registered by the authenticated user")
+                decorators.set_description(
+                    "Retrieve a list of all feeders registered by the authenticated user")
             ]
         )
         self.paths_initialised.add_path(
-            f"{self.v1_str}/feeder/feed", self.cat_endpoints.get_distribute_food, "GET",
+            f"{self.v1_str}/feeder/fed", self.cat_endpoints.get_distribute_food, "GET",
             decorators=[
                 decorators.auth_endpoint(),
                 decorators.cat_endpoint,
@@ -345,7 +346,14 @@ class EndpointManager(metaclass=FinalClass):
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder/beacon", self.cat_endpoints.delete_beacon, "DELETE",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Remove a beacon based on it's id",
+                    example={"id": 123}
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/beacons", self.cat_endpoints.get_beacons, "GET",
@@ -354,7 +362,8 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.cat_endpoint,
                 decorators.set_operation_id("get_beacons"),
                 decorators.set_summary("Get all beacons"),
-                decorators.set_description("Retrieve a list of all beacons registered by the authenticated user")
+                decorators.set_description(
+                    "Retrieve a list of all beacons registered by the authenticated user")
             ]
         )
         # location endpoints
@@ -478,7 +487,8 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.cat_endpoint,
                 decorators.set_operation_id("get_pets"),
                 decorators.set_summary("Get all pets"),
-                decorators.set_description("Retrieve a list of all pets registered by the authenticated user")
+                decorators.set_description(
+                    "Retrieve a list of all pets registered by the authenticated user")
             ]
         )
 
