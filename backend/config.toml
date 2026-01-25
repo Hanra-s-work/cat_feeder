@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: config.toml
 # CREATION DATE: 10-10-2025
-# LAST Modified: 22:30:4 14-01-2026
+# LAST Modified: 2:31:45 25-01-2026
 # DESCRIPTION:
 # The configuration file used to set the required settings for the server.
 # /STOP
@@ -456,6 +456,15 @@ elements = "8.4.7"
 editor = "5.0.0"
 explorer = "0.0.58"
 rapipdf = "2.3.2"
+
+# The URL of the front-end application
+[Frontend]
+
+# The interval in which the front-end assets cache is refreshed
+# type: integer
+# options: 0 (instant, not recommended) -> 2147483647 (68.1 years)
+# default: 300 seconds (5 minutes)
+asset_cache_refresh_interval = 0 # seconds
 
 # Arg, here comes the test territory
 [Test]
