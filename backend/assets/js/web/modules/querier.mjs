@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: querier.mjs
 * CREATION DATE: 25-01-2026
-* LAST Modified: 3:31:17 25-01-2026
+* LAST Modified: 6:35:51 25-01-2026
 * DESCRIPTION: 
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -28,6 +28,7 @@
 ** querier.mjs
 */
 
+
 console.log("js/querier initialising");
 
 const script = document.querySelector(`script[src="${new URL(import.meta.url).pathname}"]`);
@@ -37,11 +38,33 @@ const port = script?.dataset.apiPort ? Number(script.dataset.apiPort) : -1;
 console.log("script = " + script);
 console.log(`url = ${url}, port = ${port}`);
 
+
+function displayCookies() {
+    const cookies = document.cookie.split("; ");
+    if (cookies.length === 1 && cookies[0] === "") {
+        console.log("No accessible cookies found.");
+        return;
+    }
+
+    console.log("Accessible Cookies:");
+    cookies.forEach(cookie => {
+        const [name, value] = cookie.split("=");
+        console.log(`Name: ${name}, Value: ${decodeURIComponent(value)}`);
+    });
+}
+
+function token_expired() {
+    alert("Your session has expired. Please log in again.");
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    window.location.href = "/front-end/";
+}
+
 async function query(method = "GET", path = "/", body = null, token = "") {
     try {
         const headers = {};
 
         if (token) {
+            console.log("Token present");
             headers['Authorization'] = `Bearer ${token}`;
         }
 
@@ -50,6 +73,8 @@ async function query(method = "GET", path = "/", body = null, token = "") {
             mode: "cors",
             headers: headers,
         };
+
+        console.log("body = ", body);
 
         if (method !== "GET" && body) {
             if (body instanceof FormData) {
@@ -79,8 +104,20 @@ async function query(method = "GET", path = "/", body = null, token = "") {
         } catch (e) {
             data = { message: text };
         }
+        console.log(`data = ${JSON.stringify(data)}`);
         data.status = response.status;
         data.ok = response.ok;
+
+        if (response.status == 498) { response.status = 200; }
+
+        // Handle token expiration
+        if (response.status === 498) {
+            // Token expired, clear cookies and redirect to login
+            displayCookies();
+            // token_expired
+            return { ok: false, status: 498, message: "Token expired" };
+        }
+
         return data;
     } catch (error) {
         console.error('Error fetching data:', error);

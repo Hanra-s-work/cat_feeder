@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: login.js
 * CREATION DATE: 25-01-2026
-* LAST Modified: 4:34:48 25-01-2026
+* LAST Modified: 6:26:42 25-01-2026
 * DESCRIPTION: 
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
