@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: http_codes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 1:16:38 25-01-2026
+# LAST Modified: 22:59:13 26-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -153,10 +153,11 @@ class HttpCodes(metaclass=FinalClass):
             TypeError: If content type is incompatible with content.
 
         Returns:
-            Union[Response, FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse, UJSONResponse, ORJSONResponse]: _description_
+            Union[Response, FileResponse, HTMLResponse, JSONResponse, PlainTextResponse,
+                RedirectResponse, StreamingResponse, UJSONResponse, ORJSONResponse]: _description_
         """
-        # Returning the content as a response if the payload data is bytes.
-        if isinstance(content, bytes) or (isinstance(content, str) and not os.path.isfile(content)):
+        # Returning the content as a response if the payload data is bytes or a string that does not respresent a file.
+        if isinstance(content, bytes):
             return Response(
                 content=content,
                 status_code=status,
@@ -179,6 +180,14 @@ class HttpCodes(metaclass=FinalClass):
             if not isinstance(content, str):
                 raise TypeError(
                     "FileResponse requires the content to be a file path string."
+                )
+            # manual override in case the content is not a file path but it's raw content
+            if not os.path.isfile(content):
+                return Response(
+                    content=content,
+                    status_code=status,
+                    headers=headers,
+                    media_type=content_type
                 )
             return FileResponse(
                 path=content,
