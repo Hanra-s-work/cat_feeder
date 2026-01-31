@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 18:33:5 31-01-2026
+# LAST Modified: 18:52:11 31-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -399,8 +399,7 @@ class EndpointManager(metaclass=FinalClass):
                     "Post new beacon location",
                     example={
                         "beacon_mac": "AA:BB:CC:DD:EE:FF",
-                        "feeder_mac": "11:22:33:44:55:66",
-                        "timestamp": "2023-10-01T12:00:00Z"
+                        "feeder_mac": "11:22:33:44:55:66"
                     }
                 )
             ]
