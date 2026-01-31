@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: constants.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 1:31:11 25-01-2026
+# LAST Modified: 18:41:7 31-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # Backend server constants and configuration management.
@@ -198,6 +198,7 @@ JSON_LOGGED_IN: str = "logged in"
 JSON_UID: str = "user_uid"
 
 # Database table names
+TAB_PET = "Pet"
 TAB_ACCOUNTS = "Users"
 TAB_ACTIONS = "Actions"
 TAB_SERVICES = "Services"

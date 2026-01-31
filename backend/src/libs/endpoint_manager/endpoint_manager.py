@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 17:41:40 31-01-2026
+# LAST Modified: 18:33:5 31-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -225,6 +225,17 @@ class EndpointManager(metaclass=FinalClass):
                         "latitude": 48.8566,
                         "longitude": 2.3522
                     }
+                )
+            ]
+        )
+        self.paths_initialised.add_path(
+            f"{self.v1_str}/feeder", self.cat_endpoints.get_feeder, "GET",
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Get feeder status by mac, name, or id",
+                    example={"mac": "AA:BB:CC:DD:EE:FF"}
                 )
             ]
         )

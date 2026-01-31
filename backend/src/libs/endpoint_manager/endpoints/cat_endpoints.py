@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 17:12:41 31-01-2026
+# LAST Modified: 18:32:53 31-01-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -31,6 +31,7 @@ from display_tty import Disp, initialise_logger
 from fastapi import Request, Response
 from ...utils import CONST
 from ...core import RuntimeManager, RI
+from .. import endpoint_helpers as EN_CONST
 from ...http_codes import HCI
 
 if TYPE_CHECKING:
@@ -268,6 +269,73 @@ class CatEndpoints:
             title, "Feeder updated successfully", "updated", data.token, error=False
         )
         return HCI.success(bod)
+
+    async def get_feeder(self, request: Request) -> Response:
+        """Get the status of a cat feeder.
+
+        Args:
+            request (Request): The incoming request parameters.
+
+        Returns:
+            Response: The HTTP response to send back to the user.
+        """
+        title = "get_feeder"
+        data = self._user_connected(request, title)
+        if isinstance(data, Response):
+            return data
+
+        body = await self.boilerplate_incoming_initialised.get_body(request)
+
+        # require one of: id, name, or mac to identify the feeder
+        if "id" not in body and "name" not in body and "mac" not in body:
+            self.disp.log_debug(f"body={body}\n\n\n\n\n")
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "id, name, or mac")
+
+        # build where clause
+        where_parts = [f"owner={data.user_id}"]
+        if "id" in body:
+            try:
+                feeder_id = int(body["id"])
+                where_parts.append(f"id={feeder_id}")
+            except (ValueError, TypeError):
+                return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "id")
+        elif "mac" in body:
+            where_parts.append(f"mac='{body['mac']}'")
+        else:  # name
+            where_parts.append(f"name='{body['name']}'")
+
+        where = " AND ".join(where_parts)
+
+        # get feeder id
+        feeder_rows = self.database_link.get_data_from_table(
+            self.tab_feeder,
+            ["id"],
+            where,
+            beautify=True
+        )
+        if not isinstance(feeder_rows, list) or len(feeder_rows) == 0:
+            return HCI.not_found(
+                self.boilerplate_responses_initialised.build_response_body(
+                    title,
+                    "Feeder not found",
+                    "not_found",
+                    data.token,
+                    error=True
+                )
+            )
+        data_raw: Dict = feeder_rows[0]
+        data_clean = EN_CONST.convert_datetime_instances_to_strings(
+            data_raw, "<unknown_date>", disp=self.disp
+        )
+        return HCI.success(
+            self.boilerplate_responses_initialised.build_response_body(
+                title,
+                "Feeder found",
+                data_clean,
+                data.token,
+                error=False
+            )
+        )
 
     async def get_feeder_status(self, request: Request) -> Response:
         """Get the status of a cat feeder.
