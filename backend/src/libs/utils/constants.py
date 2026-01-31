@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: constants.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 18:41:7 31-01-2026
+# LAST Modified: 19:0:27 31-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # Backend server constants and configuration management.
@@ -300,6 +300,7 @@ def clean_list(raw_input: List[Any], items: Tuple[Any, ...], disp: Disp) -> List
         List[Any]: The modified list with specified items removed.
     """
     to_pop = []
+    disp.log_debug(f"initial list: {raw_input}")
     for index, item in enumerate(raw_input):
         if item in items:
             to_pop.append(index)
