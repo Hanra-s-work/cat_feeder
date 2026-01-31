@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 18:32:53 31-01-2026
+# LAST Modified: 19:27:45 31-01-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -199,10 +199,10 @@ class CatEndpoints:
         ]
         resp = self.database_link.insert_data_into_table(
             self.tab_feeder,
-            cols,
-            sql_data
+            sql_data,
+            cols
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(
                 title, data.token
             )
@@ -262,7 +262,7 @@ class CatEndpoints:
             update_cols,
             where=where
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         bod = self.boilerplate_responses_initialised.build_response_body(
@@ -502,11 +502,9 @@ class CatEndpoints:
                     title, "", field
                 )
 
-        # Find feeder by MAC (no user authentication needed - feeder calls this)
         feeder_rows = self.database_link.get_data_from_table(
             self.tab_feeder,
             ["id"],
-            # Fixed: was looking for name instead of mac
             f"mac='{body['mac']}'",
             beautify=True
         )
@@ -553,11 +551,11 @@ class CatEndpoints:
             sql_data = [feeder_id, new_ip]
             resp = self.database_link.insert_data_into_table(
                 self.tab_feeder_ip,
-                cols,
-                sql_data
+                sql_data,
+                cols
             )
 
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, "")
 
         bod = self.boilerplate_responses_initialised.build_response_body(
@@ -618,7 +616,7 @@ class CatEndpoints:
             self.tab_feeder,
             f"id={feeder_id} AND owner={data.user_id}"
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         bod = self.boilerplate_responses_initialised.build_response_body(
@@ -693,14 +691,15 @@ class CatEndpoints:
         if not isinstance(cols, list):
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
         cols = CONST.clean_list(cols, self.cols_to_remove, self.disp)
-        sql_data = [data.user_id, body["mac"], body["name"]]
-
+        sql_data = [str(data.user_id), body["mac"], body["name"]]
+        self.disp.log_debug(f"raw sql_data: {sql_data}")
+        self.disp.log_debug(f"cols: {cols}")
         resp = self.database_link.insert_data_into_table(
             self.tab_beacon,
-            cols,
-            sql_data
+            sql_data,
+            cols
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         bod = self.boilerplate_responses_initialised.build_response_body(
@@ -829,7 +828,7 @@ class CatEndpoints:
             update_cols,
             where=where
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         bod = self.boilerplate_responses_initialised.build_response_body(
@@ -881,7 +880,7 @@ class CatEndpoints:
             self.tab_beacon,
             f"id={beacon_id} AND owner={data.user_id}"
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         bod = self.boilerplate_responses_initialised.build_response_body(
@@ -1058,10 +1057,10 @@ class CatEndpoints:
 
         resp = self.database_link.insert_data_into_table(
             self.tab_location_history,
-            cols,
-            sql_data
+            sql_data,
+            cols
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, "")
 
         bod = self.boilerplate_responses_initialised.build_response_body(
@@ -1355,7 +1354,7 @@ class CatEndpoints:
             ["food_eaten"],
             where=f"beacon={beacon_id}"
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, "")
 
         bod = self.boilerplate_responses_initialised.build_response_body(
@@ -1441,10 +1440,10 @@ class CatEndpoints:
 
         resp = self.database_link.insert_data_into_table(
             self.tab_location_history,
-            cols,
-            sql_data
+            sql_data,
+            cols
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, "")
 
         bod = self.boilerplate_responses_initialised.build_response_body(
@@ -1554,10 +1553,10 @@ class CatEndpoints:
 
         resp = self.database_link.insert_data_into_table(
             self.tab_pet,
-            cols,
-            sql_data
+            sql_data,
+            cols
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         bod = self.boilerplate_responses_initialised.build_response_body(
@@ -1636,7 +1635,7 @@ class CatEndpoints:
             update_cols,
             where=f"id={pet_id}"
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         bod = self.boilerplate_responses_initialised.build_response_body(
@@ -1767,7 +1766,7 @@ class CatEndpoints:
             self.tab_pet,
             f"id={pet_id}"
         )
-        if not isinstance(resp, int):
+        if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         bod = self.boilerplate_responses_initialised.build_response_body(
