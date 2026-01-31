@@ -1,6 +1,6 @@
-r""" 
+r"""
 # +==== BEGIN CatFeeder =================+
-# LOGO: 
+# LOGO:
 # ..............(..../\
 # ...............)..(.')
 # ..............(../..)
@@ -12,8 +12,8 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 7:16:38 25-01-2026
-# DESCRIPTION: 
+# LAST Modified: 15:23:10 31-01-2026
+# DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
 # COPYRIGHT: (c) Cat Feeder
@@ -1650,15 +1650,38 @@ class CatEndpoints:
         data = self._user_connected(request, title)
         if isinstance(data, Response):
             return data
-        pets = self.database_link.get_data_from_table(
-            self.tab_pet,
-            ["id", "name", "breed", "age", "weight", "color",
-                "microchip_id", "created_at", "updated_at"],
+        beacons_raw = self.database_link.get_data_from_table(
+            self.tab_beacon,
+            ["id"],
             f"owner={data.user_id}",
             beautify=True
         )
-        if not isinstance(pets, list):
+        if not isinstance(beacons_raw, list):
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+        if len(beacons_raw) == 0:
+            bod = self.boilerplate_responses_initialised.build_response_body(
+                title, "The pets have been gathered.", [], data.token, error=False
+            )
+            return HCI.success(bod)
+        beacons = []
+        for i in enumerate(beacons_raw):
+            beacons.append(i[1]["id"])
+        columns = self.database_link.get_table_column_names(self.tab_pet)
+        if not isinstance(columns, list):
+            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+        pets = []
+        for beacon in beacons:
+            pet = self.database_link.get_data_from_table(
+                self.tab_pet,
+                columns,
+                f"beacon={beacon}",
+                beautify=True
+            )
+            if not isinstance(pet, list):
+                return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+            if len(pet) == 0:
+                continue
+            pets.extend(pet[0])
         bod = self.boilerplate_responses_initialised.build_response_body(
             title, "The pets have been gathered.", pets,  data.token, error=False
         )
