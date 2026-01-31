@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: dashboard.js
 * CREATION DATE: 25-01-2026
-* LAST Modified: 7:8:34 25-01-2026
+* LAST Modified: 17:4:26 31-01-2026
 * DESCRIPTION: 
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -25,6 +25,45 @@
 const script = document.querySelector('script[src*="dashboard.js"]');
 const loginUrl = script ? script.dataset.loginUrl : "/front-end/";
 const logoutUrl = script ? script.dataset.logoutUrl : "/front-end/logout";
+
+// ---------- MAC address helpers ----------
+function _cleanMacRaw(s) {
+    if (!s || typeof s !== 'string') return '';
+    return s.toUpperCase().replace(/[^0-9A-F]/g, '');
+}
+
+function normalizeMac(input) {
+    // Accept input with separators or without, return uppercase colon-separated pairs
+    const raw = _cleanMacRaw(input);
+    if (raw.length === 12) {
+        return raw.match(/.{1,2}/g).join(':');
+    }
+    if (raw.length === 8) {
+        // allow 4-byte MACs (rare) - format as 4 pairs
+        return raw.match(/.{1,2}/g).join(':');
+    }
+    return null;
+}
+
+function validateMac(input) {
+    const norm = normalizeMac(input);
+    if (!norm) return false;
+    // basic validation - pairs of hex separated by colon, 4 or 6 pairs
+    return /^([0-9A-F]{2}:){3,5}[0-9A-F]{2}$/.test(norm);
+}
+
+function attachMacBlurFormatting(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.setAttribute('placeholder', 'AA:BB:CC:DD:EE:FF');
+    el.setAttribute('maxlength', '17');
+    el.addEventListener('blur', () => {
+        const v = el.value || '';
+        const norm = normalizeMac(v);
+        if (norm) el.value = norm;
+    });
+}
+
 
 function logout() {
     const logoutUrlFull = logoutUrl;
@@ -41,8 +80,13 @@ function showMessage(message, isError = false) {
 async function loadFeeders(token) {
     try {
         const response = await window.querier.get('/api/v1/feeders', {}, token);
-        if (response.ok && response.data.feeders) {
-            displayFeeders(response.data.feeders);
+        if (response.ok) {
+            const feeders = (response.data && response.data.feeders) ? response.data.feeders : (response.data || response);
+            if (Array.isArray(feeders)) {
+                displayFeeders(feeders);
+            } else {
+                showMessage("Failed to load feeders", true);
+            }
         } else {
             showMessage("Failed to load feeders", true);
         }
@@ -54,8 +98,13 @@ async function loadFeeders(token) {
 async function loadBeacons(token) {
     try {
         const response = await window.querier.get('/api/v1/beacons', {}, token);
-        if (response.ok && response.data.beacons) {
-            displayBeacons(response.data.beacons);
+        if (response.ok) {
+            const beacons = (response.data && response.data.beacons) ? response.data.beacons : (response.data || response);
+            if (Array.isArray(beacons)) {
+                displayBeacons(beacons);
+            } else {
+                showMessage("Failed to load beacons", true);
+            }
         } else {
             showMessage("Failed to load beacons", true);
         }
@@ -67,8 +116,13 @@ async function loadBeacons(token) {
 async function loadPets(token) {
     try {
         const response = await window.querier.get('/api/v1/pets', {}, token);
-        if (response.ok && response.data.pets) {
-            displayPets(response.data.pets);
+        if (response.ok) {
+            const pets = (response.data && response.data.pets) ? response.data.pets : (response.data || response);
+            if (Array.isArray(pets)) {
+                displayPets(pets);
+            } else {
+                showMessage("Failed to load pets", true);
+            }
         } else {
             showMessage("Failed to load pets", true);
         }
@@ -92,7 +146,8 @@ function displayBeacons(beacons) {
     list.innerHTML = "";
     beacons.forEach(beacon => {
         const item = document.createElement("li");
-        item.textContent = `${beacon.name} - ${beacon.city_locality}, ${beacon.country}`;
+        // Beacon table does not include location fields; show name and mac
+        item.textContent = `${beacon.name} - ${beacon.mac}`;
         list.appendChild(item);
     });
 }
@@ -124,9 +179,17 @@ function setupFeederForm() {
 
     registerFeederForm.addEventListener("submit", async (e) => {
         e.preventDefault();
+        // validate and normalize MAC
+        const feederMacRaw = document.getElementById("feeder-mac").value;
+        const feederMac = normalizeMac(feederMacRaw);
+        if (!feederMac) {
+            showMessage('Invalid feeder MAC address', true);
+            return;
+        }
+
         const formData = {
             name: document.getElementById("feeder-name").value,
-            mac: document.getElementById("feeder-mac").value,
+            mac: feederMac,
             latitude: parseFloat(document.getElementById("feeder-latitude").value),
             longitude: parseFloat(document.getElementById("feeder-longitude").value),
             city_locality: document.getElementById("feeder-city").value,
@@ -134,7 +197,8 @@ function setupFeederForm() {
         };
 
         try {
-            const response = await window.querier.put('/api/v1/feeder', formData);
+            const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
+            const response = await window.querier.put('/api/v1/feeder', formData, token);
             if (response.ok) {
                 showMessage("Feeder registered successfully!");
                 feederForm.style.display = "none";
@@ -153,9 +217,10 @@ function setupFeederForm() {
         e.preventDefault();
         const name = document.getElementById("check-feeder-name").value;
         try {
-            const response = await window.querier.get(`/api/v1/feeder/${name}/status`);
+            const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
+            const response = await window.querier.get('/api/v1/feeder/status', { name }, token);
             if (response.ok) {
-                const status = response.data;
+                const status = response.data || response;
                 showMessage(`Feeder ${name} status: ${JSON.stringify(status)}`);
             } else {
                 showMessage("Failed to get feeder status: " + (response.message || "Unknown error"), true);
@@ -169,10 +234,12 @@ function setupFeederForm() {
     const feedForm = document.getElementById("feed-form");
     feedForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const name = document.getElementById("feed-feeder-name").value;
+        const feeder_mac = document.getElementById("feed-feeder-mac").value;
+        const beacon_mac = document.getElementById("feed-beacon-mac").value;
         const amount = parseInt(document.getElementById("feed-amount").value);
         try {
-            const response = await window.querier.post(`/api/v1/feeder/${name}/feed`, { amount });
+            const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
+            const response = await window.querier.post('/api/v1/feeder/fed', { feeder_mac, beacon_mac, amount }, token);
             if (response.ok) {
                 showMessage("Feeding successful!");
             } else {
@@ -201,17 +268,21 @@ function setupBeaconForm() {
 
     registerBeaconForm.addEventListener("submit", async (e) => {
         e.preventDefault();
+        const beaconMacRaw = document.getElementById("beacon-mac").value;
+        const beaconMac = normalizeMac(beaconMacRaw);
+        if (!beaconMac) {
+            showMessage('Invalid beacon MAC address', true);
+            return;
+        }
+
         const formData = {
             name: document.getElementById("beacon-name").value,
-            mac: document.getElementById("beacon-mac").value,
-            latitude: parseFloat(document.getElementById("beacon-latitude").value),
-            longitude: parseFloat(document.getElementById("beacon-longitude").value),
-            city_locality: document.getElementById("beacon-city").value,
-            country: document.getElementById("beacon-country").value
+            mac: beaconMac
         };
 
         try {
-            const response = await window.querier.put('/api/v1/beacon', formData);
+            const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
+            const response = await window.querier.put('/api/v1/feeder/beacon', formData, token);
             if (response.ok) {
                 showMessage("Beacon registered successfully!");
                 beaconForm.style.display = "none";
@@ -230,9 +301,10 @@ function setupBeaconForm() {
         e.preventDefault();
         const name = document.getElementById("check-beacon-name").value;
         try {
-            const response = await window.querier.get(`/api/v1/beacon/${name}/status`);
+            const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
+            const response = await window.querier.get('/api/v1/feeder/beacon/status', { name }, token);
             if (response.ok) {
-                const status = response.data;
+                const status = response.data || response;
                 showMessage(`Beacon ${name} status: ${JSON.stringify(status)}`);
             } else {
                 showMessage("Failed to get beacon status: " + (response.message || "Unknown error"), true);
@@ -260,17 +332,25 @@ function setupPetForm() {
 
     registerPetForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const formData = {
-            name: document.getElementById("pet-name").value,
-            breed: document.getElementById("pet-breed").value,
-            age: parseInt(document.getElementById("pet-age").value),
-            weight: parseFloat(document.getElementById("pet-weight").value),
-            color: document.getElementById("pet-color").value,
-            microchip_id: document.getElementById("pet-microchip").value
-        };
+            const petBeaconRaw = document.getElementById("pet-beacon-mac").value;
+            const petBeaconMac = normalizeMac(petBeaconRaw);
+            if (!petBeaconMac) {
+                showMessage('Invalid pet beacon MAC address', true);
+                return;
+            }
+
+            const formData = {
+                beacon_mac: petBeaconMac,
+                name: document.getElementById("pet-name").value,
+                breed: document.getElementById("pet-breed").value,
+                age: parseInt(document.getElementById("pet-age").value),
+                weight: parseFloat(document.getElementById("pet-weight").value),
+                microchip_id: document.getElementById("pet-microchip").value
+            };
 
         try {
-            const response = await window.querier.put('/api/v1/pet', formData);
+            const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
+            const response = await window.querier.put('/api/v1/pet', formData, token);
             if (response.ok) {
                 showMessage("Pet registered successfully!");
                 petForm.style.display = "none";
@@ -289,7 +369,8 @@ function setupPetForm() {
         e.preventDefault();
         const id = document.getElementById("get-pet-id").value;
         try {
-            const response = await window.querier.get(`/api/v1/pet/${id}`);
+            const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
+            const response = await window.querier.get('/api/v1/pet', { id }, token);
             if (response.ok) {
                 const pet = response.data;
                 showMessage(`Pet info: ${JSON.stringify(pet)}`);
@@ -316,6 +397,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const token = window.cookie_manager.readCookie("token") ?? "";
+
+    // attach MAC formatting/validation to inputs
+    attachMacBlurFormatting('feeder-mac');
+    attachMacBlurFormatting('beacon-mac');
+    attachMacBlurFormatting('pet-beacon-mac');
+    attachMacBlurFormatting('feed-feeder-mac');
+    attachMacBlurFormatting('feed-beacon-mac');
+
     loadFeeders(token);
     loadBeacons(token);
     loadPets(token);

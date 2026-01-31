@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: endpoints_routes.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 7:8:1 25-01-2026
+# LAST Modified: 17:41:40 31-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -220,7 +220,7 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.json_body(
                     "Update feeder details - provide id or mac, and fields to update",
                     example={
-                        "id": 123,
+                        "mac": "AA:BB:CC:DD:EE:FF",
                         "name": "Updated Feeder Name",
                         "latitude": 48.8566,
                         "longitude": 2.3522
@@ -234,14 +234,21 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.auth_endpoint(),
                 decorators.cat_endpoint,
                 decorators.json_body(
-                    "Get feeder status by name",
-                    example={"name": "My Feeder"}
+                    "Get feeder status by mac, name, or id",
+                    example={"mac": "AA:BB:CC:DD:EE:FF"}
                 )
             ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeder", self.cat_endpoints.delete_feeder, "DELETE",
-            decorators=[decorators.auth_endpoint(), decorators.cat_endpoint]
+            decorators=[
+                decorators.auth_endpoint(),
+                decorators.cat_endpoint,
+                decorators.json_body(
+                    "Remove a feeder based on it's mac or id",
+                    example={"mac": "AA:BB:CC:DD:EE:FF"}
+                )
+            ]
         )
         self.paths_initialised.add_path(
             f"{self.v1_str}/feeders", self.cat_endpoints.get_feeders, "GET",
@@ -261,7 +268,7 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.cat_endpoint,
                 decorators.json_body(
                     "Get food distribution status",
-                    example={"feeder_name": "My Feeder"}
+                    example={"beacon_mac": "AA:BB:CC:DD:EE:FF"}
                 )
             ]
         )
@@ -273,9 +280,9 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.json_body(
                     "Distribute food to feeder",
                     example={
-                        "feeder_name": "My Feeder",
-                        "amount": 50,
-                        "unit": "grams"
+                        "beacon_mac": "AA:BB:CC:DD:EE:FF",
+                        "feeder_mac": "11:22:33:44:55:66",
+                        "amount": 50
                     }
                 )
             ]
@@ -289,7 +296,7 @@ class EndpointManager(metaclass=FinalClass):
                     "Feeder IP update - called by feeder itself after reboot",
                     example={
                         "mac": "AA:BB:CC:DD:EE:FF",
-                        "ip_address": "192.168.1.100"
+                        "ip": "192.168.1.100"
                     }
                 ),
                 decorators.set_operation_id("update_feeder_ip_address"),
@@ -307,13 +314,8 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.json_body(
                     "Register a new beacon for a feeder",
                     example={
-                        "feeder_id": 123,
-                        "name": "Beacon1",
-                        "latitude": 48.8566,
-                        "longitude": 2.3522,
-                        "city_locality": "Paris",
-                        "country": "France",
-                        "mac": "AA:BB:CC:DD:EE:FF"
+                        "mac": "AA:BB:CC:DD:EE:FF",
+                        "name": "Beacon1"
                     }
                 )
             ]
@@ -324,8 +326,8 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.auth_endpoint(),
                 decorators.cat_endpoint,
                 decorators.json_body(
-                    "Get beacon status by name",
-                    example={"name": "Beacon1"}
+                    "Get beacon status by mac, name, or id",
+                    example={"mac": "AA:BB:CC:DD:EE:FF"}
                 )
             ]
         )
@@ -338,8 +340,7 @@ class EndpointManager(metaclass=FinalClass):
                     "Update beacon details - provide id or name, and fields to update",
                     example={
                         "id": 123,
-                        "name": "Updated Beacon",
-                        "latitude": 48.8566
+                        "name": "Updated Beacon"
                     }
                 )
             ]
@@ -374,7 +375,7 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.cat_endpoint,
                 decorators.json_body(
                     "Get beacon location history",
-                    example={"beacon_id": 123}
+                    example={"mac": "AA:BB:CC:DD:EE:FF"}
                 )
             ]
         )
@@ -386,11 +387,8 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.json_body(
                     "Post new beacon location",
                     example={
-                        "beacon_id": 123,
-                        "latitude": 48.8566,
-                        "longitude": 2.3522,
-                        "city_locality": "Paris",
-                        "country": "France",
+                        "beacon_mac": "AA:BB:CC:DD:EE:FF",
+                        "feeder_mac": "11:22:33:44:55:66",
                         "timestamp": "2023-10-01T12:00:00Z"
                     }
                 )
@@ -403,7 +401,7 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.cat_endpoint,
                 decorators.json_body(
                     "Get feeder visit history",
-                    example={"feeder_name": "My Feeder"}
+                    example={"mac": "AA:BB:CC:DD:EE:FF"}
                 )
             ]
         )
@@ -415,11 +413,8 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.json_body(
                     "Record a feeder visit by a pet",
                     example={
-                        "feeder_name": "My Feeder",
-                        "pet_id": 456,
-                        "timestamp": "2023-10-01T12:00:00Z",
-                        "amount_fed": 20,
-                        "unit": "grams"
+                        "feeder_mac": "11:22:33:44:55:66",
+                        "beacon_mac": "AA:BB:CC:DD:EE:FF"
                     }
                 )
             ]
@@ -432,10 +427,12 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.auth_endpoint(),
                 decorators.cat_endpoint,
                 decorators.json_body(
-                    "Pet registration data with beacon_id and name",
+                    "Pet registration data with beacon_mac and name",
                     example={
-                        "beacon_id": 123, "name": "Whiskers",
-                        "food_max": 100, "time_reset_hours": 24
+                        "beacon_mac": "AA:BB:CC:DD:EE:FF",
+                        "name": "Whiskers",
+                        "food_max": 100,
+                        "time_reset_hours": 24
                     }
                 ),
                 decorators.requires_bearer_auth()
@@ -449,7 +446,8 @@ class EndpointManager(metaclass=FinalClass):
                 decorators.json_body(
                     "Pet update data with id and fields to update",
                     example={
-                        "id": 123, "name": "Whiskers Updated",
+                        "id": 123,
+                        "name": "Whiskers Updated",
                         "food_max": 150
                     }
                 ),

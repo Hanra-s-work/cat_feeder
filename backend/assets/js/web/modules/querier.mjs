@@ -76,7 +76,16 @@ async function query(method = "GET", path = "/", body = null, token = "") {
 
         console.log("body = ", body);
 
-        if (method !== "GET" && body) {
+        // For GET requests, use query params; for others, use body
+        if (method === 'GET') {
+            if (body && Object.keys(body).length > 0) {
+                const params = new URLSearchParams();
+                for (const [key, value] of Object.entries(body)) {
+                    params.append(key, String(value));
+                }
+                final_url += '?' + params.toString();
+            }
+        } else if (body) {
             if (body instanceof FormData) {
                 payload.body = body;
                 // Content-Type will be set automatically for FormData

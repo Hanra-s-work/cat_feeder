@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 15:31:58 31-01-2026
+# LAST Modified: 17:12:41 31-01-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -285,15 +285,30 @@ class CatEndpoints:
 
         body = await self.boilerplate_incoming_initialised.get_body(request)
 
-        # require feeder name (unique) to identify the feeder
-        if "name" not in body:
-            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "name")
+        # require one of: id, name, or mac to identify the feeder
+        if "id" not in body and "name" not in body and "mac" not in body:
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "id, name, or mac")
 
-        # get feeder id owned by this user
+        # build where clause
+        where_parts = [f"owner={data.user_id}"]
+        if "id" in body:
+            try:
+                feeder_id = int(body["id"])
+                where_parts.append(f"id={feeder_id}")
+            except (ValueError, TypeError):
+                return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "id")
+        elif "mac" in body:
+            where_parts.append(f"mac='{body['mac']}'")
+        else:  # name
+            where_parts.append(f"name='{body['name']}'")
+
+        where = " AND ".join(where_parts)
+
+        # get feeder id
         feeder_rows = self.database_link.get_data_from_table(
             self.tab_feeder,
             ["id"],
-            f"owner={data.user_id} AND name='{body['name']}'",
+            where,
             beautify=True
         )
         if not isinstance(feeder_rows, list) or len(feeder_rows) == 0:
@@ -412,7 +427,7 @@ class CatEndpoints:
         body = await self.boilerplate_incoming_initialised.get_body(request)
 
         # Require MAC and new IP address
-        required_fields = ["mac", "ip_address"]
+        required_fields = ["mac", "ip"]
         for field in required_fields:
             if field not in body:
                 return self.boilerplate_responses_initialised.missing_variable_in_body(
@@ -440,7 +455,7 @@ class CatEndpoints:
             )
 
         feeder_id = feeder_rows[0]["id"]
-        new_ip = body["ip_address"]
+        new_ip = body["ip"]
 
         # Insert or update IP record for this feeder
         cols = self.database_link.get_table_column_names(self.tab_feeder_ip)
@@ -499,23 +514,26 @@ class CatEndpoints:
         if isinstance(data, Response):
             return data
         body = await self.boilerplate_incoming_initialised.get_body(request)
-        elem = "id"
-        if elem not in body:
-            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, elem)
+        if "id" not in body and "mac" not in body:
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "id or mac")
 
-        try:
-            feeder_id = int(body["id"])
-        except (ValueError, TypeError):
-            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "valid id")
+        if "id" in body:
+            try:
+                feeder_id_val = int(body["id"])
+            except (ValueError, TypeError):
+                return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "valid id")
+            where = f"owner={data.user_id} AND id={feeder_id_val}"
+        else:
+            where = f"owner={data.user_id} AND mac='{body['mac']}'"
 
         # Check if feeder exists and belongs to user
-        feeder_exists = self.database_link.get_data_from_table(
+        feeder_rows = self.database_link.get_data_from_table(
             self.tab_feeder,
             ["id"],
-            f"id={feeder_id} AND owner={data.user_id}",
+            where,
             beautify=True
         )
-        if not isinstance(feeder_exists, list) or len(feeder_exists) == 0:
+        if not isinstance(feeder_rows, list) or len(feeder_rows) == 0:
             return HCI.not_found(
                 self.boilerplate_responses_initialised.build_response_body(
                     title,
@@ -525,6 +543,8 @@ class CatEndpoints:
                     error=True
                 )
             )
+
+        feeder_id = feeder_rows[0]["id"]
 
         resp = self.database_link.remove_data_from_table(
             self.tab_feeder,
@@ -633,14 +653,39 @@ class CatEndpoints:
         if isinstance(data, Response):
             return data
         body = await self.boilerplate_incoming_initialised.get_body(request)
-        elem = "id"
-        if elem not in body:
-            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, elem)
+        # Accept beacon identifier: id or name or mac
+        if not body or ("id" not in body and "name" not in body and "mac" not in body):
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "id or name or mac")
 
-        try:
-            beacon_id = int(body["id"])
-        except (ValueError, TypeError):
-            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "valid id")
+        beacon_id = None
+        if "id" in body:
+            try:
+                beacon_id = int(body["id"])
+            except (ValueError, TypeError):
+                return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "valid id")
+        else:
+            # resolve by name or mac
+            if "name" in body:
+                where = f"owner={data.user_id} AND name='{body['name']}'"
+            else:
+                where = f"owner={data.user_id} AND mac='{body['mac']}'"
+            rows = self.database_link.get_data_from_table(
+                self.tab_beacon,
+                ["id"],
+                where,
+                beautify=True
+            )
+            if not isinstance(rows, list) or len(rows) == 0:
+                return HCI.not_found(
+                    self.boilerplate_responses_initialised.build_response_body(
+                        title,
+                        "Beacon not found",
+                        "not_found",
+                        data.token,
+                        error=True
+                    )
+                )
+            beacon_id = rows[0]["id"]
 
         beacon_data = self.database_link.get_data_from_table(
             self.tab_beacon,
@@ -1352,17 +1397,39 @@ class CatEndpoints:
         if isinstance(data, Response):
             return data
         body = await self.boilerplate_incoming_initialised.get_body(request)
-        elems = ["beacon_id", "name"]
-        for elem in elems:
-            if elem not in body:
-                return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, elem)
+        # Accept either `beacon_id` (numeric) or `beacon_mac` (string) to identify the beacon
+        if "name" not in body:
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "name")
 
-        try:
-            beacon_id = int(body["beacon_id"])
-        except (ValueError, TypeError):
-            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "valid beacon_id")
+        beacon_id = None
+        if "beacon_id" in body:
+            try:
+                beacon_id = int(body["beacon_id"])
+            except (ValueError, TypeError):
+                return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "valid beacon_id")
+        elif "beacon_mac" in body:
+            # resolve mac to id
+            beacon_rows = self.database_link.get_data_from_table(
+                self.tab_beacon,
+                ["id"],
+                f"mac='{body['beacon_mac']}' AND owner={data.user_id}",
+                beautify=True
+            )
+            if not isinstance(beacon_rows, list) or len(beacon_rows) == 0:
+                return HCI.not_found(
+                    self.boilerplate_responses_initialised.build_response_body(
+                        title,
+                        "Beacon not found or not owned by user",
+                        "not_found",
+                        data.token,
+                        error=True
+                    )
+                )
+            beacon_id = beacon_rows[0]["id"]
+        else:
+            return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "beacon_id or beacon_mac")
 
-        # Check if beacon exists and belongs to user
+        # Check if beacon exists and belongs to user (redundant for beacon_mac path but kept for beacon_id path)
         beacon_exists = self.database_link.get_data_from_table(
             self.tab_beacon,
             ["id"],
@@ -1406,6 +1473,10 @@ class CatEndpoints:
         sql_data = [
             beacon_id,
             body["name"],
+            body.get("breed"),
+            body.get("age"),
+            body.get("weight"),
+            body.get("microchip_id"),
             body.get("food_eaten", 0),
             body.get("food_max", 100),
             body.get("food_reset", None),
