@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 15:23:10 31-01-2026
+# LAST Modified: 15:31:58 31-01-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -168,7 +168,7 @@ class CatEndpoints:
         present = self.database_link.get_data_from_table(
             self.tab_feeder,
             ["id"],
-            f"user_id={data.user_id} AND mac='{body['mac']}'",
+            f"owner={data.user_id} AND mac='{body['mac']}'",
             beautify=True
         )
         if isinstance(present, list) and len(present) > 0:
@@ -251,9 +251,9 @@ class CatEndpoints:
                 feeder_id = int(body["id"])
             except (ValueError, TypeError):
                 return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "id")
-            where = f"id={feeder_id} AND user_id={data.user_id}"
+            where = f"id={feeder_id} AND owner={data.user_id}"
         else:
-            where = f"user_id={data.user_id} AND mac='{body['mac']}'"
+            where = f"owner={data.user_id} AND mac='{body['mac']}'"
 
         resp = self.database_link.update_data_in_table(
             self.tab_feeder,
@@ -293,7 +293,7 @@ class CatEndpoints:
         feeder_rows = self.database_link.get_data_from_table(
             self.tab_feeder,
             ["id"],
-            f"user_id={data.user_id} AND name='{body['name']}'",
+            f"owner={data.user_id} AND name='{body['name']}'",
             beautify=True
         )
         if not isinstance(feeder_rows, list) or len(feeder_rows) == 0:
@@ -311,8 +311,8 @@ class CatEndpoints:
         # get IP history for this feeder
         ip_rows = self.database_link.get_data_from_table(
             self.tab_feeder_ip,
-            ["ip_address", "edit_date"],
-            f"feeder_id={feeder_id}",
+            ["ip", "edit_date"],
+            f"parent_id={feeder_id}",
             beautify=True
         )
         if not isinstance(ip_rows, list) or len(ip_rows) == 0:
@@ -354,7 +354,7 @@ class CatEndpoints:
             except AttributeError:
                 return HCI.not_found(bod)
 
-        ip_address = latest.get("ip_address", "")
+        ip_address = latest.get("ip", "")
         if not ip_address:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
@@ -453,7 +453,7 @@ class CatEndpoints:
         existing_ip = self.database_link.get_data_from_table(
             self.tab_feeder_ip,
             ["id"],
-            f"feeder_id={feeder_id}",
+            f"parent_id={feeder_id}",
             beautify=True
         )
 
@@ -462,8 +462,8 @@ class CatEndpoints:
             resp = self.database_link.update_data_in_table(
                 self.tab_feeder_ip,
                 [new_ip],
-                ["ip_address"],
-                where=f"feeder_id={feeder_id}"
+                ["ip"],
+                where=f"parent_id={feeder_id}"
             )
         else:
             # Insert new record
@@ -554,8 +554,8 @@ class CatEndpoints:
         feeders = self.database_link.get_data_from_table(
             self.tab_feeder,
             ["id", "name", "mac", "latitude", "longitude",
-                "city_locality", "country", "created_at", "updated_at"],
-            f"user_id={data.user_id}",
+                "city_locality", "country", "creation_date", "edit_date"],
+            f"owner={data.user_id}",
             beautify=True
         )
         if not isinstance(feeders, list):
@@ -791,8 +791,7 @@ class CatEndpoints:
             return data
         beacons = self.database_link.get_data_from_table(
             self.tab_beacon,
-            ["id", "name", "mac", "latitude", "longitude",
-                "city_locality", "country", "created_at", "updated_at"],
+            ["id", "name", "mac", "creation_date", "edit_date"],
             f"owner={data.user_id}",
             beautify=True
         )
