@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: crons.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 14:43:37 19-12-2025
+# LAST Modified: 18:44:14 31-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -96,6 +96,12 @@ class Crons(metaclass=FinalClass):
             trigger='interval',
             seconds=CRON_CONST.CHECK_ACTIONS_INTERVAL
         )
+        self.background_tasks.safe_add_task(
+            func=self.reset_food_counters,
+            args=None,
+            trigger='interval',
+            seconds=CRON_CONST.RESET_FOOD_COUNTERS_INTERVAL
+        )
         if CRON_CONST.ENABLE_TEST_CRONS is True:
             self.background_tasks.safe_add_task(
                 func=self._test_current_date,
@@ -152,6 +158,34 @@ class Crons(metaclass=FinalClass):
             self.disp.log_info(f"(Called) Current date: {date()}")
         else:
             self.disp.log_info(f"(Not called) Current date: {date}")
+
+    def reset_food_counters(self) -> None:
+        """_summary_
+            Reset the food counters for all feeders.
+        """
+        title = "reset_food_counters"
+        self.disp.log_info("Resetting food counters for all feeders", title)
+        feeders: Union[List[Dict[str, Any]], int] = self.database_link.get_data_from_table(
+            table=CONST.TAB_PET,
+            column="*",
+            where="",
+            beautify=True
+        )
+        if isinstance(feeders, int):
+            msg = f"There is no feeders to reset in {CONST.TAB_PET} table."
+            self.disp.log_warning(msg, title)
+            return
+        for feeder in feeders:
+            self.database_link.update_data_in_table(
+                table=CONST.TAB_PET,
+                data=[0],
+                column=["food_eaten"],
+                where=f"id='{feeder['id']}'"
+            )
+            self.disp.log_debug(
+                f"Reset food counter for feeder {feeder['id']}", title
+            )
+        self.disp.log_info("Reset food counters for all feeders", title)
 
     def clean_expired_tokens(self) -> None:
         """_summary_

@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: crons_constants.py
 # CREATION DATE: 19-11-2025
-# LAST Modified: 21:44:44 14-01-2026
+# LAST Modified: 18:43:54 31-01-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -57,4 +57,7 @@ RENEW_OATH_TOKENS = TOML.get_toml_variable(
 )
 RENEW_OATH_TOKENS_INTERVAL = TOML.get_toml_variable(
     "Crons", "renew_oath_tokens_interval", 1800
+)
+RESET_FOOD_COUNTERS_INTERVAL = TOML.get_toml_variable(
+    "Crons", "reset_food_counters_interval", 86400
 )
