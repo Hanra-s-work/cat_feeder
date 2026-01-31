@@ -10,9 +10,9 @@
  * animals/cats
  * /STOP
  * PROJECT: CatFeeder
- * FILE: dumps/cat_feeder_skeleton_22_01_2026.sql
- * CREATION DATE: 22-01-2026
- * LAST Modified: 16:58:29 22-01-2026
+ * FILE: dumps/cat_feeder_skeleton_31_01_2026.sql
+ * CREATION DATE: 31-01-2026
+ * LAST Modified: 15:25:02 31-01-2026
  * DESCRIPTION: 
  * This is the project in charge of making the connected cat feeder project work.
  * /STOP
@@ -23,7 +23,7 @@
  */
 
 /*M!999999\- enable the sandbox mode */ 
--- MariaDB dump 10.19  Distrib 10.11.13-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.19  Distrib 10.11.14-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: cat_feeder
 -- ------------------------------------------------------
@@ -243,6 +243,10 @@ CREATE TABLE `Pet` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'The primary key of the table.',
   `beacon` bigint unsigned NOT NULL COMMENT 'The id of the beacon assigned to the pet.',
   `name` varchar(255) NOT NULL DEFAULT 'Pet name' COMMENT 'The name of the pet.',
+  `breed` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'This is the breed of the animal.',
+  `age` int unsigned DEFAULT '0' COMMENT 'This is the age of the animal.',
+  `weight` int unsigned DEFAULT '0' COMMENT 'This is the weight of the animal.',
+  `microchip_id` int DEFAULT NULL COMMENT 'This is the microchip id of the animal',
   `food_eaten` bigint unsigned NOT NULL DEFAULT '0' COMMENT 'The quantity of food the animal has eaten.',
   `food_max` bigint unsigned NOT NULL DEFAULT '100' COMMENT 'The maximum amount of food the pet is allowed to eat.',
   `food_reset` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'The time (in DATETIME) when to reset the food counter.',
@@ -373,4 +377,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-22 16:58:29
+-- Dump completed on 2026-01-31 15:25:02
