@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: incoming.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 19:40:35 11-01-2026
+# LAST Modified: 21:32:4 01-02-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -156,7 +156,7 @@ class BoilerplateNonHTTP(FinalSingleton):
             table=CONST.TAB_CONNECTIONS,
             data=[new_date_str],
             column=["expiration_date"],
-            where=f"token={token}"
+            where=f"token='{token}'"
         )
         if status == self.success:
             self.disp.log_debug("Token expiration date updated.")
@@ -180,7 +180,7 @@ class BoilerplateNonHTTP(FinalSingleton):
         login_table = self.database_link.get_data_from_table(
             CONST.TAB_CONNECTIONS,
             ["expiration_date"],
-            where=f"token={token}",
+            where=f"token='{token}'",
             beautify=False
         )
         if isinstance(login_table, int):
