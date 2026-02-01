@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 19:27:45 31-01-2026
+# LAST Modified: 12:28:4 01-02-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -668,6 +668,7 @@ class CatEndpoints:
         for elem in elems:
             if elem not in body:
                 return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, elem)
+        self.disp.log_debug(f"body: {body}")
 
         # Check if beacon already exists with this MAC or name
         present = self.database_link.get_data_from_table(
@@ -676,6 +677,7 @@ class CatEndpoints:
             f"owner={data.user_id} AND (mac='{body['mac']}' OR name='{body['name']}')",
             beautify=True
         )
+        self.disp.log_debug(f"present: {present}")
         if isinstance(present, list) and len(present) > 0:
             return HCI.conflict(
                 self.boilerplate_responses_initialised.build_response_body(
@@ -688,6 +690,7 @@ class CatEndpoints:
             )
 
         cols = self.database_link.get_table_column_names(self.tab_beacon)
+        self.disp.log_debug(f"Column names: {cols}")
         if not isinstance(cols, list):
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
         cols = CONST.clean_list(cols, self.cols_to_remove, self.disp)

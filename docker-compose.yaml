@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: docker-compose.yaml
 # CREATION DATE: 10-10-2025
-# LAST Modified: 19:12:18 07-12-2025
+# LAST Modified: 12:22:27 01-02-2026
 # DESCRIPTION:
 # This is the docker compose of the project, it allows the server to spin up and have access to all the other ressources it needs.
 # /STOP
@@ -143,12 +143,12 @@ services:
       memlock:
         soft: 2147483648 # 2GB in bytes
         hard: 2147483648
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
+    # healthcheck:
+    #   test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 15s
     networks:
       - db-to-back
       - bucket-to-back
