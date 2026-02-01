@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: sql_query_boilerplates.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 14:24:6 01-02-2026
+# LAST Modified: 20:8:6 01-02-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -26,7 +26,7 @@ r"""
 """
 
 import re
-from typing import List, Dict, Union, Any, Tuple, Optional, Literal, overload
+from typing import List, Dict, Union, Any, Tuple, Optional, Literal, Set, overload
 
 import mysql
 import mysql.connector
@@ -91,12 +91,23 @@ class SQLQueryBoilerplates:
 "[^"]*" |                                                   # double-quoted strings
 <=|>=|!=|=|<|> |                                            # comparison operators
 \(|\) |                                                     # parentheses
+, |                                                         # literal comma
 \bAND\b|\bOR\b|\bIN\b|\bLIKE\b|\bIS\b|\bNOT\b |             # SQL keywords
 [A-Za-z_][A-Za-z0-9_]* |                                    # identifiers
 -?\d+(?:\.\d+)?                                             # integers and floats (including negatives)
 """,
             re.IGNORECASE | re.VERBOSE,
         )
+        self.compiled_digit_check: re.Pattern = re.compile(r"-?\d+(?:\.\d+)?$")
+        self.where_clause_safe_tokens: Set[str] = {
+            '(', ')', ',', 'OR', 'AND', '=', '!=', '<', '>', '<=',
+            '>=', 'LIKE', 'IN', 'NOT', 'IS', 'NULL', 'TRUE', 'FALSE'
+        }
+        self.where_clause_single_space_skippers_pre: Set[str] = {'('}
+        self.where_clause_single_space_skippers_post: Set[str] = {')', ','}
+        self.where_clause_double_space_skippers: Set[str] = {
+            '=', '!=', '<', '>', '<=', '>='
+        }
         # ---------------------- The anty injection class ----------------------
         self.sql_injection: SQLInjection = SQLInjection(
             self.error,
@@ -145,6 +156,35 @@ class SQLQueryBoilerplates:
         """
         return self.compiled_where.findall(clause)
 
+    def _is_digit(self, token: str) -> bool:
+        """Check if the given token represents a number
+
+        Args:
+            token (str): The token to check
+
+        Returns:
+            bool: True is a digit, False otherwise
+        """
+        return bool(self.compiled_digit_check.fullmatch(token))
+
+    def _escape_risky_column_name(self, token: str) -> str:
+        """Escape column names that could be considered as SQL keywords instead of text.
+
+        Args:
+            token (str): The column part of the token
+
+        Returns:
+            str: The token (escaped if necessary)
+        """
+        token_lower = token.lower()
+        if (
+            token_lower not in self.sanitize_functions.keyword_logic_gates
+            and token_lower in self.sanitize_functions.risky_keywords
+        ):
+            self.disp.log_debug(f"Escaping risky column name {token}")
+            return f"`{token}`"
+        return token
+
     def _strip_outer_quotes(self, value: str) -> str:
         """Remove at most one leading and/or trailing quote character.
 
@@ -181,16 +221,11 @@ class SQLQueryBoilerplates:
             RuntimeError: If the token is determined to be unsafe.
         """
 
-        safe_tokens = {
-            '(', ')', 'OR', 'AND', '=', '!=', '<', '>', '<=',
-            '>=', 'LIKE', 'IN', 'NOT', 'IS', 'NULL', 'TRUE', 'FALSE'
-        }
-
         raw = token.strip()
         upper = raw.upper()
 
         # Known-safe SQL tokens
-        if upper in safe_tokens:
+        if upper in self.where_clause_safe_tokens:
             return
 
         # Numeric literals
@@ -210,24 +245,87 @@ class SQLQueryBoilerplates:
 
         if self.sql_injection.check_if_symbol_and_command_injection(check_token):
             self.disp.log_error(
-                f"SQL injection detected in WHERE token: {raw}",
-                "_check_where_node"
+                f"SQL injection detected in WHERE token: {raw}"
             )
             raise RuntimeError("SQL injection detected in WHERE clause")
 
-    def _check_complex_clause_for_injection(self, clause_str: str) -> None:
-        """Check a complex WHERE clause for SQL injection.
-
-        Tokenizes the clause and validates each token using `_check_where_node`.
+    def _is_quoted(self, value: str) -> bool:
+        """Check if a string is surrounded by single or double quotes.
 
         Args:
-            clause_str (str): The WHERE clause to validate.
+            value (str): The string to check.
 
-        Raises:
-            RuntimeError: If any token in the clause is unsafe.
+        Returns:
+            bool: True if the string starts and ends with the same quote character
+                (either single `'` or double `"`), False otherwise.
         """
-        for token in self._tokenize_where(clause_str):
-            self._check_where_node(token)
+        if not value or len(value) < 2:
+            return False
+        if (value[0] == value[-1]) and value[0] in ("'", '"'):
+            self.disp.log_debug(f"value ({value}) is quoted")
+            return True
+        return False
+
+    def _where_space_handler(self, token: str, rebuilt_tokens: List[str], skip_space: bool = False) -> bool:
+        space = " "
+        # Add a space next turn
+        if skip_space or not rebuilt_tokens or token in self.where_clause_single_space_skippers_pre:
+            return False
+        # Add a space now but not next turn
+        if token in self.where_clause_single_space_skippers_post:
+            rebuilt_tokens.append(space)
+            return True
+        # Do not add a space now and neither on the next turn
+        if token in self.where_clause_double_space_skippers:
+            return True
+        # Add a space (default behaviour)
+        rebuilt_tokens.append(space)
+        return False
+
+    def _check_complex_clause_for_injection(self, clause_str: str) -> Tuple[str, List[Union[str, int, float, None]]]:
+        """
+        Validate a complex WHERE clause and extract parameterizable values.
+
+        Args:
+            clause_str (str): The clause to check.
+
+        Returns:
+            Tuple[str, List[Union[str, int, float, None]]]:
+                - The clause with placeholders (%s) for parameterizable values.
+                - List of extracted values.
+        """
+        skip_space = False
+        self.disp.log_debug(f"Raw clause: {clause_str}")
+        tokens = self._tokenize_where(clause_str)
+        self.disp.log_debug(f"Tokenised clause: {tokens}")
+
+        params: List[Union[str, int, float, None]] = []
+        rebuilt_tokens: List[str] = []
+
+        for token in tokens:
+            self._check_where_node(token)  # existing validation
+            # Handle spacing (this is just esthetics)
+            skip_space = self._where_space_handler(
+                token, rebuilt_tokens, skip_space
+            )
+
+            # Decide if token is a value to parameterize
+            if self._is_digit(token) or self._is_quoted(token):
+                normalized = self._normalize_cell(
+                    self._strip_outer_quotes(token)
+                )
+                params.append(normalized)
+                rebuilt_tokens.append("%s")
+            else:
+                rebuilt_tokens.append(
+                    self._escape_risky_column_name(token)
+                )
+
+        self.disp.log_debug(f"rebuilt_tokens: {rebuilt_tokens}")
+        rebuilt_clause = "".join(rebuilt_tokens)
+        self.disp.log_debug(f"rebuilt_clause: {rebuilt_clause}")
+        self.disp.log_debug(f"parameters: {params}")
+        return rebuilt_clause, params
 
     def _parse_where_clause(self, where: Union[str, List[str]]) -> Tuple[str, List[Union[str, int, float, None]]]:
         """Parse and parameterize a WHERE clause.
@@ -258,48 +356,38 @@ class SQLQueryBoilerplates:
 
         self.disp.log_debug(f"unchecked WHERE clause={where}")
 
-        if isinstance(where, str):
-            where_list = []
-            for part in where.split(" AND "):
-                where_list.append(part)
-        else:
-            where_list = where
-
-        self.disp.log_debug(f"listified WHERE clause={where_list}")
-
         params: List[Union[str, int, float, None]] = []
         parsed_clauses: List[str] = []
+        join_term = ""
+
+        if isinstance(where, str):
+            self.disp.log_debug("Where clause is a string")
+            where_list = [where]
+        elif hasattr(where, "__iter__") or hasattr(where, "__getitem__"):
+            self.disp.log_debug(
+                f"Where clause is a iterable, type: {type(where)}"
+            )
+            where_list = where
+            join_term = " AND "
+        else:
+            raise ValueError("Unhandled type for where checking")
 
         for clause in where_list:
             clause_str = str(clause).strip()
+            self.disp.log_debug(f"stripped string clause: {clause_str}")
 
             # ALWAYS validate the clause first
-            self._check_complex_clause_for_injection(clause_str)
+            processed_check: Tuple[
+                str,
+                List[Union[str, int, float, None]]
+            ] = self._check_complex_clause_for_injection(clause_str)
+            self.disp.log_debug(f"processed_checks: {processed_check}")
 
-            # Try to parameterize simple equality
-            if "=" in clause_str and " OR " not in clause_str and " AND " not in clause_str:
-                column_part, value_part = map(
-                    str.strip, clause_str.split("=", 1))
+            # Clause is already validated — keep as-is
+            parsed_clauses.append(processed_check[0])
+            params.extend(processed_check[1])
 
-                # Normalize value
-                value_part = self._strip_outer_quotes(value_part)
-                normalized_value = self._normalize_cell(value_part)
-                params.append(normalized_value)
-
-                # Escape risky column names (but never logic gates)
-                col_lower = column_part.lower()
-                if (
-                    col_lower not in self.sanitize_functions.keyword_logic_gates
-                    and col_lower in self.sanitize_functions.risky_keywords
-                ):
-                    column_part = f"`{column_part}`"
-
-                parsed_clauses.append(f"{column_part}=%s")
-            else:
-                # Clause is already validated — keep as-is
-                parsed_clauses.append(clause_str)
-
-        where_string = " AND ".join(parsed_clauses)
+        where_string = join_term.join(parsed_clauses)
 
         self.disp.log_debug(
             f"Parsed WHERE: '{where_string}', params: {params}",
