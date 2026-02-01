@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: sql_query_boilerplates.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 14:54:28 19-12-2025
+# LAST Modified: 14:24:6 01-02-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -25,7 +25,7 @@ r"""
 # +==== END CatFeeder =================+
 """
 
-
+import re
 from typing import List, Dict, Union, Any, Tuple, Optional, Literal, overload
 
 import mysql
@@ -84,6 +84,19 @@ class SQLQueryBoilerplates:
         self.db_version_retro: Optional[int] = None
         if self.sql_pool.is_pool_active():
             self.get_database_version()
+        # ---------------------------- Where regex  ----------------------------
+        self.compiled_where: re.Pattern = re.compile(
+            r"""
+'[^']*' |                                                   # single-quoted strings
+"[^"]*" |                                                   # double-quoted strings
+<=|>=|!=|=|<|> |                                            # comparison operators
+\(|\) |                                                     # parentheses
+\bAND\b|\bOR\b|\bIN\b|\bLIKE\b|\bIS\b|\bNOT\b |             # SQL keywords
+[A-Za-z_][A-Za-z0-9_]* |                                    # identifiers
+-?\d+(?:\.\d+)?                                             # integers and floats (including negatives)
+""",
+            re.IGNORECASE | re.VERBOSE,
+        )
         # ---------------------- The anty injection class ----------------------
         self.sql_injection: SQLInjection = SQLInjection(
             self.error,
@@ -99,14 +112,13 @@ class SQLQueryBoilerplates:
     def _normalize_cell(self, cell: object) -> Union[str, None, int, float]:
         """Normalize a cell value for parameter binding.
 
-        Converts special tokens (e.g., 'now', 'current_date') and preserves numeric
-        types. Returns None for null-like inputs.
+        Converts special tokens (like 'now', 'current_date') to their appropriate SQL values, preserves numeric types, and returns None for null-like inputs.
 
         Args:
             cell (object): The cell value to normalize.
 
         Returns:
-            Union[str, None, int, float]: Normalized cell value.
+            Union[str, None, int, float]: Normalized value suitable for SQL parameters.
         """
         if cell is None:
             return None
@@ -120,103 +132,178 @@ class SQLQueryBoilerplates:
             return self.sanitize_functions.sql_time_manipulation.get_correct_current_date_value()
         return s
 
-    def _parse_where_clause(self, where: Union[str, List[str]]) -> Tuple[str, List[Union[str, int, float, None]]]:
-        """Parse WHERE clause and extract values for parameterization.
+    def _tokenize_where(self, clause: str) -> List[str]:
+        """Tokenize a WHERE clause into SQL tokens.
 
-        This method takes a WHERE clause (or list of clauses) and:
-        1. Checks column names for SQL injection attempts
-        2. Sanitizes column names
-        3. Extracts values from comparisons
-        4. Replaces values with %s placeholders
-        5. Returns the parameterized WHERE string and extracted values
+        Splits a clause into individual tokens such as identifiers, operators, numbers, strings, and SQL keywords.
 
         Args:
-            where (Union[str, List[str]]): WHERE clause content; string or list joined by AND.
+            clause (str): The SQL WHERE clause to tokenize.
+
+        Returns:
+            List[str]: List of tokens extracted from the clause.
+        """
+        return self.compiled_where.findall(clause)
+
+    def _strip_outer_quotes(self, value: str) -> str:
+        """Remove at most one leading and/or trailing quote character.
+
+        Preserves inner quotes and does not affect the string if no quotes are present.
+
+        Args:
+            value (str): The string from which to remove outer quotes.
+
+        Returns:
+            str: String with outer quotes removed if present.
+        """
+        if not value:
+            return value
+
+        self.disp.log_debug(f"Stripping outer quotes for {value}")
+        if value[0] in ("'", '"'):
+            value = value[1:]
+
+        if value and value[-1] in ("'", '"'):
+            value = value[:-1]
+        self.disp.log_debug(f"Outer quotes stripped for {value}")
+
+        return value
+
+    def _check_where_node(self, token: str) -> None:
+        """Validate a single WHERE clause token for SQL injection.
+
+        Checks whether the token is safe (operators, keywords, numbers, or quoted literals) and raises an error if an injection risk is detected.
+
+        Args:
+            token (str): Token from the WHERE clause to validate.
+
+        Raises:
+            RuntimeError: If the token is determined to be unsafe.
+        """
+
+        safe_tokens = {
+            '(', ')', 'OR', 'AND', '=', '!=', '<', '>', '<=',
+            '>=', 'LIKE', 'IN', 'NOT', 'IS', 'NULL', 'TRUE', 'FALSE'
+        }
+
+        raw = token.strip()
+        upper = raw.upper()
+
+        # Known-safe SQL tokens
+        if upper in safe_tokens:
+            return
+
+        # Numeric literals
+        if raw.isdigit():
+            return
+
+        # Quoted literals
+        if (
+            raw.startswith("'") and raw.endswith("'")
+        ) or (
+            raw.startswith('"') and raw.endswith('"')
+        ):
+            return
+
+        # Strip quotes before injection check
+        check_token = raw.strip("'\"")
+
+        if self.sql_injection.check_if_symbol_and_command_injection(check_token):
+            self.disp.log_error(
+                f"SQL injection detected in WHERE token: {raw}",
+                "_check_where_node"
+            )
+            raise RuntimeError("SQL injection detected in WHERE clause")
+
+    def _check_complex_clause_for_injection(self, clause_str: str) -> None:
+        """Check a complex WHERE clause for SQL injection.
+
+        Tokenizes the clause and validates each token using `_check_where_node`.
+
+        Args:
+            clause_str (str): The WHERE clause to validate.
+
+        Raises:
+            RuntimeError: If any token in the clause is unsafe.
+        """
+        for token in self._tokenize_where(clause_str):
+            self._check_where_node(token)
+
+    def _parse_where_clause(self, where: Union[str, List[str]]) -> Tuple[str, List[Union[str, int, float, None]]]:
+        """Parse and parameterize a WHERE clause.
+
+        This method performs the following steps:
+            1. Validates each clause for SQL injection.
+            2. Parameterizes simple equality clauses with %s placeholders.
+            3. Escapes risky column names while leaving logical operators unescaped.
+            4. Returns the parameterized WHERE string and list of extracted values.
+
+        Args:
+            where (Union[str, List[str]]): WHERE clause(s) to parse. Can be a string
+                or a list of strings joined by AND.
 
         Returns:
             Tuple[str, List[Union[str, int, float, None]]]:
-                - Parameterized WHERE clause string
-                - List of extracted values for parameters
+                - Parameterized WHERE clause string.
+                - List of extracted values for parameters.
 
         Raises:
-            RuntimeError: If SQL injection is detected in column names or operators.
+            RuntimeError: If SQL injection is detected in the WHERE clauses.
         """
+
         title = "_parse_where_clause"
 
-        # Handle empty WHERE clause
-        if where == "" or (isinstance(where, list) and len(where) == 0):
+        if where == "" or (isinstance(where, list) and not where):
             return "", []
 
-        # Convert to list for uniform processing
+        self.disp.log_debug(f"unchecked WHERE clause={where}")
+
         if isinstance(where, str):
-            where_list = [where]
+            where_list = []
+            for part in where.split(" AND "):
+                where_list.append(part)
         else:
             where_list = where
 
+        self.disp.log_debug(f"listified WHERE clause={where_list}")
+
         params: List[Union[str, int, float, None]] = []
         parsed_clauses: List[str] = []
-        column_names_to_check: List[str] = []
 
         for clause in where_list:
             clause_str = str(clause).strip()
 
-            # Check if this clause contains a comparison operator with a value
-            if "=" in clause_str:
-                # Split on the first = to get column and value
-                parts = clause_str.split("=", maxsplit=1)
-                if len(parts) == 2:
-                    column_part = parts[0].strip()
-                    value_part = parts[1].strip()
+            # ALWAYS validate the clause first
+            self._check_complex_clause_for_injection(clause_str)
 
-                    # Check column name for injection (before removing quotes from value)
-                    column_names_to_check.append(column_part)
+            # Try to parameterize simple equality
+            if "=" in clause_str and " OR " not in clause_str and " AND " not in clause_str:
+                column_part, value_part = map(
+                    str.strip, clause_str.split("=", 1))
 
-                    # Remove quotes from value if present
-                    if value_part.startswith("'") and value_part.endswith("'"):
-                        value_part = value_part[1:-1]
-                    elif value_part.startswith('"') and value_part.endswith('"'):
-                        value_part = value_part[1:-1]
+                # Normalize value
+                value_part = self._strip_outer_quotes(value_part)
+                normalized_value = self._normalize_cell(value_part)
+                params.append(normalized_value)
 
-                    # Escape risky column name if needed
-                    if column_part.lower() not in self.sanitize_functions.keyword_logic_gates and column_part.lower() in self.sanitize_functions.risky_keywords:
-                        column_part = f"`{column_part}`"
+                # Escape risky column names (but never logic gates)
+                col_lower = column_part.lower()
+                if (
+                    col_lower not in self.sanitize_functions.keyword_logic_gates
+                    and col_lower in self.sanitize_functions.risky_keywords
+                ):
+                    column_part = f"`{column_part}`"
 
-                    # Normalize and add the value to params
-                    normalized_value = self._normalize_cell(value_part)
-                    params.append(normalized_value)
-
-                    # Build parameterized clause
-                    parsed_clauses.append(f"{column_part}=%s")
-                else:
-                    # No value found, just add the clause as-is
-                    parsed_clauses.append(clause_str)
+                parsed_clauses.append(f"{column_part}=%s")
             else:
-                # No = operator, add clause as-is (might be a column check or other condition)
+                # Clause is already validated — keep as-is
                 parsed_clauses.append(clause_str)
 
-        # Check all extracted column names for SQL injection
-        # Note: We filter out risky keywords (like "order", "select") as these are legitimate column names
-        # that will be escaped with backticks. We only check for actual injection attempts (symbols and commands).
-        if column_names_to_check:
-            self.disp.log_debug(
-                f"Checking column names for injection: {column_names_to_check}", title
-            )
-            # Filter out risky keywords - they're legitimate column names, not injection attempts
-            non_risky_columns = [
-                col for col in column_names_to_check
-                if col.lower() not in self.sanitize_functions.risky_keywords
-            ]
-            if non_risky_columns and self.sql_injection.check_if_symbol_and_command_injection(non_risky_columns):
-                self.disp.log_error(
-                    "SQL injection detected in WHERE clause column names", title
-                )
-                raise RuntimeError("SQL injection detected in WHERE clause")
-
-        # Join all clauses with AND
         where_string = " AND ".join(parsed_clauses)
 
         self.disp.log_debug(
-            f"Parsed WHERE: '{where_string}', params: {params}", title
+            f"Parsed WHERE: '{where_string}', params: {params}",
+            title
         )
 
         return where_string, params
