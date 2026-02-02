@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: sql_query_boilerplates.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 1:7:21 02-02-2026
+# LAST Modified: 1:26:10 02-02-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -275,6 +275,16 @@ class SQLQueryBoilerplates:
         return False
 
     def _where_space_handler(self, token: str, rebuilt_tokens: List[str], skip_space: bool = False) -> bool:
+        """Determine where to put spaces during query rebuild, this is mostly for esthetic reasons.
+
+        Args:
+            token (str): The current token being processed.
+            rebuilt_tokens (List[str]): The list of tokens being rebuilt.
+            skip_space (bool, optional): This is wether adding whitespace on the next turn should be skipped or not. Defaults to False.
+
+        Returns:
+            bool: The state of skip_space for the next turn.
+        """
         space = " "
         # Add a space next turn
         if skip_space or not rebuilt_tokens or token in self.where_clause_single_space_skippers_post:
