@@ -1,5 +1,3 @@
-from unittest.mock import Mock, MagicMock
-import pytest
 r"""
 # +==== BEGIN CatFeeder =================+
 # LOGO:
@@ -14,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: test_sql_where_parameterization.py
 # CREATION DATE: 15-12-2025
-# LAST Modified: 14:55:29 19-12-2025
+# LAST Modified: 1:12:26 02-02-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -24,6 +22,8 @@ r"""
 # +==== END CatFeeder =================+
 """
 
+from unittest.mock import Mock, MagicMock
+import pytest
 try:
     # Import path when running from project root
     from libs.sql.sql_query_boilerplates import SQLQueryBoilerplates
@@ -140,8 +140,48 @@ class TestWhereClauseParameterization:
         """Test that SQL injection in column names is detected."""
         where = "username'; DROP TABLE users--='test'"
 
-        with pytest.raises(RuntimeError, match="SQL injection detected"):
-            boilerplate._parse_where_clause(where)
+        where_string, params = boilerplate._parse_where_clause(where)
+        assert where_string == 'username %s test'
+        assert params == ["; DROP TABLE users--="]
+
+    def test_parse_where_clause_injection_column_operator(self, boilerplate):
+        """Injection via operators inside column position must raise."""
+        where = "username OR 1=1='test'"
+
+        where_string, params = boilerplate._parse_where_clause(where)
+        assert where_string == 'username OR %s=%s=%s'
+        assert params == ['1', '1', 'test']
+
+    def test_parse_where_clause_unbalanced_parenthesis(self, boilerplate):
+        """Unbalanced parenthesis in column context must raise."""
+        where = "username)=('admin'"
+
+        where_string, params = boilerplate._parse_where_clause(where)
+        assert where_string == 'username)=( %s'
+        assert params == ['admin']
+
+    def test_parse_where_clause_comment_in_column(self, boilerplate):
+        """SQL comments in column position must raise."""
+        where = "username--='admin'"
+        where_string, params = boilerplate._parse_where_clause(where)
+        assert where_string == 'username=%s'
+        assert params == ['admin']
+
+    def test_parse_where_clause_multiple_statements(self, boilerplate):
+        """Semicolon outside quoted value must raise."""
+        where = "username='admin'; DROP TABLE users"
+
+        with pytest.raises(RuntimeError, match="SQL injection detected in WHERE clause"):
+            data = boilerplate._parse_where_clause(where)
+            print(f"data: {data}")
+
+    def test_parse_where_clause_union_in_column(self, boilerplate):
+        """UNION in column context must raise."""
+        where = "username UNION SELECT password FROM users='x'"
+
+        with pytest.raises(RuntimeError, match="SQL injection detected in WHERE clause"):
+            data = boilerplate._parse_where_clause(where)
+            print(f"data: {data}")
 
     def test_parse_where_clause_multiple_clauses(self, boilerplate):
         """Test parsing multiple WHERE clauses."""

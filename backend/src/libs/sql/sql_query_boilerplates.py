@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: sql_query_boilerplates.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 20:8:6 01-02-2026
+# LAST Modified: 1:7:21 02-02-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -108,6 +108,10 @@ class SQLQueryBoilerplates:
         self.where_clause_double_space_skippers: Set[str] = {
             '=', '!=', '<', '>', '<=', '>='
         }
+        # ------------------- Pre-built injection exception  -------------------
+        self.where_injection_exception: RuntimeError = RuntimeError(
+            "SQL injection detected in WHERE clause"
+        )
         # ---------------------- The anty injection class ----------------------
         self.sql_injection: SQLInjection = SQLInjection(
             self.error,
@@ -224,6 +228,10 @@ class SQLQueryBoilerplates:
         raw = token.strip()
         upper = raw.upper()
 
+        # Token has been escaped already
+        if raw.startswith("`") and raw.endswith("`"):
+            return
+
         # Known-safe SQL tokens
         if upper in self.where_clause_safe_tokens:
             return
@@ -247,7 +255,7 @@ class SQLQueryBoilerplates:
             self.disp.log_error(
                 f"SQL injection detected in WHERE token: {raw}"
             )
-            raise RuntimeError("SQL injection detected in WHERE clause")
+            raise self.where_injection_exception
 
     def _is_quoted(self, value: str) -> bool:
         """Check if a string is surrounded by single or double quotes.
@@ -269,10 +277,10 @@ class SQLQueryBoilerplates:
     def _where_space_handler(self, token: str, rebuilt_tokens: List[str], skip_space: bool = False) -> bool:
         space = " "
         # Add a space next turn
-        if skip_space or not rebuilt_tokens or token in self.where_clause_single_space_skippers_pre:
+        if skip_space or not rebuilt_tokens or token in self.where_clause_single_space_skippers_post:
             return False
         # Add a space now but not next turn
-        if token in self.where_clause_single_space_skippers_post:
+        if token in self.where_clause_single_space_skippers_pre:
             rebuilt_tokens.append(space)
             return True
         # Do not add a space now and neither on the next turn
@@ -281,6 +289,23 @@ class SQLQueryBoilerplates:
         # Add a space (default behaviour)
         rebuilt_tokens.append(space)
         return False
+
+    def _sanity_check_where_clause(self, clause_str: str) -> None:
+        """
+        Perform sanity checks on a WHERE clause to detect potential SQL injection after it has been broken down and reconstructed.
+
+        Args:
+            clause_str (str): The clause to check.
+
+        Raises:
+            RuntimeError: If SQL injection is detected.
+        """
+        # Check for unbalanced parentheses
+        if clause_str.count("(") != clause_str.count(")"):
+            raise self.where_injection_exception
+        # Disallow trailing identifiers after a complete expression
+        if re.search(r"%s\s+`[^`]+`", clause_str):
+            raise self.where_injection_exception
 
     def _check_complex_clause_for_injection(self, clause_str: str) -> Tuple[str, List[Union[str, int, float, None]]]:
         """
@@ -301,8 +326,15 @@ class SQLQueryBoilerplates:
 
         params: List[Union[str, int, float, None]] = []
         rebuilt_tokens: List[str] = []
+        is_column: bool = False
 
         for token in tokens:
+            is_column = (
+                self._is_digit(token)
+                or self._is_quoted(token)
+            ) is False
+            if is_column:
+                token = self._escape_risky_column_name(token)
             self._check_where_node(token)  # existing validation
             # Handle spacing (this is just esthetics)
             skip_space = self._where_space_handler(
@@ -310,21 +342,21 @@ class SQLQueryBoilerplates:
             )
 
             # Decide if token is a value to parameterize
-            if self._is_digit(token) or self._is_quoted(token):
+            if not is_column:
                 normalized = self._normalize_cell(
                     self._strip_outer_quotes(token)
                 )
                 params.append(normalized)
                 rebuilt_tokens.append("%s")
             else:
-                rebuilt_tokens.append(
-                    self._escape_risky_column_name(token)
-                )
+                rebuilt_tokens.append(token)
 
         self.disp.log_debug(f"rebuilt_tokens: {rebuilt_tokens}")
         rebuilt_clause = "".join(rebuilt_tokens)
         self.disp.log_debug(f"rebuilt_clause: {rebuilt_clause}")
         self.disp.log_debug(f"parameters: {params}")
+        self._sanity_check_where_clause(rebuilt_clause)
+        self.disp.log_debug("WHERE clause passed sanity check")
         return rebuilt_clause, params
 
     def _parse_where_clause(self, where: Union[str, List[str]]) -> Tuple[str, List[Union[str, int, float, None]]]:
