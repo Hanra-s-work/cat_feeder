@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: sql_query_boilerplates.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 1:26:10 02-02-2026
+# LAST Modified: 21:14:29 05-02-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -969,6 +969,8 @@ class SQLQueryBoilerplates:
             self.disp.log_error("Injection detected.", "sql")
             return self.error
 
+        # Store column name for later use if beautifying is needed
+        original_column = column
         if isinstance(column, list) is True:
             column = self.sanitize_functions.escape_risky_column_names(column)
             column = ", ".join(column)
@@ -1001,9 +1003,20 @@ class SQLQueryBoilerplates:
         self.disp.log_debug(f"Queried data: {resp}", title)
         if beautify is False:
             return resp_list
-        data = self.describe_table(table)
-        if isinstance(data, int):
-            return self.error
+        # Return the raw list if no data is present
+        if len(resp_list) == 0:
+            return resp_list
+        # Determine columns to beautify
+        if original_column in ("*", ["*"]):
+            data = self.describe_table(table)
+            if isinstance(data, int):
+                return self.error
+        else:
+            if isinstance(original_column, str):
+                data = [original_column]
+            else:
+                data = original_column
+        # Beautify and return the data
         return self.sanitize_functions.beautify_table(data, resp_list)
 
     def get_table_size(self, table: str, column: Union[str, List[str]], where: Union[str, List[str]] = "") -> int:
