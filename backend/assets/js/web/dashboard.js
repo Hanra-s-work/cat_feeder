@@ -81,7 +81,7 @@ async function loadFeeders(token) {
     try {
         const response = await window.querier.get('/api/v1/feeders', {}, token);
         if (response.ok) {
-            const feeders = (response.data && response.data.feeders) ? response.data.feeders : (response.data || response);
+            const feeders = response.resp || [];
             if (Array.isArray(feeders)) {
                 displayFeeders(feeders);
             } else {
@@ -99,7 +99,7 @@ async function loadBeacons(token) {
     try {
         const response = await window.querier.get('/api/v1/beacons', {}, token);
         if (response.ok) {
-            const beacons = (response.data && response.data.beacons) ? response.data.beacons : (response.data || response);
+            const beacons = response.resp || [];
             if (Array.isArray(beacons)) {
                 displayBeacons(beacons);
             } else {
@@ -117,7 +117,7 @@ async function loadPets(token) {
     try {
         const response = await window.querier.get('/api/v1/pets', {}, token);
         if (response.ok) {
-            const pets = (response.data && response.data.pets) ? response.data.pets : (response.data || response);
+            const pets = response.resp || [];
             if (Array.isArray(pets)) {
                 displayPets(pets);
             } else {
@@ -134,9 +134,23 @@ async function loadPets(token) {
 function displayFeeders(feeders) {
     const list = document.getElementById("feeders-list");
     list.innerHTML = "";
+    if (feeders.length === 0) {
+        const item = document.createElement("li");
+        item.textContent = "No feeders found";
+        list.appendChild(item);
+        return;
+    }
     feeders.forEach(feeder => {
         const item = document.createElement("li");
-        item.textContent = `${feeder.name} - ${feeder.city_locality}, ${feeder.country}`;
+        // Based on actual API response structure
+        const name = feeder.owner || feeder.name || 'Unnamed';
+        const mac = feeder.latitude || feeder.mac || 'No MAC';
+        const city = feeder.country || feeder.city_locality || 'Unknown City';
+        const country = feeder.mac || feeder.country || 'Unknown Country';
+        const lat = feeder.longitude || 'N/A';
+        const lon = feeder.city_locality || 'N/A';
+        
+        item.textContent = `${name} (ID: ${feeder.id}) - MAC: ${mac} - Location: ${city}, ${country} (${lat}, ${lon})`;
         list.appendChild(item);
     });
 }
@@ -144,10 +158,19 @@ function displayFeeders(feeders) {
 function displayBeacons(beacons) {
     const list = document.getElementById("beacons-list");
     list.innerHTML = "";
+    if (beacons.length === 0) {
+        const item = document.createElement("li");
+        item.textContent = "No beacons found";
+        list.appendChild(item);
+        return;
+    }
     beacons.forEach(beacon => {
         const item = document.createElement("li");
-        // Beacon table does not include location fields; show name and mac
-        item.textContent = `${beacon.name} - ${beacon.mac}`;
+        // Based on actual API response structure
+        const name = beacon.owner || beacon.name || 'Unnamed';
+        const mac = beacon.mac || 'No MAC';
+        
+        item.textContent = `${name} (ID: ${beacon.id}) - MAC: ${mac}`;
         list.appendChild(item);
     });
 }
@@ -155,9 +178,20 @@ function displayBeacons(beacons) {
 function displayPets(pets) {
     const list = document.getElementById("pets-list");
     list.innerHTML = "";
+    if (pets.length === 0) {
+        const item = document.createElement("li");
+        item.textContent = "No pets found";
+        list.appendChild(item);
+        return;
+    }
     pets.forEach(pet => {
         const item = document.createElement("li");
-        item.textContent = `${pet.name} - ${pet.breed}, ${pet.age} years old`;
+        const name = pet.name || 'Unnamed';
+        const breed = pet.breed || 'Unknown breed';
+        const age = pet.age !== undefined ? pet.age : 'Unknown';
+        const weight = pet.weight !== undefined ? ` - ${pet.weight}kg` : '';
+        
+        item.textContent = `${name} (ID: ${pet.id}) - ${breed}, ${age} years old${weight}`;
         list.appendChild(item);
     });
 }
@@ -200,11 +234,12 @@ function setupFeederForm() {
             const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
             const response = await window.querier.put('/api/v1/feeder', formData, token);
             if (response.ok) {
-                showMessage("Feeder registered successfully!");
+                showMessage(response.msg || "Feeder registered successfully!");
                 feederForm.style.display = "none";
                 registerFeederForm.reset();
+                loadFeeders(token);
             } else {
-                showMessage("Failed to register feeder: " + (response.message || "Unknown error"), true);
+                showMessage("Failed to register feeder: " + (response.msg || response.message || "Unknown error"), true);
             }
         } catch (error) {
             showMessage("Error registering feeder: " + error.message, true);
@@ -220,10 +255,10 @@ function setupFeederForm() {
             const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
             const response = await window.querier.get('/api/v1/feeder/status', { name }, token);
             if (response.ok) {
-                const status = response.data || response;
+                const status = response.resp || response.msg || response;
                 showMessage(`Feeder ${name} status: ${JSON.stringify(status)}`);
             } else {
-                showMessage("Failed to get feeder status: " + (response.message || "Unknown error"), true);
+                showMessage("Failed to get feeder status: " + (response.msg || response.message || "Unknown error"), true);
             }
         } catch (error) {
             showMessage("Error getting feeder status: " + error.message, true);
@@ -241,9 +276,9 @@ function setupFeederForm() {
             const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
             const response = await window.querier.post('/api/v1/feeder/fed', { feeder_mac, beacon_mac, amount }, token);
             if (response.ok) {
-                showMessage("Feeding successful!");
+                showMessage(response.msg || "Feeding successful!");
             } else {
-                showMessage("Failed to feed: " + (response.message || "Unknown error"), true);
+                showMessage("Failed to feed: " + (response.msg || response.message || "Unknown error"), true);
             }
         } catch (error) {
             showMessage("Error feeding: " + error.message, true);
@@ -284,11 +319,12 @@ function setupBeaconForm() {
             const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
             const response = await window.querier.put('/api/v1/feeder/beacon', formData, token);
             if (response.ok) {
-                showMessage("Beacon registered successfully!");
+                showMessage(response.msg || "Beacon registered successfully!");
                 beaconForm.style.display = "none";
                 registerBeaconForm.reset();
+                loadBeacons(token);
             } else {
-                showMessage("Failed to register beacon: " + (response.message || "Unknown error"), true);
+                showMessage("Failed to register beacon: " + (response.msg || response.message || "Unknown error"), true);
             }
         } catch (error) {
             showMessage("Error registering beacon: " + error.message, true);
@@ -304,10 +340,10 @@ function setupBeaconForm() {
             const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
             const response = await window.querier.get('/api/v1/feeder/beacon/status', { name }, token);
             if (response.ok) {
-                const status = response.data || response;
+                const status = response.resp || response.msg || response;
                 showMessage(`Beacon ${name} status: ${JSON.stringify(status)}`);
             } else {
-                showMessage("Failed to get beacon status: " + (response.message || "Unknown error"), true);
+                showMessage("Failed to get beacon status: " + (response.msg || response.message || "Unknown error"), true);
             }
         } catch (error) {
             showMessage("Error getting beacon status: " + error.message, true);
@@ -352,11 +388,12 @@ function setupPetForm() {
             const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
             const response = await window.querier.put('/api/v1/pet', formData, token);
             if (response.ok) {
-                showMessage("Pet registered successfully!");
+                showMessage(response.msg || "Pet registered successfully!");
                 petForm.style.display = "none";
                 registerPetForm.reset();
+                loadPets(token);
             } else {
-                showMessage("Failed to register pet: " + (response.message || "Unknown error"), true);
+                showMessage("Failed to register pet: " + (response.msg || response.message || "Unknown error"), true);
             }
         } catch (error) {
             showMessage("Error registering pet: " + error.message, true);
@@ -372,10 +409,10 @@ function setupPetForm() {
             const token = (window.cookie_manager && window.cookie_manager.readCookie) ? window.cookie_manager.readCookie("token") : "";
             const response = await window.querier.get('/api/v1/pet', { id }, token);
             if (response.ok) {
-                const pet = response.data;
+                const pet = response.resp || response;
                 showMessage(`Pet info: ${JSON.stringify(pet)}`);
             } else {
-                showMessage("Failed to get pet info: " + (response.message || "Unknown error"), true);
+                showMessage("Failed to get pet info: " + (response.msg || response.message || "Unknown error"), true);
             }
         } catch (error) {
             showMessage("Error getting pet info: " + error.message, true);
@@ -412,4 +449,23 @@ document.addEventListener("DOMContentLoaded", function () {
     setupFeederForm();
     setupBeaconForm();
     setupPetForm();
+
+    // Setup refresh buttons
+    document.getElementById("refresh-feeders").addEventListener("click", () => {
+        const token = window.cookie_manager.readCookie("token") ?? "";
+        loadFeeders(token);
+        showMessage("Feeders refreshed");
+    });
+
+    document.getElementById("refresh-beacons").addEventListener("click", () => {
+        const token = window.cookie_manager.readCookie("token") ?? "";
+        loadBeacons(token);
+        showMessage("Beacons refreshed");
+    });
+
+    document.getElementById("refresh-pets").addEventListener("click", () => {
+        const token = window.cookie_manager.readCookie("token") ?? "";
+        loadPets(token);
+        showMessage("Pets refreshed");
+    });
 });
