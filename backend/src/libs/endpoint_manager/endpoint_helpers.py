@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: endpoint_helpers.py
 # CREATION DATE: 11-01-2026
-# LAST Modified: 22:42:8 14-01-2026
+# LAST Modified: 14:24:16 02-02-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -22,10 +22,11 @@ r"""
 # +==== END CatFeeder =================+
 """
 
-from typing import Union, Dict, List, Any, Tuple
+from typing import Union, Dict, List, Any, Tuple, Set
 from string import ascii_letters, digits
 from random import randint
 
+from decimal import Decimal
 from threading import Lock
 from datetime import datetime
 
@@ -79,7 +80,7 @@ def string_to_datetime(date_str: str, default_datetime: datetime = datetime.min,
         return default_datetime
 
 
-def convert_datetime_instances_to_strings_list(data: Union[List, Tuple], default_message: str = "<unknown_date>", *, disp: Disp = EP_IDISP, depth=0) -> Union[List[Any], Tuple[Any, ...]]:
+def convert_datetime_instances_to_strings_list(data: Union[List, Tuple, Set], default_message: str = "<unknown_date>", *, disp: Disp = EP_IDISP, depth: int = 0) -> Union[List[Any], Tuple[Any, ...], Set[Any]]:
     """Convert all datetime instances in a dictionary to ISO 8601 string format.
 
     Args:
@@ -107,7 +108,7 @@ def convert_datetime_instances_to_strings_list(data: Union[List, Tuple], default
                     key, default_message, disp=disp
                 )
             )
-        elif isinstance(key, (list, tuple)):
+        elif isinstance(key, (list, tuple, set)):
             disp.log_debug(
                 "Recursively converting list/tuple item in list/tuple."
             )
@@ -116,15 +117,27 @@ def convert_datetime_instances_to_strings_list(data: Union[List, Tuple], default
                     key, default_message, disp=disp
                 )
             )
+        elif isinstance(key, Decimal):
+            disp.log_debug(
+                f"Converting list/tuple item with decimal value '{key}' to float."
+            )
+            final_list.append(convert_decimal_to_float(key, disp=disp))
+        elif isinstance(key, bytes):
+            disp.log_debug(
+                f"Decoding bytes value '{key}' using bytes to str."
+            )
+            final_list.append(convert_bytes_to_str(key, disp=disp))
         else:
             final_list.append(key)
     disp.log_debug(f"Converted data: {final_list}")
     if isinstance(data, tuple):
         return tuple(final_list)
+    if isinstance(data, set):
+        return set(final_list)
     return final_list
 
 
-def convert_datetime_instances_to_strings(data: dict, default_message: str = "<unknown_date>", *, disp: Disp = EP_IDISP, depth=0) -> Dict:
+def convert_datetime_instances_to_strings(data: Dict[str, Any], default_message: str = "<unknown_date>", *, disp: Disp = EP_IDISP, depth: int = 0) -> Dict:
     """Convert all datetime instances in a dictionary to ISO 8601 string format.
 
     Args:
@@ -142,22 +155,69 @@ def convert_datetime_instances_to_strings(data: dict, default_message: str = "<u
                 f"Converting key '{key}' with datetime value '{value}'."
             )
             data[key] = datetime_to_string(value, default_message)
-        if isinstance(value, dict):
+        elif isinstance(value, dict):
             disp.log_debug(
                 f"Recursively converting dictionary at key '{key}'."
             )
             data[key] = convert_datetime_instances_to_strings(
                 value, default_message, disp=disp, depth=depth + 1
             )
-        if isinstance(value, (list, tuple)):
+        elif isinstance(value, (list, tuple, set)):
             disp.log_debug(
                 f"Recursively converting list/tuple at key '{key}'."
             )
             data[key] = convert_datetime_instances_to_strings_list(
                 value, default_message, disp=disp, depth=depth + 1
             )
+        elif isinstance(value, Decimal):
+            disp.log_debug(
+                f"Converting key '{key}' with decimal value '{value}' to float."
+            )
+            data[key] = convert_decimal_to_float(value, disp=disp)
+        elif isinstance(value, bytes):
+            disp.log_debug(
+                f"Decoding bytes value '{value}' using bytes to str."
+            )
+            data[key] = convert_bytes_to_str(value, disp=disp)
+        else:
+            disp.log_debug(f"No conversion needed for key '{key}'.")
+            data[key] = value
     disp.log_debug(f"Converted data: {data}")
     return data
+
+
+def convert_decimal_to_float(data: Decimal, *, disp: Disp = EP_IDISP) -> float:
+    """Convert a decimal.Decimal to float.
+
+    Args:
+        data (decimal.Decimal): The decimal value to convert.
+
+    Returns:
+        float: The converted float value.
+    """
+    disp.log_debug("Converting decimal to float.")
+    try:
+        return float(data)
+    except (ValueError, TypeError) as e:
+        disp.log_debug(f"Failed to convert decimal to float: {e}")
+        return 0.0
+
+
+def convert_float_to_decimal(data: Union[float, int], *, disp: Disp = EP_IDISP) -> Decimal:
+    """Convert a float to decimal.Decimal.
+
+    Args:
+        data (float): The float value to convert.
+
+    Returns:
+        decimal.Decimal: The converted decimal value.
+    """
+    disp.log_debug("Converting float to decimal.")
+    try:
+        return Decimal(data)
+    except (ValueError, TypeError) as e:
+        disp.log_debug(f"Failed to convert float to decimal: {e}")
+        return Decimal(0)
 
 
 def convert_bytes_to_str(data: Union[bytes, str], encoding: str = "utf-8", *, disp: Disp = EP_IDISP) -> str:
@@ -173,7 +233,13 @@ def convert_bytes_to_str(data: Union[bytes, str], encoding: str = "utf-8", *, di
     disp.log_debug("Converting bytes to string.")
     if isinstance(data, bytes):
         disp.log_debug(f"Decoding bytes data using encoding '{encoding}'.")
-        return data.decode(encoding)
+        try:
+            return data.decode(encoding)
+        except (UnicodeDecodeError, AttributeError) as e:
+            disp.log_debug(
+                f"Failed to decode bytes: {e}; returning default string."
+            )
+            return "<undecodable_bytes>"
     if not isinstance(data, str):
         disp.log_debug(
             "Data is neither bytes nor string; converting to string using str()."
@@ -196,7 +262,18 @@ def convert_str_to_bytes(data: Union[bytes, str], encoding: str = "utf-8", *, di
     disp.log_debug("Converting string to bytes.")
     if isinstance(data, str):
         disp.log_debug(f"Encoding string data using encoding '{encoding}'.")
-        return data.encode(encoding)
+        try:
+            return data.encode(encoding)
+        except (UnicodeEncodeError, AttributeError) as e:
+            disp.log_debug(
+                f"Failed to encode string: {e}; returning default bytes."
+            )
+            return b"<un-encodable_string>"
+    if not isinstance(data, bytes):
+        disp.log_debug(
+            "Data is neither string nor bytes; converting to bytes using str()."
+        )
+        return str(data).encode(encoding)
     disp.log_debug("Data is already bytes; no conversion needed.")
     return data
 
@@ -322,3 +399,40 @@ async def display_request_content(request: Request, *, disp: Disp = EP_IDISP, ti
     disp.log_debug(padding, title)
     disp.log_debug("Finished displaying request content.", title)
     disp.log_debug(padding, title)
+
+
+def sanitize_response_data(data: Union[List[Any], Dict[Any, Any], Tuple[Any, ...], Set[Any]], *, disp: Disp = EP_IDISP) -> Union[List[Any], Dict[Any, Any], Tuple[Any, ...], Set[Any]]:
+    """Sanitize response data by converting datetime instances to strings.
+
+    Args:
+        data (list, dict, or tuple): The response data to sanitize.
+        disp (Disp): Logger instance for debug output.
+
+    Returns:
+        list, dict, or tuple: The sanitized response data.
+    """
+    disp.log_debug("Sanitizing response data.")
+    disp.log_debug("Converting datetime instances in dictionary to strings.")
+    disp.log_debug(f"Input data: {data}")
+    if isinstance(data, dict):
+        return convert_datetime_instances_to_strings(data, disp=disp)
+    if isinstance(data, (list, tuple, set)):
+        return convert_datetime_instances_to_strings_list(data, disp=disp)
+    disp.log_debug(
+        "Data is not iterable, checking if specific conversions are needed."
+    )
+    if isinstance(data, datetime):
+        disp.log_debug(
+            f"Converting datetime value '{data}' to string."
+        )
+        return datetime_to_string(data)
+    if isinstance(data, Decimal):
+        disp.log_debug(
+            f"Converting decimal value '{data}' to float."
+        )
+        return convert_decimal_to_float(data, disp=disp)
+    if isinstance(data, bytes):
+        disp.log_debug("Decoding bytes data using bytes to str.")
+        return convert_bytes_to_str(data, disp=disp)
+    disp.log_debug("No conversion needed for data.")
+    return data
