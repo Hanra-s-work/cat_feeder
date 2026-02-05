@@ -132,16 +132,21 @@ async function loadPets(token) {
 }
 
 function displayFeeders(feeders) {
-    const list = document.getElementById("feeders-list");
-    list.innerHTML = "";
+    const tbody = document.getElementById("feeders-list");
+    tbody.innerHTML = "";
     if (feeders.length === 0) {
-        const item = document.createElement("li");
-        item.textContent = "No feeders found";
-        list.appendChild(item);
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.setAttribute("colspan", "5");
+        cell.style.textAlign = "center";
+        cell.textContent = "No feeders found";
+        row.appendChild(cell);
+        tbody.appendChild(row);
         return;
     }
     feeders.forEach(feeder => {
-        const item = document.createElement("li");
+        const row = document.createElement("tr");
+        
         // Based on actual API response structure
         const name = feeder.owner || feeder.name || 'Unnamed';
         const mac = feeder.latitude || feeder.mac || 'No MAC';
@@ -150,49 +155,75 @@ function displayFeeders(feeders) {
         const lat = feeder.longitude || 'N/A';
         const lon = feeder.city_locality || 'N/A';
         
-        item.textContent = `${name} (ID: ${feeder.id}) - MAC: ${mac} - Location: ${city}, ${country} (${lat}, ${lon})`;
-        list.appendChild(item);
+        row.innerHTML = `
+            <td>${feeder.id}</td>
+            <td>${name}</td>
+            <td>${mac}</td>
+            <td>${city}, ${country}</td>
+            <td>${lat}, ${lon}</td>
+        `;
+        tbody.appendChild(row);
     });
 }
 
 function displayBeacons(beacons) {
-    const list = document.getElementById("beacons-list");
-    list.innerHTML = "";
+    const tbody = document.getElementById("beacons-list");
+    tbody.innerHTML = "";
     if (beacons.length === 0) {
-        const item = document.createElement("li");
-        item.textContent = "No beacons found";
-        list.appendChild(item);
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.setAttribute("colspan", "3");
+        cell.style.textAlign = "center";
+        cell.textContent = "No beacons found";
+        row.appendChild(cell);
+        tbody.appendChild(row);
         return;
     }
     beacons.forEach(beacon => {
-        const item = document.createElement("li");
+        const row = document.createElement("tr");
+        
         // Based on actual API response structure
         const name = beacon.owner || beacon.name || 'Unnamed';
         const mac = beacon.mac || 'No MAC';
         
-        item.textContent = `${name} (ID: ${beacon.id}) - MAC: ${mac}`;
-        list.appendChild(item);
+        row.innerHTML = `
+            <td>${beacon.id}</td>
+            <td>${name}</td>
+            <td>${mac}</td>
+        `;
+        tbody.appendChild(row);
     });
 }
 
 function displayPets(pets) {
-    const list = document.getElementById("pets-list");
-    list.innerHTML = "";
+    const tbody = document.getElementById("pets-list");
+    tbody.innerHTML = "";
     if (pets.length === 0) {
-        const item = document.createElement("li");
-        item.textContent = "No pets found";
-        list.appendChild(item);
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.setAttribute("colspan", "5");
+        cell.style.textAlign = "center";
+        cell.textContent = "No pets found";
+        row.appendChild(cell);
+        tbody.appendChild(row);
         return;
     }
     pets.forEach(pet => {
-        const item = document.createElement("li");
+        const row = document.createElement("tr");
+        
         const name = pet.name || 'Unnamed';
         const breed = pet.breed || 'Unknown breed';
         const age = pet.age !== undefined ? pet.age : 'Unknown';
-        const weight = pet.weight !== undefined ? ` - ${pet.weight}kg` : '';
+        const weight = pet.weight !== undefined ? pet.weight : 'N/A';
         
-        item.textContent = `${name} (ID: ${pet.id}) - ${breed}, ${age} years old${weight}`;
-        list.appendChild(item);
+        row.innerHTML = `
+            <td>${pet.id}</td>
+            <td>${name}</td>
+            <td>${breed}</td>
+            <td>${age}</td>
+            <td>${weight}</td>
+        `;
+        tbody.appendChild(row);
     });
 }
 

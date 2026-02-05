@@ -27,7 +27,22 @@
     <section id="feeders">
         <h2>Feeders <button id="refresh-feeders" style="font-size: 0.8em; margin-left: 10px;">🔄 Refresh</button></h2>
         <button id="add-feeder">Add New Feeder</button>
-        <ul id="feeders-list"></ul>
+        <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; margin: 1rem 0;">
+            <table id="feeders-table" style="width: 100%; margin: 0;">
+                <thead style="position: sticky; top: 0; background: var(--pico-background-color); z-index: 1;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>MAC Address</th>
+                        <th>Location</th>
+                        <th>Coordinates</th>
+                    </tr>
+                </thead>
+                <tbody id="feeders-list">
+                    <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
         <div id="feeder-form" style="display: none;">
             <h3>Register Feeder</h3>
             <form id="register-feeder-form">
@@ -74,7 +89,20 @@
     <section id="beacons">
         <h2>Beacons <button id="refresh-beacons" style="font-size: 0.8em; margin-left: 10px;">🔄 Refresh</button></h2>
         <button id="add-beacon">Add New Beacon</button>
-        <ul id="beacons-list"></ul>
+        <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; margin: 1rem 0;">
+            <table id="beacons-table" style="width: 100%; margin: 0;">
+                <thead style="position: sticky; top: 0; background: var(--pico-background-color); z-index: 1;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>MAC Address</th>
+                    </tr>
+                </thead>
+                <tbody id="beacons-list">
+                    <tr><td colspan="3" style="text-align: center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
         <div id="beacon-form" style="display: none;">
             <h3>Register Beacon</h3>
             <form id="register-beacon-form">
@@ -101,7 +129,22 @@
     <section id="pets">
         <h2>Pets <button id="refresh-pets" style="font-size: 0.8em; margin-left: 10px;">🔄 Refresh</button></h2>
         <button id="add-pet">Add New Pet</button>
-        <ul id="pets-list"></ul>
+        <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; margin: 1rem 0;">
+            <table id="pets-table" style="width: 100%; margin: 0;">
+                <thead style="position: sticky; top: 0; background: var(--pico-background-color); z-index: 1;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Breed</th>
+                        <th>Age</th>
+                        <th>Weight</th>
+                    </tr>
+                </thead>
+                <tbody id="pets-list">
+                    <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
         <div id="pet-form" style="display: none;">
             <h3>Register Pet</h3>
             <form id="register-pet-form">
