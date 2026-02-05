@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 12:28:4 01-02-2026
+# LAST Modified: 16:31:59 05-02-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -76,6 +76,9 @@ class CatEndpoints:
         self.cols_to_remove: Tuple[str, ...] = (
             "id", "creation_date", "edit_date"
         )
+        # -------------------------- forced timezone  --------------------------
+        # self.forced_timezone: timezone = timezone.fromutc(timedelta(hours=0))
+        self.forced_timezone: timezone = timezone.utc
         # -------------------------- Shared instances --------------------------
         self.boilerplate_incoming_initialised: "BoilerplateIncoming" = self.runtime_manager.get(
             "BoilerplateIncoming")
@@ -129,18 +132,17 @@ class CatEndpoints:
     def _parse_dt(self, val: Optional[str]) -> Optional[datetime]:
         if val is None:
             return None
+        if isinstance(val, datetime):
+            return val
         try:
             # try ISO first
             dt = datetime.fromisoformat(val)
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            return dt.astimezone(timezone.utc)
+            return dt
         except (ValueError, TypeError):
             # fallback common formats
             for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
                 try:
-                    dt = datetime.strptime(val, fmt)
-                    return dt.replace(tzinfo=timezone.utc)
+                    return datetime.strptime(val, fmt)
                 except (ValueError, TypeError):
                     continue
         return None
@@ -232,8 +234,10 @@ class CatEndpoints:
             return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "id or mac")
 
         # allowed fields to update
-        allowed = {"latitude", "longitude",
-                   "city_locality", "country", "mac", "name"}
+        allowed = {
+            "latitude", "longitude",
+            "city_locality", "country", "mac", "name"
+        }
 
         cols = self.database_link.get_table_column_names(self.tab_feeder)
         if not isinstance(cols, list):
@@ -324,8 +328,8 @@ class CatEndpoints:
                 )
             )
         data_raw: Dict = feeder_rows[0]
-        data_clean = EN_CONST.convert_datetime_instances_to_strings(
-            data_raw, "<unknown_date>", disp=self.disp
+        data_clean = EN_CONST.sanitize_response_data(
+            data_raw, disp=self.disp
         )
         return HCI.success(
             self.boilerplate_responses_initialised.build_response_body(
@@ -394,7 +398,7 @@ class CatEndpoints:
         # get IP history for this feeder
         ip_rows = self.database_link.get_data_from_table(
             self.tab_feeder_ip,
-            ["ip", "edit_date"],
+            "*",
             f"parent_id={feeder_id}",
             beautify=True
         )
@@ -409,10 +413,15 @@ class CatEndpoints:
                 )
             )
 
+        self.disp.log_debug(f"IP rows: {ip_rows}")
         latest = None
         latest_dt = None
         for r in ip_rows:
+            self.disp.log_debug(f"Evaluating row: {r}")
             dt = self._parse_dt(r.get("edit_date"))
+            self.disp.log_debug(
+                f"Parsed datetime: {dt} from edit_date: {r.get('edit_date')}"
+            )
             if dt is None:
                 continue
             if latest_dt is None or dt > latest_dt:
@@ -423,7 +432,7 @@ class CatEndpoints:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         # if last update older than 1 hour -> consider feeder offline
-        if datetime.now(timezone.utc) - latest_dt > timedelta(hours=1):
+        if datetime.now() - latest_dt > timedelta(hours=1):
             bod = self.boilerplate_responses_initialised.build_response_body(
                 title,
                 "Feeder last seen more than 1 hour ago",
@@ -444,7 +453,7 @@ class CatEndpoints:
         # try to query the feeder device with a short timeout
         try:
             url = f"http://{ip_address}"
-            resp = requests.get(url, timeout=3)
+            resp = requests.get(url, timeout=5)
             if 200 <= resp.status_code < 400:
                 bod = self.boilerplate_responses_initialised.build_response_body(
                     title,
@@ -539,14 +548,21 @@ class CatEndpoints:
         )
 
         if isinstance(existing_ip, list) and len(existing_ip) > 0:
+            self.disp.log_debug(f"Existing IP record found: {existing_ip}")
+            self.disp.log_debug(f"Updating IP to: {new_ip}")
             # Update existing record
+            _now = datetime.now()  # tz=self.forced_timezone
+            now_str = self.database_link.datetime_to_string(_now, False, True)
             resp = self.database_link.update_data_in_table(
                 self.tab_feeder_ip,
-                [new_ip],
-                ["ip"],
+                [new_ip, now_str],
+                ["ip", "edit_date"],
                 where=f"parent_id={feeder_id}"
             )
         else:
+            self.disp.log_debug(
+                "No existing IP record found, inserting new one.")
+            self.disp.log_debug(f"Inserting new IP: {new_ip}")
             # Insert new record
             sql_data = [feeder_id, new_ip]
             resp = self.database_link.insert_data_into_table(
@@ -639,13 +655,18 @@ class CatEndpoints:
             return data
         feeders = self.database_link.get_data_from_table(
             self.tab_feeder,
-            ["id", "name", "mac", "latitude", "longitude",
-                "city_locality", "country", "creation_date", "edit_date"],
+            [
+                "id", "name", "mac", "latitude", "longitude",
+                "city_locality", "country", "creation_date", "edit_date"
+            ],
             f"owner={data.user_id}",
             beautify=True
         )
         if not isinstance(feeders, list):
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+        feeders = EN_CONST.sanitize_response_data(
+            feeders, disp=self.disp
+        )
         bod = self.boilerplate_responses_initialised.build_response_body(
             title, "The feeders have been gathered", feeders, data.token, error=False
         )
@@ -773,11 +794,13 @@ class CatEndpoints:
                     error=True
                 )
             )
-
+        beacon_cleared = EN_CONST.sanitize_response_data(
+            beacon_data[0], disp=self.disp
+        )
         bod = self.boilerplate_responses_initialised.build_response_body(
             title,
             "Beacon status retrieved successfully",
-            resp={"beacon": beacon_data[0]},
+            resp={"beacon": beacon_cleared},
             token=data.token,
             error=False,
         )
@@ -809,11 +832,16 @@ class CatEndpoints:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         # determine which columns from the table we can update based on request body
-        update_cols = [c for c in cols if c in allowed and c in body]
+        update_cols = []
+        for c in cols:
+            if c in allowed and c in body:
+                update_cols.append(c)
         if not update_cols:
             return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "fields to update")
 
-        sql_data = [body[col] for col in update_cols]
+        sql_data = []
+        for col in update_cols:
+            sql_data.append(body[col])
 
         # build where clause to ensure user updates only their beacon
         if "id" in body:
@@ -904,14 +932,19 @@ class CatEndpoints:
         data = self._user_connected(request, title)
         if isinstance(data, Response):
             return data
-        beacons = self.database_link.get_data_from_table(
+        beacons_raw = self.database_link.get_data_from_table(
             self.tab_beacon,
             ["id", "name", "mac", "creation_date", "edit_date"],
             f"owner={data.user_id}",
             beautify=True
         )
-        if not isinstance(beacons, list):
+        if not isinstance(beacons_raw, list):
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+
+        beacons = EN_CONST.sanitize_response_data(
+            beacons_raw, disp=self.disp
+        )
+
         bod = self.boilerplate_responses_initialised.build_response_body(
             title, "The beacons have been gathered", beacons, data.token, error=False
         )
@@ -980,15 +1013,20 @@ class CatEndpoints:
                 beautify=True
             )
             if isinstance(feeder_data, list) and len(feeder_data) > 0:
-                locations.append({
-                    "visit_time": location["creation_date"],
-                    "feeder": feeder_data[0]
-                })
+                locations.append(
+                    {
+                        "visit_time": location["creation_date"],
+                        "feeder": feeder_data[0]
+                    }
+                )
 
+        locations_cleaned = EN_CONST.sanitize_response_data(
+            locations, disp=self.disp
+        )
         bod = self.boilerplate_responses_initialised.build_response_body(
             title,
             "Beacon locations retrieved successfully",
-            {"locations": locations},
+            {"locations": locations_cleaned},
             data.token,
             error=False
         )
@@ -1125,7 +1163,7 @@ class CatEndpoints:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         # Get beacon information for each visit
-        visits = []
+        visits_raw = []
         for visit in visit_data:
             beacon_info = self.database_link.get_data_from_table(
                 self.tab_beacon,
@@ -1134,11 +1172,14 @@ class CatEndpoints:
                 beautify=True
             )
             if isinstance(beacon_info, list) and len(beacon_info) > 0:
-                visits.append({
+                visits_raw.append({
                     "visit_time": visit["creation_date"],
                     "beacon": beacon_info[0]
                 })
 
+        visits = EN_CONST.sanitize_response_data(
+            visits_raw, disp=self.disp
+        )
         bod = self.boilerplate_responses_initialised.build_response_body(
             title,
             "Feeder visits retrieved successfully",
@@ -1224,14 +1265,20 @@ class CatEndpoints:
         # Check if pet can receive food
         can_distribute = pet["food_eaten"] < pet["food_max"]
 
+        raw_content = {
+            "can_distribute": can_distribute,
+            "food_eaten": pet["food_eaten"],
+            "food_max": pet["food_max"]
+        }
+
+        cleaned_content = EN_CONST.sanitize_response_data(
+            raw_content, disp=self.disp
+        )
+
         bod = self.boilerplate_responses_initialised.build_response_body(
             title,
             "Food distribution status checked",
-            {
-                "can_distribute": can_distribute,
-                "food_eaten": pet["food_eaten"],
-                "food_max": pet["food_max"]
-            },
+            cleaned_content,
             "",
             error=False
         )
@@ -1295,8 +1342,10 @@ class CatEndpoints:
         # Get pet data
         pet_data = self.database_link.get_data_from_table(
             self.tab_pet,
-            ["food_eaten", "food_max", "food_reset",
-                "time_reset_hours", "time_reset_minutes"],
+            [
+                "food_eaten", "food_max", "food_reset",
+                "time_reset_hours", "time_reset_minutes"
+            ],
             f"beacon={beacon_id}",
             beautify=True
         )
@@ -1360,14 +1409,19 @@ class CatEndpoints:
         if resp == self.database_link.error:
             return self.boilerplate_responses_initialised.internal_server_error(title, "")
 
+        raw_data = {
+            "amount_distributed": food_amount,
+            "new_total": new_food_eaten,
+            "remaining": pet["food_max"] - new_food_eaten
+        }
+        cleaned_data = EN_CONST.sanitize_response_data(
+            raw_data, disp=self.disp
+        )
+
         bod = self.boilerplate_responses_initialised.build_response_body(
             title,
             "Food distributed successfully",
-            {
-                "amount_distributed": food_amount,
-                "new_total": new_food_eaten,
-                "remaining": pet["food_max"] - new_food_eaten
-            },
+            cleaned_data,
             "",
             error=False
         )
@@ -1618,8 +1672,10 @@ class CatEndpoints:
             return self.boilerplate_responses_initialised.insuffisant_rights(title, data.token)
 
         # allowed fields to update
-        allowed = {"name", "food_eaten", "food_max", "food_reset",
-                   "time_reset_hours", "time_reset_minutes"}
+        allowed = {
+            "name", "food_eaten", "food_max", "food_reset",
+            "time_reset_hours", "time_reset_minutes"
+        }
 
         cols = self.database_link.get_table_column_names(self.tab_pet)
         if not isinstance(cols, list):
@@ -1630,7 +1686,9 @@ class CatEndpoints:
         if not update_cols:
             return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "fields to update")
 
-        sql_data = [body[col] for col in update_cols]
+        sql_data = []
+        for col in update_cols:
+            sql_data.append(body[col])
 
         resp = self.database_link.update_data_in_table(
             self.tab_pet,
@@ -1702,8 +1760,10 @@ class CatEndpoints:
 
         resp = self.database_link.get_data_from_table(
             self.tab_pet,
-            column=["name", "food_eaten", "food_max", "food_reset",
-                    "time_reset_hours", "time_reset_minutes"],
+            column=[
+                "name", "food_eaten", "food_max", "food_reset",
+                "time_reset_hours", "time_reset_minutes"
+            ],
             where=f"id={pet_id}",
             beautify=True
         )
@@ -1809,7 +1869,7 @@ class CatEndpoints:
         columns = self.database_link.get_table_column_names(self.tab_pet)
         if not isinstance(columns, list):
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
-        pets = []
+        pets_raw = []
         for beacon in beacons:
             pet = self.database_link.get_data_from_table(
                 self.tab_pet,
@@ -1821,7 +1881,10 @@ class CatEndpoints:
                 return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
             if len(pet) == 0:
                 continue
-            pets.extend(pet[0])
+            pets_raw.extend(pet[0])
+        pets = EN_CONST.sanitize_response_data(
+            pets_raw, disp=self.disp
+        )
         bod = self.boilerplate_responses_initialised.build_response_body(
             title, "The pets have been gathered.", pets,  data.token, error=False
         )
