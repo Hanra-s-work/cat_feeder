@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 17:20:12 05-02-2026
+# LAST Modified: 17:28:43 05-02-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -1885,11 +1885,13 @@ class CatEndpoints:
                 f"beacon={beacon}",
                 beautify=True
             )
+            self.disp.log_debug(f"Pet data for beacon {beacon}: {pet}")
             if not isinstance(pet, list):
                 return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
             if len(pet) == 0:
                 continue
-            pets_raw.extend(pet[0])
+            pets_raw.append(pet[0])
+        self.disp.log_debug(f"Raw pets data: {pets_raw}")
         pets = EN_CONST.sanitize_response_data(
             pets_raw, disp=self.disp
         )
