@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 16:35:29 05-02-2026
+# LAST Modified: 17:20:12 05-02-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -1594,18 +1594,26 @@ class CatEndpoints:
             return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
         cols = CONST.clean_list(cols, self.cols_to_remove, self.disp)
 
+        time_reset_hours = body.get("time_reset_hours", 24)
+        time_reset_minutes = body.get("time_reset_minutes", 0)
+        default_reset: datetime = datetime.now(timezone.utc).astimezone()
+        default_reset = default_reset + timedelta(
+            hours=time_reset_hours,
+            minutes=time_reset_minutes
+        )
+
         sql_data = [
             beacon_id,
             body["name"],
-            body.get("breed"),
-            body.get("age"),
-            body.get("weight"),
-            body.get("microchip_id"),
+            body.get("breed", None),
+            body.get("age", None),
+            body.get("weight", None),
+            body.get("microchip_id", None),
             body.get("food_eaten", 0),
             body.get("food_max", 100),
-            body.get("food_reset", None),
-            body.get("time_reset_hours", 24),
-            body.get("time_reset_minutes", 0)
+            body.get("food_reset", default_reset),
+            time_reset_hours,
+            time_reset_minutes
         ]
 
         resp = self.database_link.insert_data_into_table(
