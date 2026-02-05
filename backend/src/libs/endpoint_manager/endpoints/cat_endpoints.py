@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: cat_endpoints.py
 # CREATION DATE: 08-12-2025
-# LAST Modified: 17:28:43 05-02-2026
+# LAST Modified: 21:33:16 05-02-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -1735,9 +1735,13 @@ class CatEndpoints:
             return self.boilerplate_responses_initialised.missing_variable_in_body(title, data.token, "valid id")
 
         # Check if pet exists and beacon belongs to user
+        # Query pet once with all needed columns (including beacon for auth)
         pet_data = self.database_link.get_data_from_table(
             self.tab_pet,
-            ["beacon"],
+            [
+                "beacon", "name", "food_eaten", "food_max", "food_reset",
+                "time_reset_hours", "time_reset_minutes"
+            ],
             f"id={pet_id}",
             beautify=True
         )
@@ -1752,6 +1756,11 @@ class CatEndpoints:
                 )
             )
 
+        self.disp.log_debug(
+            f"Pet data retrieved for pet_id {pet_id}: {pet_data}"
+        )
+
+        # Verify authorization: check if beacon belongs to user
         beacon_id = pet_data[0]["beacon"]
         beacon_owner = self.database_link.get_data_from_table(
             self.tab_beacon,
@@ -1759,24 +1768,22 @@ class CatEndpoints:
             f"id={beacon_id}",
             beautify=True
         )
+        self.disp.log_debug(
+            f"Beacon owner for beacon_id {beacon_id}: {beacon_owner}"
+        )
         if not isinstance(beacon_owner, list) or len(beacon_owner) == 0 or beacon_owner[0]["owner"] != data.user_id:
             return self.boilerplate_responses_initialised.insuffisant_rights(title, data.token)
 
-        cols = self.database_link.get_table_column_names(self.tab_pet)
-        if not isinstance(cols, list):
-            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
+        # Use the pet data we already retrieved (remove beacon field from response)
+        pet_dict = {}
+        for k, v in pet_data[0].items():
+            if k != "beacon":
+                pet_dict[k] = v
+        resp_raw = [pet_dict]
 
-        resp = self.database_link.get_data_from_table(
-            self.tab_pet,
-            column=[
-                "name", "food_eaten", "food_max", "food_reset",
-                "time_reset_hours", "time_reset_minutes"
-            ],
-            where=f"id={pet_id}",
-            beautify=True
+        resp = EN_CONST.sanitize_response_data(
+            resp_raw, disp=self.disp
         )
-        if not isinstance(resp, list):
-            return self.boilerplate_responses_initialised.internal_server_error(title, data.token)
 
         bod = self.boilerplate_responses_initialised.build_response_body(
             title, "Pet retrieved successfully", resp, data.token, error=False
