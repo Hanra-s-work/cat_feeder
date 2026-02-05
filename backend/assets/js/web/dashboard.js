@@ -131,6 +131,52 @@ async function loadPets(token) {
     }
 }
 
+async function loadActivity(token) {
+    try {
+        // Get all feeders and beacons to gather comprehensive activity
+        const feedersResp = await window.querier.get('/api/v1/feeders', {}, token);
+        const beaconsResp = await window.querier.get('/api/v1/beacons', {}, token);
+        
+        let allActivity = [];
+        
+        // Gather visits for each feeder
+        if (feedersResp.ok && feedersResp.resp && Array.isArray(feedersResp.resp)) {
+            for (const feeder of feedersResp.resp) {
+                const feederName = feeder.owner || feeder.name || `Feeder ${feeder.id}`;
+                const feederMac = feeder.latitude || feeder.mac;
+                
+                if (feederMac) {
+                    const visitsResp = await window.querier.get('/api/v1/feeder/visits', { mac: feederMac }, token);
+                    if (visitsResp.ok && visitsResp.resp && visitsResp.resp.visits) {
+                        visitsResp.resp.visits.forEach(visit => {
+                            allActivity.push({
+                                time: visit.visit_time || visit.beacon?.creation_date,
+                                type: 'Visit',
+                                details: `${visit.beacon?.name || visit.beacon?.mac || 'Unknown'} visited ${feederName}`
+                            });
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Sort by time (most recent first)
+        allActivity.sort((a, b) => {
+            const dateA = new Date(a.time || 0);
+            const dateB = new Date(b.time || 0);
+            return dateB - dateA;
+        });
+        
+        // Limit to last 50 activities
+        allActivity = allActivity.slice(0, 50);
+        
+        displayActivity(allActivity);
+    } catch (error) {
+        console.error('Error loading activity:', error);
+        displayActivity([]);
+    }
+}
+
 function displayFeeders(feeders) {
     const tbody = document.getElementById("feeders-list");
     tbody.innerHTML = "";
@@ -222,6 +268,42 @@ function displayPets(pets) {
             <td>${breed}</td>
             <td>${age}</td>
             <td>${weight}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function displayActivity(activities) {
+    const tbody = document.getElementById("activity-list");
+    tbody.innerHTML = "";
+    if (activities.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.setAttribute("colspan", "3");
+        cell.style.textAlign = "center";
+        cell.textContent = "No recent activity";
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        return;
+    }
+    activities.forEach(activity => {
+        const row = document.createElement("tr");
+        
+        // Format the timestamp
+        let timeStr = 'Unknown time';
+        if (activity.time) {
+            try {
+                const date = new Date(activity.time);
+                timeStr = date.toLocaleString();
+            } catch (e) {
+                timeStr = activity.time;
+            }
+        }
+        
+        row.innerHTML = `
+            <td>${timeStr}</td>
+            <td>${activity.type || 'Activity'}</td>
+            <td>${activity.details || 'No details'}</td>
         `;
         tbody.appendChild(row);
     });
@@ -476,6 +558,7 @@ document.addEventListener("DOMContentLoaded", function () {
     loadFeeders(token);
     loadBeacons(token);
     loadPets(token);
+    loadActivity(token);
 
     setupFeederForm();
     setupBeaconForm();
@@ -498,5 +581,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const token = window.cookie_manager.readCookie("token") ?? "";
         loadPets(token);
         showMessage("Pets refreshed");
+    });
+
+    document.getElementById("refresh-activity").addEventListener("click", () => {
+        const token = window.cookie_manager.readCookie("token") ?? "";
+        loadActivity(token);
+        showMessage("Activity refreshed");
     });
 });

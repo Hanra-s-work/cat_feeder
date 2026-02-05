@@ -178,8 +178,21 @@
     </section>
 
     <section id="activity">
-        <h2>Recent Activity</h2>
-        <div id="activity-list">Loading activity...</div>
+        <h2>Recent Activity <button id="refresh-activity" style="font-size: 0.8em; margin-left: 10px;">🔄 Refresh</button></h2>
+        <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; margin: 1rem 0;">
+            <table id="activity-table" style="width: 100%; margin: 0;">
+                <thead style="position: sticky; top: 0; background: var(--pico-background-color); z-index: 1;">
+                    <tr>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="activity-list">
+                    <tr><td colspan="3" style="text-align: center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </section>
 
     <div id="message"></div>
