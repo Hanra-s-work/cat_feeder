@@ -1,5 +1,36 @@
+# 
+# +==== BEGIN CatFeeder =================+
+# LOGO: 
+# ..............(..../\
+# ...............)..(.')
+# ..............(../..)
+# ...............\(__)|
+# Inspired by Joan Stark
+# source https://www.asciiart.eu/
+# animals/cats
+# /STOP
+# PROJECT: CatFeeder
+# FILE: .gitignore
+# CREATION DATE: 07-02-2026
+# LAST Modified: 0:16:25 07-02-2026
+# DESCRIPTION: 
+# This is the project in charge of making the connected cat feeder project work.
+# /STOP
+# COPYRIGHT: (c) Cat Feeder
+# PURPOSE: This is the .gitignore file used to define the files that are not to be sent onto the repository.
+# // AR
+# +==== END CatFeeder =================+
+# 
 .pio
 .vscode/.browse.c_cpp.db*
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+*.env
+!source*.env
+!include/
+!lib/
+!src/
+!test/
+!utils/
+!platformio.ini
