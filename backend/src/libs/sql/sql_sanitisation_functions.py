@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: sql_sanitisation_functions.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 14:52:41 19-12-2025
+# LAST Modified: 1:50:47 06-02-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -282,39 +282,43 @@ class SQLSanitiseFunctions:
         Returns:
             Union[List[Dict[str, Any]], int]: Beautified table or error code.
         """
+        self.disp.log_debug("Beautifying table.")
         data: List[Dict[str, Any]] = []
-        v_index: int = 0
         if len(column_names) == 0:
-            self.disp.log_error(
-                "There are no provided table column names.",
-                "_beautify_table"
-            )
+            self.disp.log_error("There are no provided table column names.")
             return self.error
         if len(table_content) == 0:
-            self.disp.log_warning(
-                "There is no table content.",
-                "_beautify_table"
-            )
+            self.disp.log_warning("There is no table content.")
             return []
+
         column_length = len(column_names)
-        for i in table_content:
-            cell_length = len(i)
+
+        # Cache type check: determine column structure once
+        columns_are_tuples = isinstance(column_names[0], tuple)
+
+        # Pre-extract keys if columns are tuples to avoid repeated indexing
+        if columns_are_tuples:
+            column_keys = []
+            for col in column_names:
+                column_keys.append(col[0])
+        else:
+            column_keys = column_names
+
+        # Process rows with optimized path
+        for row in table_content:
+            cell_length = len(row)
             if cell_length != column_length:
                 self.disp.log_warning(
-                    "Table content and column lengths do not correspond.",
-                    "_beautify_table"
+                    "Table content and column lengths do not correspond."
                 )
-            data.append({})
-            for index, items in enumerate(column_names):
-                if index == cell_length:
-                    self.disp.log_warning(
-                        "Skipping the rest of the tuple because it is shorter than the column names.",
-                        "_beautify_table"
-                    )
-                    break
-                data[v_index][items[0]] = i[index]
-            v_index += 1
-        self.disp.log_debug(f"beautified_table = {data}", "_beautify_table")
+
+            row_dict = {}
+            for index in range(min(cell_length, column_length)):
+                row_dict[column_keys[index]] = row[index]
+
+            data.append(row_dict)
+
+        self.disp.log_debug(f"beautified_table = {data}")
         return data
 
     def compile_update_line(self, line: List, column: List, column_length: int) -> str:
