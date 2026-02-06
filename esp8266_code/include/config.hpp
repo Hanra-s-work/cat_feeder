@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(..../\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: config.hpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 0:36:40 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: This is the file in charge of containing all the configuration required for the program to work properly.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #pragma once
 #include <Adafruit_NeoPixel.h>
 
@@ -8,17 +31,15 @@
 #include "pins.hpp"
 
 // Wifi connection
-// constexpr char SSID[] = "WINDTRE-AE3AB3";
-// constexpr char SSID_PASSWORD[] = "7tzs8xm6cntbfh7c";
-constexpr char SSID[] = "Fairphone 5 5G AP_1650";
-constexpr char SSID_PASSWORD[] = "8dmt53vfwy8cvtg";
+constexpr char SSID[] = "[SSID]";
+constexpr char SSID_PASSWORD[] = "[SSID_PASSWORD]";
 
 // Board name
-constexpr char BOARD_NAME[] = "feeder1";
+constexpr char BOARD_NAME[] = "[BOARD_NAME]";
 
 // Ntfy server Address
-constexpr char NTFY_SERVER[] = "http://ntfy.petlang.me";
-constexpr char NTFY_TOPIC[] = "esp8266-ip";
+constexpr char NTFY_SERVER[] = "[NTFY_SERVER]";
+constexpr char NTFY_TOPIC[] = "[NTFY_TOPIC]";
 
 // Internal server configuration
 constexpr int SERVER_PORT = 80;

@@ -5,5 +5,27 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"asperheader.enableDebug": false,
+		"asperheader.extensionIgnore": [
+			"renovate.json",
+			"*.code-workspace",
+			"python.version",
+			"settings.json"
+		],
+		"asperheader.headerLogo": [
+			"..............(..../\\",
+			"...............)..(.')",
+			"..............(../..)",
+			"...............\\(__)|",
+			"Inspired by Joan Stark",
+			"source https://www.asciiart.eu/",
+			"animals/cats"
+		],
+		"asperheader.projectCopyright": "(c) Cat Feeder",
+		"asperheader.promptToCreateIfMissing": true,
+		"asperheader.useWorkspaceNameWhenAvailable": false,
+		"asperheader.projectDescription": "This is the project in charge of making the connected cat feeder project work.",
+		"asperheader.extensionName": "CatFeeder",
+	}
 }
