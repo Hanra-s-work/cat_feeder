@@ -11,10 +11,11 @@
 			"renovate.json",
 			"*.code-workspace",
 			"python.version",
-			"settings.json"
+			"settings.json",
+			"platformio.ini"
 		],
 		"asperheader.headerLogo": [
-			"..............(..../\\",
+			"..............(....⁄\\",
 			"...............)..(.')",
 			"..............(../..)",
 			"...............\\(__)|",
