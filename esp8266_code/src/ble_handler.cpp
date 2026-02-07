@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: ble_handler.cpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:49:58 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: This is the implementation for the ble library.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #include "ble_handler.hpp"
 
 BluetoothLE::BLEHandler::BLEHandler(uint32_t baud)

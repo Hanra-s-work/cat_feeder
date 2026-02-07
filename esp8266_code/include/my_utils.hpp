@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: my_utils.hpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:45:55 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: These are a set of utility function that essentially contain templates and code that needs to be globally available.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #pragma once
 #include "leds.hpp"
 #include "leds_structs.hpp"

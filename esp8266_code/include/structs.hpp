@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: structs.hpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:48:53 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: These are structures used for tracking the feeding of the animal.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #pragma once
 
 struct FeedEvent {

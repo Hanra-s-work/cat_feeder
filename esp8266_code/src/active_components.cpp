@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: active_components.cpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:49:45 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: This is the implementation of active components, which are a system for managing the LED strip in a way that allows multiple "components" to display their status and activity without interfering with each other.
+* // AR
+* +==== END CatFeeder =================+
+*/
 /**
  * @file active_components.cpp
  * @brief Implementation of the active component LED management system.

@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: ble_handler.hpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:43:39 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: This is the headeer for the bluetooth module overlay for handling detection of ble devices.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #pragma once
 #include <Arduino.h>
 #include <SoftwareSerial.h>

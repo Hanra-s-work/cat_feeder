@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: server.cpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:52:32 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: This is the implementation of the endpoints for the http server.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include "server.hpp"

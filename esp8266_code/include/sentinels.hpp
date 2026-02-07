@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: sentinels.hpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:47:36 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: These are pre-computed values to allow the program to know when it risks creating an overflow.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #pragma once
 
 #include <cstdint>   // fixed-width integer types

@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: leds.hpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:44:57 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: This is the led module for driving different led strips thanks to the underlying adafruit library.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #pragma once
 #include <Arduino.h>
 #include "config.hpp"

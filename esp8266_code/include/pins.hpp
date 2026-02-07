@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: pins.hpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:47:11 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: This is the pin mapping on the esp8266 so that software wise we know who we are addressing.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #pragma once
 #include <Arduino.h>
 #include <esp8266_peri.h>

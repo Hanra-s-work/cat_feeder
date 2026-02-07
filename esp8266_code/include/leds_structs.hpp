@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: leds_structs.hpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:44:13 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: These are the structures used for the led module overlay.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #pragma once
 #include <stdint.h>
 #include <Arduino.h>

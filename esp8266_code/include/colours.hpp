@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: colours.hpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:42:56 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: This is the headerfile containing all the colours that are available to the led module.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #pragma once
 #include "leds_structs.hpp"
 #include "config.hpp"

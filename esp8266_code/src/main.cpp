@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: main.cpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:51:16 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: This is the main file of the program, where the setup and loop occurs.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include "ntfy.hpp"

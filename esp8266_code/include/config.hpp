@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: config.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:19:39 07-02-2026
+* LAST Modified: 1:43:55 07-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP

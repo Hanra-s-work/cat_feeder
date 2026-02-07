@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: motors.cpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:51:30 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: These are the functions for the motor library.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #include "motors.hpp"
 
 Motors::Motor::Motor(const uint8_t motor_pin, LED::ColourPos *led_items, const int8_t speed, const LED::Colour &led_background, const LED::Colour &led_stop_colour, const MyUtils::ActiveComponents::Component component)

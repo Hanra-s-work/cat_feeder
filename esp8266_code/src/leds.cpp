@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: leds.cpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:50:38 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: These are the functions for the LED module.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include "pins.hpp"

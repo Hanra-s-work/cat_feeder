@@ -1,3 +1,26 @@
+/*
+* +==== BEGIN CatFeeder =================+
+* LOGO:
+* ..............(....⁄\
+* ...............)..(.')
+* ..............(../..)
+* ...............\(__)|
+* Inspired by Joan Stark
+* source https://www.asciiart.eu/
+* animals/cats
+* /STOP
+* PROJECT: CatFeeder
+* FILE: server.hpp
+* CREATION DATE: 07-02-2026
+* LAST Modified: 1:47:51 07-02-2026
+* DESCRIPTION:
+* This is the project in charge of making the connected cat feeder project work.
+* /STOP
+* COPYRIGHT: (c) Cat Feeder
+* PURPOSE: The is the code used for the server overlay.
+* // AR
+* +==== END CatFeeder =================+
+*/
 #pragma once
 #include <ESP8266WebServer.h>
 #include "active_components.hpp"
