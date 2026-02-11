@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: docker-compose.yaml
 # CREATION DATE: 10-10-2025
-# LAST Modified: 12:22:27 01-02-2026
+# LAST Modified: 16:25:58 05-02-2026
 # DESCRIPTION:
 # This is the docker compose of the project, it allows the server to spin up and have access to all the other ressources it needs.
 # /STOP

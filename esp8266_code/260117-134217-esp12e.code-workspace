@@ -28,5 +28,8 @@
 		"asperheader.useWorkspaceNameWhenAvailable": false,
 		"asperheader.projectDescription": "This is the project in charge of making the connected cat feeder project work.",
 		"asperheader.extensionName": "CatFeeder",
+		"asperheader.languageAppend": {
+			".hpp": "\n#pragma once"
+		}
 	}
 }
