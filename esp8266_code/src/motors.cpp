@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: motors.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:51:30 07-02-2026
+* LAST Modified: 23:12:14 11-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -33,22 +33,24 @@ Motors::Motor::Motor(const uint8_t motor_pin, LED::ColourPos *led_items, const i
 
 void Motors::Motor::init()
 {
-    Serial.println("Initializing motor on pin " + String(_pin));
+    Serial << "Initializing motor on pin " << _pin << endl;
     LED::led_fancy(_leds, _leds_length, _background, 100);
-    Serial.println("Heap before: " + String(ESP.getFreeHeap()) + " frag:" + String(ESP.getHeapFragmentation()));
+    uint32_t free_heap = ESP.getFreeHeap();
+    uint8_t fragmented_heap = ESP.getHeapFragmentation();
+    Serial << "Heap before: " << free_heap << " frag:" << fragmented_heap << endl;
     // Do not attach servo here: attach on-demand in set_speed() to avoid
     // keeping multiple servo timers active simultaneously which can
     // interfere with timing-critical LED updates on ESP8266.
-    Serial.println("(servo attach deferred until first movement)");
+    Serial << "(servo attach deferred until first movement)" << endl;
     // Quick attach/detach validation to ensure the servo can be controlled
     // without leaving the timer running. This briefly exercises the driver
     // while keeping it detached for normal operation.
-    Serial.println("Validating servo attach/detach on pin " + String(_pin));
+    Serial << "Validating servo attach/detach on pin " << _pin << endl;
     _servo.attach(_pin);
     delay(5);
     stop();
     _servo.detach();
-    Serial.println("Servo attach/detach validation complete");
+    Serial << "Servo attach/detach validation complete" << endl;
     // Ensure motor is stopped (will attach/detach when used)
     MyUtils::ActiveComponents::Panel::enable(_component);
 }
@@ -142,39 +144,39 @@ void Motors::Motor::calibrate()
 {
     _test_mode = true;
     _calibration_step = 0;
-    Serial.println("Calibrating motor on pin " + String(_pin));
+    Serial << "Calibrating motor on pin " << _pin << endl;
     LED::led_fancy(_leds, _leds_length, _background, 100);
 
-    Serial.println(" - Setting to max speed");
+    Serial << " - Setting to max speed" << endl;
     set_speed(_min_speed);
     delay(MOTOR_SPEED_DEFAULT);
     _increment_calibration_step();
 
-    Serial.println(" - Setting to min speed");
+    Serial << " - Setting to min speed" << endl;
     set_speed(_max_speed);
     delay(MOTOR_SPEED_DEFAULT);
     _increment_calibration_step();
 
-    Serial.println(" - turning left for " + String(MOTOR_SPEED_DEFAULT) + " second");
+    Serial << " - turning left for " << MOTOR_SPEED_DEFAULT << " second" << endl;
     turn_left(MOTOR_SPEED_DEFAULT);
     _increment_calibration_step();
 
-    Serial.println(" - turning right for " + String(MOTOR_SPEED_DEFAULT) + " second");
+    Serial << " - turning right for " << MOTOR_SPEED_DEFAULT << " second" << endl;
     turn_right(MOTOR_SPEED_DEFAULT);
     _increment_calibration_step();
 
-    Serial.println(" - turning left for 90°");
+    Serial << " - turning left for 90°" << endl;
     turn_left_degrees(90);
     _increment_calibration_step();
 
-    Serial.println(" - turning right for 90°");
+    Serial << " - turning right for 90°" << endl;
     turn_right_degrees(90);
     _increment_calibration_step();
 
-    Serial.println(" - Stopping motor");
+    Serial << " - Stopping motor" << endl;
     stop();
     _increment_calibration_step();
-    Serial.println("Motor calibration complete");
+    Serial << "Motor calibration complete" << endl;
     _test_mode = false;
 }
 

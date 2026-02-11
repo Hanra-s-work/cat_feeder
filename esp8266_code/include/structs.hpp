@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: structs.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:48:53 07-02-2026
+* LAST Modified: 20:26:36 11-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP

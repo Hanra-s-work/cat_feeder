@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: wifi_handler.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:53:3 07-02-2026
+* LAST Modified: 23:44:38 11-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -27,6 +27,7 @@
 #include <iomanip>
 #include "sentinels.hpp"
 
+
 Wifi::WifiHandler::WifiHandler(const char *ssid_, const char *password_, const LED::Colour &background_, LED::ColourPos *animArray_)
     : ssid(ssid_), password(password_), background(background_), wifi_anim(animArray_), wifi_anim_length(LED::led_colourpos_length(animArray_))
 {
@@ -37,7 +38,7 @@ Wifi::WifiHandler::WifiHandler(const char *ssid_, const char *password_, const L
 
 void Wifi::WifiHandler::init()
 {
-    Serial.println("Connecting to WiFi...");
+    Serial << "Connecting to WiFi..." << endl;
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
 }
@@ -57,7 +58,7 @@ void Wifi::WifiHandler::connect()
             wifi_anim[0].pos = 0;
         }
     }
-    Serial.println("\nWiFi connected");
+    Serial << "\nWiFi connected" << endl;
     LED::led_set_colour(wifi_anim->colour, LED_DURATION, -1);
     MyUtils::ActiveComponents::Panel::enable(WIFI_COMPONENT);
 }
@@ -65,8 +66,7 @@ void Wifi::WifiHandler::connect()
 void Wifi::WifiHandler::showIp()
 {
     IPAddress ip = getIP();
-    Serial.print("Device IP Address: ");
-    Serial.println(ip);
+    Serial << "Device IP Address: " << ip.v4() << endl;
     LED::led_set_colour(wifi_anim->colour, LED_DURATION, -1);
 }
 

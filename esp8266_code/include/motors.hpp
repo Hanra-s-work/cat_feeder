@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: motors.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:45:14 07-02-2026
+* LAST Modified: 23:6:36 11-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -27,6 +27,7 @@
 #include "leds.hpp"
 #include "colours.hpp"
 #include "sentinels.hpp"
+#include "my_overloads.hpp"
 #include "active_components.hpp"
 
 namespace Motors

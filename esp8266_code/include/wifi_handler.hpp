@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: wifi_handler.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:49:8 07-02-2026
+* LAST Modified: 23:35:38 11-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -28,6 +28,7 @@
 #include "colours.hpp"
 #include "sentinels.hpp"
 #include "active_components.hpp"
+#include "my_overloads.hpp"
 
 namespace Wifi
 {

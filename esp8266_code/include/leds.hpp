@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: leds.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:44:57 07-02-2026
+* LAST Modified: 22:45:9 11-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -25,6 +25,7 @@
 #include <Arduino.h>
 #include "config.hpp"
 #include "colours.hpp"
+#include "my_overloads.hpp"
 
 namespace LED
 {

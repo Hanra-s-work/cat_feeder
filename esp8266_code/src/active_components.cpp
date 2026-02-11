@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: active_components.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:49:45 07-02-2026
+* LAST Modified: 22:50:31 11-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -107,7 +107,7 @@ LED::ColourPos &MyUtils::ActiveComponents::Panel::get(Component c)
 {
     size_t idx = static_cast<size_t>(c);
     if (idx >= static_cast<size_t>(Component::_COUNT)) {
-        Serial.println("CRITICAL: Invalid component index: " + String(idx));
+        Serial << "CRITICAL: Invalid component index: " << idx << endl;
         return _nodes[0]; // Return first node as fallback
     }
     return _nodes[idx];
@@ -148,7 +148,7 @@ void MyUtils::ActiveComponents::Panel::activity(const Component c, const bool ac
     // Map component to buffer slot (or find first inactive slot)
     LEDCommand *cmd = allocate_led_command();
     if (!cmd) {
-        Serial.println("WARNING: LED command buffer full");
+        Serial << "WARNING: LED command buffer full" << endl;
         return; // buffer full, drop ping
     }
 
@@ -158,7 +158,7 @@ void MyUtils::ActiveComponents::Panel::activity(const Component c, const bool ac
     cmd->startTime = millis();
     cmd->active = true;
 
-    Serial.println("Component activity set at LED pos: " + String(pos));
+    Serial << "Component activity set at LED pos: " << pos << endl;
 }
 
 /**
@@ -187,7 +187,7 @@ void MyUtils::ActiveComponents::Panel::data_transmission(const Component comp, c
 
     // Validate bottom position is in bottom strip
     if (bottom_pos >= BOTTOM_STRIP_SIZE) {
-        Serial.println("ERROR: Component position " + String(bottom_pos) + " not in bottom strip");
+        Serial << "ERROR: Component position " << bottom_pos << " not in bottom strip" << endl;
         return;
     }
 
@@ -210,7 +210,7 @@ void MyUtils::ActiveComponents::Panel::data_transmission(const Component comp, c
 
         LEDCommand *cmd = allocate_led_command();
         if (!cmd) {
-            Serial.println("WARNING: LED command buffer full in data_transmission");
+            Serial << "WARNING: LED command buffer full in data_transmission" << endl;
             return; // buffer full, drop remaining
         }
 
@@ -272,7 +272,7 @@ void MyUtils::ActiveComponents::Panel::render()
     for (uint16_t i = 0; i < LED_NUMBER; ++i) {
         // CRITICAL: Validate base frame access
         if (i >= LED_TOTAL_CMDS) {
-            Serial.println("CRITICAL ERROR: Base frame index out of bounds: " + String(i));
+            Serial << "CRITICAL ERROR: Base frame index out of bounds: " << i << endl;
             continue;
         }
         LED::led_set_led_position(i, _led_commands[i].colour, 0, false);
@@ -287,12 +287,12 @@ void MyUtils::ActiveComponents::Panel::render()
 
         // Validate position before accessing arrays
         if (n.pos >= LED_NUMBER) {
-            Serial.println("ERROR: Node[" + String(node_idx) + "] position out of bounds: " + String(n.pos));
+            Serial << "ERROR: Node[" << node_idx << "] position out of bounds: " << n.pos << endl;
             continue;
         }
 
         if (n.pos >= LED_TOTAL_CMDS) {
-            Serial.println("CRITICAL: Node[" + String(node_idx) + "] position exceeds command buffer: " + String(n.pos));
+            Serial << "CRITICAL: Node[" << node_idx << "] position exceeds command buffer: " << n.pos << endl;
             continue;
         }
 
@@ -316,7 +316,7 @@ void MyUtils::ActiveComponents::Panel::render()
 
         // Validate position before accessing array
         if (cmd.pos >= LED_NUMBER) {
-            Serial.println("ERROR: Command position out of bounds: " + String(cmd.pos));
+            Serial << "ERROR: Command position out of bounds: " << cmd.pos << endl;
             cmd.active = false; // Deactivate corrupt command
             continue;
         }
@@ -351,16 +351,16 @@ void MyUtils::ActiveComponents::Panel::debug_print_commands()
 {
     uint16_t base_count = 0;
     uint16_t temp_count = 0;
-    Serial.println("=== LED Command Buffer Debug ===");
-    Serial.println("Base Frame (0-" + String(LED_NUMBER - 1) + "):");
+    Serial << "=== LED Command Buffer Debug ===" << endl;
+    Serial << "Base Frame (0-" << (LED_NUMBER - 1) << "):" << endl;
     for (uint16_t i = 0; i < LED_NUMBER; i++) {
         if (_led_commands[i].active) base_count++;
     }
-    Serial.println("  Active: " + String(base_count) + "/" + String(LED_NUMBER));
+    Serial << "  Active: " << base_count << "/" << LED_NUMBER << endl;
 
-    Serial.println("Temporary Commands (" + String(LED_NUMBER) + "-" + String(LED_TOTAL_CMDS - 1) + "):");
-    Serial.println("Total active: " + String(base_count + temp_count) + "/" + String(LED_TOTAL_CMDS));
-    Serial.println("=================================");
+    Serial << "Temporary Commands (" << LED_NUMBER << "-" << LED_TOTAL_CMDS - 1 << "):" << endl;
+    Serial << "Total active: " << base_count + temp_count << "/" << LED_TOTAL_CMDS << endl;
+    Serial << "=================================" << endl;
 }
 
 void MyUtils::ActiveComponents::initialise_active_components()
@@ -368,40 +368,40 @@ void MyUtils::ActiveComponents::initialise_active_components()
     unsigned long artificial_delay = 50;
     Panel::build_base_frame();
     int16_t max_steps = component_id(Component::_COUNT);
-    Serial.println("Total steps: " + String(max_steps));
+    Serial << "Total steps: " << max_steps << endl;
     MyUtils::display_percentage(LED::dark_blue, LED::green_colour, 0, max_steps);
     delay(artificial_delay);
     Panel::initialize_clock();
     MyUtils::display_percentage(LED::dark_blue, LED::green_colour, 1, max_steps);
-    Serial.println("Clock animation set up");
+    Serial << "Clock animation set up" << endl;
     delay(artificial_delay);
     Panel::initialize_component_status(Component::WifiStatus, false);
     MyUtils::display_percentage(LED::dark_blue, LED::green_colour, 2, max_steps);
-    Serial.println("Component status animations set up");
+    Serial << "Component status animations set up" << endl;
     delay(artificial_delay);
     Panel::initialize_component_status(Component::Bluetooth, false);
     MyUtils::display_percentage(LED::dark_blue, LED::green_colour, 3, max_steps);
-    Serial.println(" - Bluetooth: success");
+    Serial << " - Bluetooth: success" << endl;
     delay(artificial_delay);
     Panel::initialize_component_status(Component::MotorLeft, false);
     MyUtils::display_percentage(LED::dark_blue, LED::green_colour, 4, max_steps);
-    Serial.println(" - MotorLeft: success");
+    Serial << " - MotorLeft: success" << endl;
     delay(artificial_delay);
     Panel::initialize_component_status(Component::MotorRight, false);
     MyUtils::display_percentage(LED::dark_blue, LED::green_colour, 5, max_steps);
-    Serial.println(" - MotorRight: success");
+    Serial << " - MotorRight: success" << endl;
     delay(artificial_delay);
     Panel::initialize_component_status(Component::Server, false);
     MyUtils::display_percentage(LED::dark_blue, LED::green_colour, 6, max_steps);
-    Serial.println(" - Server: success");
+    Serial << " - Server: success" << endl;
     delay(artificial_delay);
     Panel::initialize_component_status(Component::Error, false);
     MyUtils::display_percentage(LED::dark_blue, LED::green_colour, 7, max_steps);
-    Serial.println(" - Error: success");
+    Serial << " - Error: success" << endl;
     Panel::build_base_frame();
 
     // Force a render to clear any artifacts from display_percentage calls
     delay(artificial_delay);
     Panel::render();
-    Serial.println("Active components initialized - render complete");
+    Serial << "Active components initialized - render complete" << endl;
 }

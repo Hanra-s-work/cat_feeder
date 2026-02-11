@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: server.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:52:32 07-02-2026
+* LAST Modified: 23:32:12 11-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -26,6 +26,7 @@
 #include "server.hpp"
 #include "config.hpp"
 #include "ble_handler.hpp"
+#include "my_overloads.hpp"
 
 namespace HttpServer
 {
@@ -51,8 +52,7 @@ namespace HttpServer
         String response;
         serializeJson(doc, response);
 
-        Serial.println("Info requested:");
-        Serial.println(response);
+        Serial << "Info requested: '" << response << "'" << endl;
         MyUtils::ActiveComponents::Panel::data_transmission(blinkIntervalComponent, 5);
         MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
         server.send(200, "application/json", response);
@@ -71,15 +71,14 @@ namespace HttpServer
         DeserializationError err = deserializeJson(doc, server.arg("plain"));
 
         if (err || !doc["interval"].is<unsigned long>()) {
-            Serial.println("Failed to parse JSON or missing 'interval'");
+            Serial << "Failed to parse JSON or missing 'interval'" << endl;
             MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
             server.send(400, "text/plain", "Invalid JSON");
             return;
         }
 
         blinkInterval = doc["interval"];
-        Serial.print("Blink interval updated to ");
-        Serial.println(blinkInterval);
+        Serial << "Blink interval updated to " << blinkInterval << endl;
         MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
         server.send(200, "text/plain", "Blink interval updated");
     }
@@ -91,8 +90,7 @@ namespace HttpServer
         doc["bluetooth_connected"] = SharedDependencies::bleHandler->isConnected();
         String response;
         serializeJson(doc, response);
-        Serial.println("Bluetooth status requested:");
-        Serial.println(response);
+        Serial << "Bluetooth status requested: '" << response << "'" << endl;
         MyUtils::ActiveComponents::Panel::data_transmission(blinkIntervalComponent, 3);
         MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
         server.send(200, "application/json", response);

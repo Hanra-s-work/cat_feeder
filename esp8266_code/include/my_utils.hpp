@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: my_utils.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:45:55 07-02-2026
+* LAST Modified: 23:47:34 11-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -24,6 +24,7 @@
 #pragma once
 #include "leds.hpp"
 #include "leds_structs.hpp"
+#include "my_overloads.hpp"
 #include "active_components.hpp"
 
 namespace MyUtils
@@ -48,13 +49,13 @@ namespace MyUtils
 
     inline void display_percentage(const LED::Colour &fg, const LED::Colour &bg, const int16_t current, const int16_t max_steps)
     {
-        Serial.println("Displaying progress for step " + String(current) + " of " + String(max_steps));
+        Serial << "Displaying progress for step " << current << " of " << max_steps << endl;
         int16_t progress = MyUtils::leds_for_progress<int16_t>(
             current,
             max_steps,
             static_cast<int16_t>(LED_NUMBER)
         );
-        Serial.println("Displaying progress: " + String(progress) + " LEDs lit for step " + String(current) + " of " + String(max_steps));
+        Serial << "Displaying progress: " << progress << " LEDs lit for step " << current << " of " << max_steps << endl;
         LED::led_set_colour(fg, LED_DURATION, progress, bg);
     };
 }

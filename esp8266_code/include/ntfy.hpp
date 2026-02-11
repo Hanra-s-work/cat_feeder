@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ntfy.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:46:31 07-02-2026
+* LAST Modified: 23:20:47 11-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP

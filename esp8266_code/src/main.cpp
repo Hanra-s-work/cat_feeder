@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: main.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:51:16 07-02-2026
+* LAST Modified: 23:5:55 11-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -23,6 +23,7 @@
 */
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#include "my_overloads.hpp"
 #include "ntfy.hpp"
 #include "leds.hpp"
 #include "config.hpp"
@@ -36,12 +37,38 @@
 bool led_state = false;
 unsigned long last_toggle = 0;
 static unsigned long long iteration = 0;
+static unsigned long last_ble_scan = 0;
 bool led_cleared = false;
 
 static LED::ColourPos loop_progress[] = {
     { 0, LED::led_get_colour_from_pointer(&LED::Colours::Yellow) },                 // moving dot
     { UINT16_MAX_VALUE, {} }    // sentinel
 };
+
+void initial_ble_scan()
+{
+    const bool scan_response = SharedDependencies::bleHandler->startScan(5000);
+    if (scan_response) {  // 5 second scan
+        const uint8_t deviceCount = SharedDependencies::bleHandler->getDeviceCount();
+        const uint8_t overflow = SharedDependencies::bleHandler->getOverflowCount();
+        const BluetoothLE::BLEDevice *devices = SharedDependencies::bleHandler->getScannedDevices();
+
+        Serial << "Found " << deviceCount << " BLE devices:" << endl;
+        for (uint8_t i = 0; i < deviceCount; i++) {
+            Serial << " - " << devices[i].address;
+            if (devices[i].name.length() > 0) {
+                Serial << "(" << devices[i].name << ")";
+            }
+            Serial << " RSSI: " << devices[i].rssi << " dBm" << endl;
+        }
+
+        if (overflow > 0) {
+            Serial << "WARNING: " << overflow << " devices were not captured (buffer full)" << endl;
+        }
+    } else {
+        Serial << "No devices found or scan failed" << endl;
+    }
+}
 
 
 void setup()
@@ -51,21 +78,21 @@ void setup()
     Pins::init();
 
     Serial.begin(SERIAL_BAUDRATE);
-    Serial.println("Starting up...");
+    Serial << "Starting up..." << endl;
     delay(100);
 
     // ─────────────── LED Initialization ───────────────
-    Serial.println("Initializing LEDs...");
+    Serial << "Initializing LEDs..." << endl;
     LED::led_init();
     LED::Nodes::set_pos_step(loop_progress[0], 0);
     // Set up the cycle led animation
-    Serial.println("Setting up LED cycle animation...");
+    Serial << "Setting up LED cycle animation..." << endl;
     MyUtils::ActiveComponents::initialise_active_components();
-    Serial.println("LED cycle animation set up complete");
-    Serial.println("LEDs initialized");
+    Serial << "LED cycle animation set up complete" << endl;
+    Serial << "LEDs initialized" << endl;
 
     // ─────────────── WiFi ───────────────
-    Serial.println("Initializing WiFi...");
+    Serial << "Initializing WiFi..." << endl;
     LED::ColourPos wifi_anim[] = {
         {0, LED::green_colour},
         {UINT16_MAX_VALUE, {}}
@@ -73,72 +100,76 @@ void setup()
     LED::Nodes::set_pos_step(wifi_anim[0], 0);
 
     static Wifi::WifiHandler wifiHandler(SSID, SSID_PASSWORD, LED::dark_blue, wifi_anim);
-    Serial.println("Sharing WiFi handler pointer...");
+    Serial << "Sharing WiFi handler pointer..." << endl;
     SharedDependencies::wifiHandler = &wifiHandler;
-    Serial.println("WiFi handler pointer shared");
-    Serial.println("Setting up WiFi handler...");
+    Serial << "WiFi handler pointer shared" << endl;
+    Serial << "Setting up WiFi handler..." << endl;
     wifiHandler.init();
-    Serial.println("Connecting to WiFi...");
+    Serial << "Connecting to WiFi..." << endl;
     wifiHandler.connect();
-    Serial.println("WiFi initialized");
+    Serial << "WiFi initialized" << endl;
 
 
-    Serial.println("Unveiling IP...");
+    Serial << "Unveiling IP..." << endl;
     LED::led_set_colour(LED::red_colour, LED_DURATION, -1);
     send_ip_to_ntfy();
     LED::led_set_colour(LED::yellow_colour, LED_DURATION, -1);
-    Serial.println("\nConnected!");
+    Serial << "\nConnected!" << endl;
     wifiHandler.showIp();
 
     // ─────────────── Motors ───────────────
-    Serial.println("Initializing motors...");
-    Serial.println("Declaring left motor...");
+    Serial << "Initializing motors..." << endl;
+    Serial << "Declaring left motor..." << endl;
     static Motors::Motor kibble_tray(Pins::MOTOR1_PIN, loop_progress, MOTOR_SPEED_DEFAULT, LED::dark_blue, LED::red_colour, MyUtils::ActiveComponents::Component::MotorLeft);
-    Serial.println("Left motor declared");
-    Serial.println("Sharing left motor pointer...");
+    Serial << "Left motor declared" << endl;
+    Serial << "Sharing left motor pointer..." << endl;
     SharedDependencies::leftMotor = &kibble_tray;
-    Serial.println("Left motor pointer shared");
-    Serial.println("Initialising left motor...");
+    Serial << "Left motor pointer shared" << endl;
+    Serial << "Initialising left motor..." << endl;
     kibble_tray.init();
-    Serial.println("Running test turn on left motor...");
+    Serial << "Running test turn on left motor..." << endl;
     kibble_tray.calibrate();
-    Serial.println("Left motor initialized");
+    Serial << "Left motor initialized" << endl;
 
-    Serial.println("Initializing right motor...");
+    Serial << "Initializing right motor..." << endl;
     static Motors::Motor food_trap(Pins::MOTOR2_PIN, loop_progress, MOTOR_SPEED_DEFAULT, LED::dark_blue, LED::red_colour, MyUtils::ActiveComponents::Component::MotorRight);
-    Serial.println("Rigth motor declared");
-    Serial.println("Sharing left motor pointer...");
+    Serial << "Rigth motor declared" << endl;
+    Serial << "Sharing left motor pointer..." << endl;
     SharedDependencies::rightMotor = &food_trap;
-    Serial.println("Left motor pointer shared");
-    Serial.println("Initialising right motor...");
+    Serial << "Left motor pointer shared" << endl;
+    Serial << "Initialising right motor..." << endl;
     food_trap.init();
-    Serial.println("Right motor initialized");
-    Serial.println("Running test turn on right motor...");
+    Serial << "Right motor initialized" << endl;
+    Serial << "Running test turn on right motor..." << endl;
     food_trap.calibrate();
-    Serial.println("Right motor initialized");
+    Serial << "Right motor initialized" << endl;
 
     // ─────────────── HTTP Server ───────────────
-    Serial.println("Starting HTTP server...");
+    Serial << "Starting HTTP server..." << endl;
     HttpServer::initialize_server();
-    Serial.println("HTTP server started");
+    Serial << "HTTP server started" << endl;
     LED::led_set_colour(LED::blue_colour, LED_DURATION, -1);
 
     // ─────────────── Bluetooth ───────────────
-    Serial.println("Setting up bluetooth...");
+    Serial << "Setting up bluetooth..." << endl;
     BluetoothLE::BLEHandler bleHandler(BLUETOOTH_BAUDRATE);
-    Serial.println("Sharing bluetooth handler pointer...");
+    Serial << "Sharing bluetooth handler pointer..." << endl;
     SharedDependencies::bleHandler = &bleHandler;
-    Serial.println("Bluetooth handler pointer shared");
-    Serial.println("Initializing bluetooth...");
+    Serial << "Bluetooth handler pointer shared" << endl;
+    Serial << "Initializing bluetooth..." << endl;
     bleHandler.init();
-    Serial.println("Enabling bluetooth...");
+    Serial << "Enabling bluetooth..." << endl;
     bleHandler.enable();
-    Serial.println("Serial BT started");
+    Serial << "Ble module information..." << endl;
+    bleHandler.printStatus();
+    Serial << "Running initial scan..." << endl;
+    initial_ble_scan();
+    Serial << "Serial BT started" << endl;
 
     // Final render to clear all setup artifacts
-    Serial.println("Clearing setup artifacts...");
+    Serial << "Clearing setup artifacts..." << endl;
     MyUtils::ActiveComponents::Panel::render();
-    Serial.println("Setup complete - entering main loop");
+    Serial << "Setup complete - entering main loop" << endl;
 }
 
 void onboard_blinker()
@@ -150,22 +181,107 @@ void onboard_blinker()
         digitalWrite(Pins::LED_PIN, led_state ? LOW : HIGH);
     }
 }
+
 void increment_iteration()
 {
     if (iteration + 1 == UINT32_MAX_VALUE) {
-        Serial.println("Iteration counter overflow imminent, resetting to 0");
+        Serial << "Iteration counter overflow imminent, resetting to 0" << endl;
         iteration = 0;
     } else {
         iteration++;
     }
 }
 
+void display_ble_connection_status()
+{
+    Serial << "Checking BLE connection status" << endl;
+    const BluetoothLE::ATCommandResult ble_status = SharedDependencies::bleHandler->testConnection();
+    Serial << "Connection status: ";
+    if (ble_status == BluetoothLE::ATCommandResult::OK) {
+        Serial << "[OK]" << endl;
+    } else if (ble_status == BluetoothLE::ATCommandResult::TIMEOUT) {
+        Serial << "[TIMEOUT]" << endl;
+    } else if (ble_status == BluetoothLE::ATCommandResult::ERROR) {
+        Serial << "[ERROR]" << endl;
+    } else if (ble_status == BluetoothLE::ATCommandResult::UNKNOWN) {
+        Serial << "[UNKNOWN]" << endl;
+    } else {
+        Serial << "[UKNOWN TYPE]" << endl;
+    }
+}
+
+bool refresh_ble_scan()
+{
+    if (millis() - last_ble_scan > BLE_SCAN_INTERVAL) {
+        last_ble_scan = millis();
+        Serial << "\n--- Periodic BLE Scan ---" << endl;
+        SharedDependencies::bleHandler->startScan(BLE_PERIODIC_SCAN_DURATION);
+
+        uint8_t count = SharedDependencies::bleHandler->getDeviceCount();
+        uint8_t overflow = SharedDependencies::bleHandler->getOverflowCount();
+        Serial << "Detected " << count << " nearby devices" << endl;
+        if (overflow > 0) {
+            Serial << "Lost " << overflow << " devices (increase MAX_BLE_DEVICES if needed)" << endl;
+        }
+    } else {
+        return false;
+    }
+
+    // Check for BLE connection status
+    const bool ble_status = SharedDependencies::bleHandler->isConnected();
+    if (ble_status) {
+        String received = SharedDependencies::bleHandler->receive();
+        if (received.length() > 0) {
+            Serial << "Received over Bluetooth: " << received << endl;
+
+            // Example: respond to commands
+            if (received.indexOf("SCAN") >= 0) {
+                Serial << "Command received: Starting scan..." << endl;
+                SharedDependencies::bleHandler->startScan(5000);
+
+                // Send results back via BLE
+                uint8_t count = SharedDependencies::bleHandler->getDeviceCount();
+                const BluetoothLE::BLEDevice *devices = SharedDependencies::bleHandler->getScannedDevices();
+
+                Serial << "Found " << count << " devices" << endl;
+                for (uint8_t i = 0; i < count; i++) {
+                    Serial << devices[i].address << endl;
+                }
+
+                uint8_t overflow = SharedDependencies::bleHandler->getOverflowCount();
+                if (overflow > 0) {
+                    Serial << "Lost: " << overflow << endl;
+                }
+            } else if (received.indexOf("STATUS") >= 0) {
+                SharedDependencies::bleHandler->printStatus();
+            } else if (received.indexOf("CONNECT:") >= 0) {
+                // Extract MAC address (e.g., "CONNECT:001122334455")
+                String address = received.substring(8);
+                address.trim();
+                if (SharedDependencies::bleHandler->connectToDevice(address)) {
+                    SharedDependencies::bleHandler->send("Connected to " + address);
+                } else {
+                    SharedDependencies::bleHandler->send("Connection failed");
+                }
+            }
+        }
+    }
+    return true;
+}
+
 void loop()
 {
     if (iteration % 1000 == 0) {
-        // Serial.println("In main loop, iteration: " + String(iteration));
+        // Serial << "In main loop, iteration: " << iteration << endl;
         MyUtils::ActiveComponents::Panel::tick();
         MyUtils::ActiveComponents::Panel::render();
+        display_ble_connection_status();
+        bool refreshed = refresh_ble_scan();
+        if (refreshed) {
+            Serial << "BLE Scan refreshed" << endl;
+        } else {
+            Serial << "BLE Scan not refreshed" << endl;
+        }
         // MyUtils::ActiveComponents::Panel::debug_print_commands();
         // if (!led_cleared) {
         //     LED::led_clear();
@@ -179,7 +295,5 @@ void loop()
     // LED::led_set_colour(LED::led_get_colour_from_pointer(&LED::Colours::Magenta), LED_DURATION, 20, LED::led_get_colour_from_pointer(&LED::Colours::Black));
     HttpServer::server.handleClient();
     // quick repro in loop()
-    // bool ble_status = SharedDependencies::bleHandler->isConnected();
-    // Serial.println("Bluetooth connected: " + String(ble_status ? "Yes" : "No"));
     increment_iteration();
 }
