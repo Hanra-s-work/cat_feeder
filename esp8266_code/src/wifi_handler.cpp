@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: wifi_handler.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 23:44:38 11-02-2026
+* LAST Modified: 0:59:16 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -66,7 +66,8 @@ void Wifi::WifiHandler::connect()
 void Wifi::WifiHandler::showIp()
 {
     IPAddress ip = getIP();
-    Serial << "Device IP Address: " << ip.v4() << endl;
+    // Print IP without using String - access octets directly
+    Serial << "Device IP Address: " << ip[0] << "." << ip[1] << "." << ip[2] << "." << ip[3] << endl;
     LED::led_set_colour(wifi_anim->colour, LED_DURATION, -1);
 }
 

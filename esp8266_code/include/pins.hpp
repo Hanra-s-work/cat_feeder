@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: pins.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:47:11 07-02-2026
+* LAST Modified: 0:57:52 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -31,8 +31,8 @@ namespace Pins
     constexpr uint8_t LED_STRIP_PIN = 5;   // D1 = GPIO5
     constexpr uint8_t MOTOR1_PIN = 14;  // D5 = GPIO14
     constexpr uint8_t MOTOR2_PIN = 16;   // Servo 2 (D0, GPIO16) -> software PWM
-    constexpr uint8_t BLE_RXD_PIN = 13;  // D7 = GPIO13
-    constexpr uint8_t BLE_TXD_PIN = 12;  // D6 = GPIO12
+    constexpr uint8_t BLE_RXD_PIN = 12;  // D6 = GPIO12 (SWAPPED - trying RX on GPIO12)
+    constexpr uint8_t BLE_TXD_PIN = 13;  // D7 = GPIO13 (SWAPPED - trying TX on GPIO13)
     constexpr uint8_t BLE_EN_PIN = 4;   // D2 = GPIO4
     constexpr uint8_t BLE_STATE_PIN = A0;  // ADC0
 

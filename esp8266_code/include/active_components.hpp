@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: active_components.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:39:41 07-02-2026
+* LAST Modified: 0:30:55 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -50,7 +50,12 @@ namespace MyUtils
             }
         };
 
-        static constexpr uint16_t LED_TOTAL_CMDS = LED_NUMBER;
+        // LED command buffer sizing:
+        // - Slots 0 to LED_NUMBER-1 (0-29): Base frame (persistent background, one per LED)
+        // - Slots LED_NUMBER onwards: Temporary commands (activity pings, data transmission)
+        // Need ~20 temporary slots for simultaneous component activity + data transmission
+        static constexpr uint16_t LED_TEMP_CMD_SLOTS = 20;
+        static constexpr uint16_t LED_TOTAL_CMDS = LED_NUMBER + LED_TEMP_CMD_SLOTS;  // 30 + 20 = 50
         extern LEDCommand _led_commands[LED_TOTAL_CMDS];
         extern LEDCommand LED_DEFAULT_BACKGROUND;
 

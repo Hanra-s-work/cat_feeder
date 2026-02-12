@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ble_AT_quickies.hpp
 * CREATION DATE: 11-02-2026
-* LAST Modified: 21:37:30 11-02-2026
+* LAST Modified: 1:9:10 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -24,49 +24,53 @@
 #pragma once
 #include <string_view>
 
+// Macro for compile-time string concatenation
+#define AT_NEWLINE "\r\n"
+
 namespace BluetoothLE
 {
     namespace AT
     {
+        // Expose as string_view for runtime use if needed
+        inline constexpr std::string_view NEWLINE = AT_NEWLINE;
 
         namespace Query
         {
-            inline constexpr std::string_view NAME = "AT+NAME?";
-            inline constexpr std::string_view ROLE = "AT+ROLE?";
+            inline constexpr std::string_view NAME = "AT+NAME?" AT_NEWLINE;
+            inline constexpr std::string_view ROLE = "AT+ROLE?" AT_NEWLINE;
         }
 
         namespace Set
         {
-            inline constexpr std::string_view ROLE_MASTER = "AT+ROLE1";
-            inline constexpr std::string_view ROLE_SLAVE = "AT+ROLE0";
+            inline constexpr std::string_view ROLE_MASTER = "AT+ROLE1" AT_NEWLINE;
+            inline constexpr std::string_view ROLE_SLAVE = "AT+ROLE0" AT_NEWLINE;
         }
 
         namespace Action
         {
-            inline constexpr std::string_view RESET = "AT+RESET";
-            inline constexpr std::string_view SLEEP = "AT+SLEEP";
+            inline constexpr std::string_view RESET = "AT+RESET" AT_NEWLINE;
+            inline constexpr std::string_view SLEEP = "AT+SLEEP" AT_NEWLINE;
         }
 
-        inline constexpr std::string_view TEST = "AT";
-        inline constexpr std::string_view NAME_GET = "AT+NAME?";
-        inline constexpr std::string_view NAME_SET = "AT+NAME";      // append new name
-        inline constexpr std::string_view ADDR_GET = "AT+ADDR?";
-        inline constexpr std::string_view VERSION_GET = "AT+VERS?";
-        inline constexpr std::string_view BAUD_GET = "AT+BAUD?";
+        inline constexpr std::string_view TEST = "AT" AT_NEWLINE;
+        inline constexpr std::string_view NAME_GET = "AT+NAME?" AT_NEWLINE;
+        inline constexpr std::string_view NAME_SET = "AT+NAME";      // append new name + AT_NEWLINE
+        inline constexpr std::string_view ADDR_GET = "AT+ADDR?" AT_NEWLINE;
+        inline constexpr std::string_view VERSION_GET = "AT+VERS?" AT_NEWLINE;
+        inline constexpr std::string_view BAUD_GET = "AT+BAUD?" AT_NEWLINE;
 
-        inline constexpr std::string_view ROLE_GET = "AT+ROLE?";
-        inline constexpr std::string_view ROLE_SLAVE = "AT+ROLE0";
-        inline constexpr std::string_view ROLE_MASTER = "AT+ROLE1";
+        inline constexpr std::string_view ROLE_GET = "AT+ROLE?" AT_NEWLINE;
+        inline constexpr std::string_view ROLE_SLAVE = "AT+ROLE0" AT_NEWLINE;
+        inline constexpr std::string_view ROLE_MASTER = "AT+ROLE1" AT_NEWLINE;
 
-        inline constexpr std::string_view DISCOVER = "AT+DISC?";
-        inline constexpr std::string_view CONNECT = "AT+CON";       // append MAC
+        inline constexpr std::string_view DISCOVER = "AT+DISC?" AT_NEWLINE;
+        inline constexpr std::string_view CONNECT = "AT+CON";       // append MAC + AT_NEWLINE
+        inline constexpr std::string_view RESET = "AT+RESET" AT_NEWLINE;
+        inline constexpr std::string_view SLEEP = "AT+SLEEP" AT_NEWLINE;
 
-        inline constexpr std::string_view RESET = "AT+RESET";
-        inline constexpr std::string_view SLEEP = "AT+SLEEP";
-
-        inline constexpr std::string_view PASS_GET = "AT+PASS?";
-        inline constexpr std::string_view PASS_SET = "AT+PASS";      // append PIN
-        inline constexpr std::string_view TYPE_GET = "AT+TYPE?";
+        inline constexpr std::string_view PASS_GET = "AT+PASS?" AT_NEWLINE;
+        inline constexpr std::string_view PASS_SET = "AT+PASS";      // append PIN + AT_NEWLINE
+        inline constexpr std::string_view TYPE_GET = "AT+TYPE?" AT_NEWLINE;
 
     }
 }

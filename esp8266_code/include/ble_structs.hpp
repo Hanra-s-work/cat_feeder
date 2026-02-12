@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ble_structs.hpp
 * CREATION DATE: 11-02-2026
-* LAST Modified: 21:26:25 11-02-2026
+* LAST Modified: 0:26:45 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -27,15 +27,23 @@
 namespace BluetoothLE
 {
     struct BLEDevice {
-        String address;      // MAC address (e.g., "001122334455")
-        String name;         // Device name (if available)
-        int8_t rssi;        // Signal strength in dBm
-        bool valid;         // Whether this entry contains valid data
+        char address[13];    // MAC address (12 hex chars + null terminator)
+        char name[32];       // Device name (max 31 chars + null terminator)
+        int8_t rssi;         // Signal strength in dBm
+        bool valid;          // Whether this entry contains valid data
 
-        BLEDevice() : address(""), name(""), rssi(-127), valid(false) {}
-        BLEDevice(const String &addr, const String &n, int8_t r)
-            : address(addr), name(n), rssi(r), valid(true)
+        BLEDevice() : rssi(-127), valid(false)
         {
+            address[0] = '\0';
+            name[0] = '\0';
+        }
+
+        BLEDevice(const char *addr, const char *n, int8_t r) : rssi(r), valid(true)
+        {
+            strncpy(address, addr, sizeof(address) - 1);
+            address[sizeof(address) - 1] = '\0';
+            strncpy(name, n, sizeof(name) - 1);
+            name[sizeof(name) - 1] = '\0';
         }
     };
 }

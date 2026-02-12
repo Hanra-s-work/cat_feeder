@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: config.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 21:18:43 11-02-2026
+* LAST Modified: 1:20:49 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -90,3 +90,7 @@ constexpr uint16_t MAX_BLE_DEVICES = 32;
 constexpr unsigned long BLUETOOTH_BAUDRATE = 9600;
 constexpr unsigned long BLE_SCAN_INTERVAL = 30000; // Scan every 30 seconds
 constexpr unsigned long BLE_PERIODIC_SCAN_DURATION = 3000; // Scan for 3 seconds
+constexpr unsigned long BLE_STATUS_CHECK_INTERVAL = 10000; // Check BLE connectivity every 10 seconds
+
+// Led render timing
+constexpr unsigned long LED_RENDER_INTERVAL = 100; // Render LEDs every 100ms
