@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ble_AT_quickies.hpp
 * CREATION DATE: 11-02-2026
-* LAST Modified: 1:9:10 12-02-2026
+* LAST Modified: 2:9:30 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -71,6 +71,39 @@ namespace BluetoothLE
         inline constexpr std::string_view PASS_GET = "AT+PASS?" AT_NEWLINE;
         inline constexpr std::string_view PASS_SET = "AT+PASS";      // append PIN + AT_NEWLINE
         inline constexpr std::string_view TYPE_GET = "AT+TYPE?" AT_NEWLINE;
+
+        // Expected responses (for string comparison without heap allocation)
+        namespace Responses
+        {
+            namespace Ok
+            {
+                inline constexpr std::string_view OK = "OK";
+                inline constexpr std::string_view CONN = "OK+CONN";
+                inline constexpr std::string_view LOST = "OK+LOST";
+                inline constexpr std::string_view DISC = "OK+DISC:";
+                inline constexpr std::string_view DIS = "OK+DIS";     // Covers OK+DIS0, OK+DISA, etc.
+                inline constexpr std::string_view DISCS = "OK+DISCS";
+                inline constexpr std::string_view NAME = "OK+NAME:";
+                inline constexpr std::string_view ADDR = "OK+ADDR:";
+                inline constexpr std::string_view VERS = "OK+VERS:";
+                inline constexpr std::string_view ROLE = "OK+Get:";   // Response to role query (generic)
+
+                namespace Role
+                {
+                    inline constexpr std::string_view SLAVE = "OK+Get:0";   // Role 0 = Slave/Peripheral
+                    inline constexpr std::string_view MASTER = "OK+Get:1";  // Role 1 = Master/Central
+                    // Alternative formats (some firmware versions, no "OK" prefix)
+                    inline constexpr std::string_view ALT_SLAVE = "+Get:0";
+                    inline constexpr std::string_view ALT_MASTER = "+Get:1";
+                    inline constexpr std::string_view SET_SLAVE = "+ROLE=0";  // Response to AT+ROLE0
+                    inline constexpr std::string_view SET_MASTER = "+ROLE=1"; // Response to AT+ROLE1
+                }
+            }
+            namespace Error
+            {
+                inline constexpr std::string_view ERROR = "ERROR";
+            }
+        }
 
     }
 }

@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ble_handler.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:26:17 12-02-2026
+* LAST Modified: 1:47:9 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -110,7 +110,8 @@ namespace BluetoothLE
         // Helper methods
         size_t _readResponseToBuffer(char *buffer, size_t buffer_size, uint32_t timeout_ms);
         String _readResponse(uint32_t timeout_ms);  // String version for convenience
-        BLEDevice _parseDiscoveryLine(const char *line, size_t length);
+        BLEDevice _parseDiscoveryLine(const char *line, size_t length);  // Buffer version
+        BLEDevice _parseDiscoveryLine(const String &line);  // String wrapper
         void _flushSerial();
     };
 }

@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: main.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 23:5:55 11-02-2026
+* LAST Modified: 1:24:26 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -38,38 +38,13 @@ bool led_state = false;
 unsigned long last_toggle = 0;
 static unsigned long long iteration = 0;
 static unsigned long last_ble_scan = 0;
+static unsigned long last_ble_status_check = 0;
 bool led_cleared = false;
 
 static LED::ColourPos loop_progress[] = {
     { 0, LED::led_get_colour_from_pointer(&LED::Colours::Yellow) },                 // moving dot
     { UINT16_MAX_VALUE, {} }    // sentinel
 };
-
-void initial_ble_scan()
-{
-    const bool scan_response = SharedDependencies::bleHandler->startScan(5000);
-    if (scan_response) {  // 5 second scan
-        const uint8_t deviceCount = SharedDependencies::bleHandler->getDeviceCount();
-        const uint8_t overflow = SharedDependencies::bleHandler->getOverflowCount();
-        const BluetoothLE::BLEDevice *devices = SharedDependencies::bleHandler->getScannedDevices();
-
-        Serial << "Found " << deviceCount << " BLE devices:" << endl;
-        for (uint8_t i = 0; i < deviceCount; i++) {
-            Serial << " - " << devices[i].address;
-            if (devices[i].name.length() > 0) {
-                Serial << "(" << devices[i].name << ")";
-            }
-            Serial << " RSSI: " << devices[i].rssi << " dBm" << endl;
-        }
-
-        if (overflow > 0) {
-            Serial << "WARNING: " << overflow << " devices were not captured (buffer full)" << endl;
-        }
-    } else {
-        Serial << "No devices found or scan failed" << endl;
-    }
-}
-
 
 void setup()
 {
@@ -152,7 +127,7 @@ void setup()
 
     // ─────────────── Bluetooth ───────────────
     Serial << "Setting up bluetooth..." << endl;
-    BluetoothLE::BLEHandler bleHandler(BLUETOOTH_BAUDRATE);
+    static BluetoothLE::BLEHandler bleHandler(BLUETOOTH_BAUDRATE);
     Serial << "Sharing bluetooth handler pointer..." << endl;
     SharedDependencies::bleHandler = &bleHandler;
     Serial << "Bluetooth handler pointer shared" << endl;
@@ -160,10 +135,19 @@ void setup()
     bleHandler.init();
     Serial << "Enabling bluetooth..." << endl;
     bleHandler.enable();
+    Serial << "Granting additional wait time for first boot..." << endl;
+    delay(200);  // AT-09 needs ~200-300ms after power-on (enable() already has 100ms)
+
+    // Hardware diagnostics
+    bleHandler.testHardware();
+
+    // Debug: Uncomment to test different baud rates
+    // bleHandler.testBaudRates();
+
     Serial << "Ble module information..." << endl;
     bleHandler.printStatus();
     Serial << "Running initial scan..." << endl;
-    initial_ble_scan();
+    bleHandler.printInitialScan(5000);
     Serial << "Serial BT started" << endl;
 
     // Final render to clear all setup artifacts
@@ -192,103 +176,78 @@ void increment_iteration()
     }
 }
 
-void display_ble_connection_status()
-{
-    Serial << "Checking BLE connection status" << endl;
-    const BluetoothLE::ATCommandResult ble_status = SharedDependencies::bleHandler->testConnection();
-    Serial << "Connection status: ";
-    if (ble_status == BluetoothLE::ATCommandResult::OK) {
-        Serial << "[OK]" << endl;
-    } else if (ble_status == BluetoothLE::ATCommandResult::TIMEOUT) {
-        Serial << "[TIMEOUT]" << endl;
-    } else if (ble_status == BluetoothLE::ATCommandResult::ERROR) {
-        Serial << "[ERROR]" << endl;
-    } else if (ble_status == BluetoothLE::ATCommandResult::UNKNOWN) {
-        Serial << "[UNKNOWN]" << endl;
-    } else {
-        Serial << "[UKNOWN TYPE]" << endl;
-    }
-}
-
-bool refresh_ble_scan()
+void refresh_ble_scan()
 {
     if (millis() - last_ble_scan > BLE_SCAN_INTERVAL) {
         last_ble_scan = millis();
-        Serial << "\n--- Periodic BLE Scan ---" << endl;
-        SharedDependencies::bleHandler->startScan(BLE_PERIODIC_SCAN_DURATION);
+        SharedDependencies::bleHandler->printPeriodicScan();
 
-        uint8_t count = SharedDependencies::bleHandler->getDeviceCount();
-        uint8_t overflow = SharedDependencies::bleHandler->getOverflowCount();
-        Serial << "Detected " << count << " nearby devices" << endl;
-        if (overflow > 0) {
-            Serial << "Lost " << overflow << " devices (increase MAX_BLE_DEVICES if needed)" << endl;
-        }
-    } else {
-        return false;
-    }
+        // Check for BLE connection and handle incoming data
+        const bool ble_status = SharedDependencies::bleHandler->isConnected();
+        if (ble_status) {
+            String received = SharedDependencies::bleHandler->receive();
+            if (received.length() > 0) {
+                Serial << "Received over Bluetooth: " << received << endl;
 
-    // Check for BLE connection status
-    const bool ble_status = SharedDependencies::bleHandler->isConnected();
-    if (ble_status) {
-        String received = SharedDependencies::bleHandler->receive();
-        if (received.length() > 0) {
-            Serial << "Received over Bluetooth: " << received << endl;
+                // Example: respond to commands
+                if (received.indexOf("SCAN") >= 0) {
+                    Serial << "Command received: Starting scan..." << endl;
+                    SharedDependencies::bleHandler->startScan(5000);
 
-            // Example: respond to commands
-            if (received.indexOf("SCAN") >= 0) {
-                Serial << "Command received: Starting scan..." << endl;
-                SharedDependencies::bleHandler->startScan(5000);
+                    // Send results back via BLE
+                    uint8_t count = SharedDependencies::bleHandler->getDeviceCount();
+                    const BluetoothLE::BLEDevice *devices = SharedDependencies::bleHandler->getScannedDevices();
 
-                // Send results back via BLE
-                uint8_t count = SharedDependencies::bleHandler->getDeviceCount();
-                const BluetoothLE::BLEDevice *devices = SharedDependencies::bleHandler->getScannedDevices();
+                    Serial << "Found " << count << " devices" << endl;
+                    for (uint8_t i = 0; i < count; i++) {
+                        Serial << devices[i].address << endl;
+                    }
 
-                Serial << "Found " << count << " devices" << endl;
-                for (uint8_t i = 0; i < count; i++) {
-                    Serial << devices[i].address << endl;
-                }
-
-                uint8_t overflow = SharedDependencies::bleHandler->getOverflowCount();
-                if (overflow > 0) {
-                    Serial << "Lost: " << overflow << endl;
-                }
-            } else if (received.indexOf("STATUS") >= 0) {
-                SharedDependencies::bleHandler->printStatus();
-            } else if (received.indexOf("CONNECT:") >= 0) {
-                // Extract MAC address (e.g., "CONNECT:001122334455")
-                String address = received.substring(8);
-                address.trim();
-                if (SharedDependencies::bleHandler->connectToDevice(address)) {
-                    SharedDependencies::bleHandler->send("Connected to " + address);
-                } else {
-                    SharedDependencies::bleHandler->send("Connection failed");
+                    uint8_t overflow = SharedDependencies::bleHandler->getOverflowCount();
+                    if (overflow > 0) {
+                        Serial << "Lost: " << overflow << endl;
+                    }
+                } else if (received.indexOf("STATUS") >= 0) {
+                    SharedDependencies::bleHandler->printStatus();
+                } else if (received.indexOf("CONNECT:") >= 0) {
+                    // Extract MAC address (e.g., "CONNECT:001122334455")
+                    String address = received.substring(8);
+                    address.trim();
+                    if (SharedDependencies::bleHandler->connectToDevice(address)) {
+                        SharedDependencies::bleHandler->send("Connected to " + address);
+                    } else {
+                        SharedDependencies::bleHandler->send("Connection failed");
+                    }
                 }
             }
         }
     }
-    return true;
 }
 
 void loop()
 {
-    if (iteration % 1000 == 0) {
-        // Serial << "In main loop, iteration: " << iteration << endl;
+    unsigned long now = millis();
+    static unsigned long last_led_render = 0;
+
+    // LED updates every 100ms
+    if (now - last_led_render >= LED_RENDER_INTERVAL) {
+        last_led_render = now;
         MyUtils::ActiveComponents::Panel::tick();
         MyUtils::ActiveComponents::Panel::render();
-        display_ble_connection_status();
-        bool refreshed = refresh_ble_scan();
-        if (refreshed) {
-            Serial << "BLE Scan refreshed" << endl;
-        } else {
-            Serial << "BLE Scan not refreshed" << endl;
-        }
-        // MyUtils::ActiveComponents::Panel::debug_print_commands();
-        // if (!led_cleared) {
-        //     LED::led_clear();
-        //     led_cleared = true;
-        // }
-        onboard_blinker();
     }
+
+    // BLE connectivity status check every 10 seconds
+    if (now - last_ble_status_check >= BLE_STATUS_CHECK_INTERVAL) {
+        last_ble_status_check = now;
+        Serial << "\n--- BLE Connectivity Check ---" << endl;
+        SharedDependencies::bleHandler->printConnectionStatus();
+    }
+
+    // BLE periodic scanning (handled by refresh_ble_scan with BLE_SCAN_INTERVAL)
+    refresh_ble_scan();
+
+    // Onboard LED blinker
+    onboard_blinker();
     // LED::led_set_led_position(5, LED::green_colour, LED_DURATION, true);
     // LED::led_set_led_position(10, LED::led_get_colour_from_pointer(&LED::Colours::Aqua), LED_DURATION, true);
     // LED::led_set_colour(LED::blue_colour, LED_DURATION, 15, LED::black_colour);
