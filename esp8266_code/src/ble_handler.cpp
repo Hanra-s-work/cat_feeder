@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ble_handler.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 2:12:52 12-02-2026
+* LAST Modified: 2:24:7 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -307,6 +307,13 @@ bool BluetoothLE::BLEHandler::startScan(uint32_t timeout_ms)
     Serial << "[BLE] Starting device discovery..." << endl;
 
     String response = sendATCommand(AT::DISCOVER, timeout_ms + 1000);
+
+    // If first command fails or returns ERROR, try alternative command format
+    if (response.length() == 0 || response.indexOf(AT::Responses::Error::ERROR.data()) >= 0) {
+        Serial << "[BLE] First discovery command failed, trying alternative format..." << endl;
+        delay(200);  // Small delay before retry
+        response = sendATCommand(AT::DISCOVER_ALT, timeout_ms + 1000);
+    }
 
     // Parse response for discovered devices
     // Response format (varies by firmware):

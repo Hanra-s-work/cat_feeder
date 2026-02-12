@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ble_constants.hpp
 * CREATION DATE: 12-02-2026
-* LAST Modified: 2:19:19 12-02-2026
+* LAST Modified: 2:23:54 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -43,7 +43,7 @@ namespace BluetoothLE
 
         // Timing delays (milliseconds)
         constexpr uint32_t POWER_UP_DELAY_MS = 100;            // Module power-up stabilization time
-        constexpr uint32_t ROLE_CHANGE_DELAY_MS = 100;         // Delay after changing module role
+        constexpr uint32_t ROLE_CHANGE_DELAY_MS = 500;         // Delay after changing module role (needs time to stabilize)
         constexpr uint32_t SERIAL_REINIT_DELAY_MS = 50;        // Delay for serial reinitialization
         constexpr uint32_t SERIAL_STABILIZE_DELAY_MS = 50;     // Serial stabilization delay
         constexpr uint32_t RESPONSE_TRAILING_DELAY_MS = 50;    // Delay to catch trailing response characters

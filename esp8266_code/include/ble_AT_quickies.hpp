@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ble_AT_quickies.hpp
 * CREATION DATE: 11-02-2026
-* LAST Modified: 2:9:30 12-02-2026
+* LAST Modified: 2:23:36 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -64,6 +64,7 @@ namespace BluetoothLE
         inline constexpr std::string_view ROLE_MASTER = "AT+ROLE1" AT_NEWLINE;
 
         inline constexpr std::string_view DISCOVER = "AT+DISC?" AT_NEWLINE;
+        inline constexpr std::string_view DISCOVER_ALT = "AT+DISC" AT_NEWLINE;  // Alternative without '?'
         inline constexpr std::string_view CONNECT = "AT+CON";       // append MAC + AT_NEWLINE
         inline constexpr std::string_view RESET = "AT+RESET" AT_NEWLINE;
         inline constexpr std::string_view SLEEP = "AT+SLEEP" AT_NEWLINE;
