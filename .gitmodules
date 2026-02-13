@@ -1,0 +1,3 @@
+[submodule "utils/HM-10_reflash/CCLoader"]
+	path = utils/HM-10_reflash/CCLoader
+	url = https://github.com/RedBearLab/CCLoader.git

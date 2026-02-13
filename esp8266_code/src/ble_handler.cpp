@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ble_handler.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 2:24:7 12-02-2026
+* LAST Modified: 18:17:45 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -21,10 +21,10 @@
 * // AR
 * +==== END CatFeeder =================+
 */
+#include <cstring>  // For strstr, strchr, atoi, strncpy
 #include "ble_handler.hpp"
 #include "ble_AT_quickies.hpp"
 #include "ble_constants.hpp"
-#include <cstring>  // For strstr, strchr, atoi, strncpy
 
 BluetoothLE::BLEHandler::BLEHandler(uint32_t baud)
     : _serial(Pins::BLE_RXD_PIN, Pins::BLE_TXD_PIN), _baud(baud)
@@ -185,7 +185,7 @@ BluetoothLE::ATCommandResult BluetoothLE::BLEHandler::testConnection()
 
 String BluetoothLE::BLEHandler::getModuleName()
 {
-    String response = sendATCommand(AT::NAME_GET, 1000);
+    String response = sendATCommand(AT::Query::NAME, 1000);
     // Response format: "OK+NAME:DeviceName"
     int nameStart = response.indexOf(AT::Responses::Ok::NAME.data());
     if (nameStart >= 0) {
@@ -200,7 +200,7 @@ String BluetoothLE::BLEHandler::getModuleName()
 
 String BluetoothLE::BLEHandler::getModuleAddress()
 {
-    String response = sendATCommand(AT::ADDR_GET, 1000);
+    String response = sendATCommand(AT::Query::ADDR, 1000);
     // Response format: "OK+ADDR:001122334455"
     int addrStart = response.indexOf(AT::Responses::Ok::ADDR.data());
     if (addrStart >= 0) {
@@ -215,7 +215,7 @@ String BluetoothLE::BLEHandler::getModuleAddress()
 
 String BluetoothLE::BLEHandler::getVersion()
 {
-    String response = sendATCommand(AT::VERSION_GET, 1000);
+    String response = sendATCommand(AT::Query::VERSION, 1000);
     // Response format: "OK+VERS:HMSoft V523"
     int versStart = response.indexOf(AT::Responses::Ok::VERS.data());
     if (versStart >= 0) {
@@ -230,7 +230,7 @@ String BluetoothLE::BLEHandler::getVersion()
 
 BluetoothLE::BLERole BluetoothLE::BLEHandler::getRole()
 {
-    String response = sendATCommand(AT::ROLE_GET, 1000);
+    String response = sendATCommand(AT::Query::ROLE, 1000);
     // Response format varies: "OK+Get:0", "+Get:0", or may return ERROR
     // Check for Slave (Role 0)
     if (response.indexOf(AT::Responses::Ok::Role::SLAVE.data()) >= 0 ||
@@ -261,7 +261,7 @@ BluetoothLE::BLERole BluetoothLE::BLEHandler::getRole()
 bool BluetoothLE::BLEHandler::setRole(BLERole role)
 {
     // Use compile-time constants to avoid string allocation
-    const std::string_view cmd = (role == BLERole::Master) ? AT::ROLE_MASTER : AT::ROLE_SLAVE;
+    const std::string_view cmd = (role == BLERole::Master) ? AT::Set::ROLE_MASTER : AT::Set::ROLE_SLAVE;
     String response = sendATCommand(cmd, 1000);
 
     // Check for various success responses: "OK", "+ROLE=1", "+ROLE=0"
@@ -277,6 +277,11 @@ bool BluetoothLE::BLEHandler::setRole(BLERole role)
     if (success) {
         _current_role = role;
         Serial << "[BLE] Role set to: " << ((role == BLERole::Master) ? "Master" : "Slave") << endl;
+
+        // Some modules require reset after role change for discovery to work
+        Serial << "[BLE] Module may need reset for role change to take effect..." << endl;
+        Serial << "[BLE] Firmware version: " << getVersion() << endl;
+
         // Module may need reset after role change
         delay(Constants::ROLE_CHANGE_DELAY_MS);
         return true;
@@ -284,6 +289,123 @@ bool BluetoothLE::BLEHandler::setRole(BLERole role)
 
     Serial << "[BLE] Failed to set role. Response: " << response << endl;
     return false;
+}
+
+// ==================== Slave/Peripheral Mode Operations ====================
+
+// Set module name (buffer version)
+bool BluetoothLE::BLEHandler::setModuleName(const char *name)
+{
+    // Build command: AT+NAME<name>\r\n
+    size_t name_len = strlen(name);
+
+    if (name_len > BluetoothLE::Constants::MAX_NAME_LENGTH) {
+        Serial << "[BLE] Name too long (max " << Constants::MAX_NAME_LENGTH << " chars)" << endl;
+        return false;
+    }
+
+    // Build command at runtime
+    char cmd[Constants::COMMAND_NAME_LENGTH];  // "AT+NAME" + name + "\r\n" + null
+    snprintf(cmd, sizeof(cmd), "%.*s%s%.*s",
+        (int)AT::Set::NAME.length(), AT::Set::NAME.data(),
+        name,
+        (int)AT::NEWLINE.length(), AT::NEWLINE.data());
+
+    // Send command and get response
+    String response = sendATCommand(cmd, 1000);
+
+    // Check for success (OK or +NAME=<newname>)
+    if (response.indexOf(AT::Responses::Ok::OK.data()) >= 0 || response.indexOf("+NAME=") >= 0) {
+        Serial << "[BLE] Module name set to: " << name << endl;
+        delay(100);  // Let module update
+        return true;
+    }
+
+    Serial << "[BLE] Failed to set name. Response: " << response << endl;
+    return false;
+}
+
+// Set module name (String wrapper)
+bool BluetoothLE::BLEHandler::setModuleName(const String &name)
+{
+    return setModuleName(name.c_str());
+}
+
+// Setup slave/peripheral mode
+bool BluetoothLE::BLEHandler::setupSlaveMode(const char *device_name)
+{
+    Serial << "[BLE] Configuring slave/peripheral mode..." << endl;
+
+    // Set to slave mode (Role 0)
+    if (_current_role == BLERole::Unknown) {
+        getRole();
+    }
+
+    if (_current_role != BLERole::Slave) {
+        Serial << "[BLE] Setting slave mode..." << endl;
+        if (!setRole(BLERole::Slave)) {
+            Serial << "[BLE] Failed to set slave mode" << endl;
+            return false;
+        }
+    }
+
+    // Set device name if provided, otherwise use BOARD_NAME from config
+    const char *name_to_set = device_name ? device_name : BOARD_NAME;
+    if (!setModuleName(name_to_set)) {
+        Serial << "[BLE] Warning: Failed to set device name" << endl;
+        // Not critical - continue anyway
+    }
+
+    Serial << "[BLE] Slave mode configured. Device is now discoverable." << endl;
+    Serial << "[BLE] Device name: " << name_to_set << endl;
+    Serial << "[BLE] Address: " << getModuleAddress() << endl;
+
+    return true;
+}
+
+// Wait for incoming connection
+bool BluetoothLE::BLEHandler::waitForConnection(uint32_t timeout_ms)
+{
+    Serial << "[BLE] Waiting for connection..." << endl;
+    unsigned long start = millis();
+
+    while (timeout_ms == 0 || (millis() - start < timeout_ms)) {
+        if (isConnected()) {
+            Serial << "[BLE] Connection established!" << endl;
+            _was_connected = true;
+            return true;
+        }
+        delay(100);  // Poll every 100ms
+    }
+
+    if (timeout_ms > 0) {
+        Serial << "[BLE] Connection timeout" << endl;
+    }
+    return false;
+}
+
+// Check if data is available
+bool BluetoothLE::BLEHandler::hasIncomingData()
+{
+    return _serial.available() > 0;
+}
+
+// Monitor connection state changes
+void BluetoothLE::BLEHandler::monitorConnection()
+{
+    bool currently_connected = isConnected();
+
+    // Detect state change
+    if (currently_connected != _was_connected) {
+        if (currently_connected) {
+            Serial << "[BLE] Device connected" << endl;
+            MyUtils::ActiveComponents::Panel::enable(_ble_component);
+        } else {
+            Serial << "[BLE] Device disconnected" << endl;
+            MyUtils::ActiveComponents::Panel::disable(_ble_component);
+        }
+        _was_connected = currently_connected;
+    }
 }
 
 // ==================== Scanning Operations ====================
@@ -305,14 +427,23 @@ bool BluetoothLE::BLEHandler::startScan(uint32_t timeout_ms)
 
     clearScannedDevices();
     Serial << "[BLE] Starting device discovery..." << endl;
+    Serial << "[BLE] Current role: " << (_current_role == BLERole::Master ? "Master" : (_current_role == BLERole::Slave ? "Slave" : "Unknown")) << endl;
 
-    String response = sendATCommand(AT::DISCOVER, timeout_ms + 1000);
+    String response = sendATCommand(AT::Action::DISCOVER, timeout_ms + 1000);
 
     // If first command fails or returns ERROR, try alternative command format
     if (response.length() == 0 || response.indexOf(AT::Responses::Error::ERROR.data()) >= 0) {
-        Serial << "[BLE] First discovery command failed, trying alternative format..." << endl;
+        Serial << "[BLE] AT+DISC? failed. Trying AT+DISC..." << endl;
         delay(200);  // Small delay before retry
-        response = sendATCommand(AT::DISCOVER_ALT, timeout_ms + 1000);
+        response = sendATCommand(AT::Action::DISCOVER_ALT, timeout_ms + 1000);
+
+        // If still failing, log and return
+        if (response.indexOf(AT::Responses::Error::ERROR.data()) >= 0) {
+            Serial << "[BLE] Discovery command not supported or module not ready." << endl;
+            Serial << "[BLE] This AT-09 firmware may not support device discovery." << endl;
+            Serial << "[BLE] Try resetting the module with: bleHandler.reset()" << endl;
+            return false;
+        }
     }
 
     // Parse response for discovered devices
@@ -424,7 +555,7 @@ bool BluetoothLE::BLEHandler::disconnect()
 void BluetoothLE::BLEHandler::reset()
 {
     Serial << "[BLE] Resetting module..." << endl;
-    sendATCommand(AT::RESET, 2000);
+    sendATCommand(AT::Action::RESET, 2000);
     delay(1000);  // Give module time to reset
     _current_role = BLERole::Unknown;
     clearScannedDevices();

@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: main.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:24:26 12-02-2026
+* LAST Modified: 20:52:20 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -35,11 +35,11 @@
 #include "shared_dependencies.hpp"
 
 bool led_state = false;
+bool led_cleared = false;
 unsigned long last_toggle = 0;
 static unsigned long long iteration = 0;
 static unsigned long last_ble_scan = 0;
 static unsigned long last_ble_status_check = 0;
-bool led_cleared = false;
 
 static LED::ColourPos loop_progress[] = {
     { 0, LED::led_get_colour_from_pointer(&LED::Colours::Yellow) },                 // moving dot
@@ -137,8 +137,8 @@ void setup()
     bleHandler.enable();
     Serial << "Granting additional wait time for first boot..." << endl;
     delay(200);  // AT-09 needs ~200-300ms after power-on (enable() already has 100ms)
-
     // Hardware diagnostics
+    Serial << "Testing Hardware..." << endl;
     bleHandler.testHardware();
 
     // Debug: Uncomment to test different baud rates
@@ -146,8 +146,15 @@ void setup()
 
     Serial << "Ble module information..." << endl;
     bleHandler.printStatus();
-    Serial << "Running initial scan..." << endl;
-    bleHandler.printInitialScan(5000);
+
+    // Setup as discoverable peripheral (slave mode)
+    Serial << "Configuring as discoverable BLE peripheral..." << endl;
+    if (bleHandler.setupSlaveMode(BOARD_NAME)) {
+        Serial << "Device is now discoverable as: " << BOARD_NAME << endl;
+    } else {
+        Serial << "Warning: Slave mode setup failed, device may not be discoverable" << endl;
+    }
+
     Serial << "Serial BT started" << endl;
 
     // Final render to clear all setup artifacts
@@ -224,10 +231,56 @@ void refresh_ble_scan()
     }
 }
 
+// Handle incoming BLE data from connected devices
+void handle_ble_data()
+{
+    // Only check if connected
+    if (!SharedDependencies::bleHandler->isConnected()) {
+        return;
+    }
+
+    // Check if data is available (non-blocking)
+    if (!SharedDependencies::bleHandler->hasIncomingData()) {
+        return;
+    }
+
+    // Option 1: Receive as String (easier but allocates memory)
+    String received = SharedDependencies::bleHandler->receive();
+
+    // Option 2: Receive into buffer (more efficient, no heap allocation)
+    // char buffer[128];
+    // size_t bytes_read = SharedDependencies::bleHandler->receive(buffer, sizeof(buffer));
+    // if (bytes_read > 0) { /* process buffer */ }
+
+    if (received.length() > 0) {
+        Serial << "[BLE Data] Received: " << received << endl;
+
+        // Example: Echo back to the sender
+        SharedDependencies::bleHandler->send("Echo: " + received);
+
+        // Example: Handle specific commands
+        if (received.indexOf("STATUS") >= 0) {
+            SharedDependencies::bleHandler->send("Device: " + String(BOARD_NAME) + ", Ready!");
+        } else if (received.indexOf("FEED") >= 0) {
+            Serial << "[Command] Feed command received!" << endl;
+            SharedDependencies::bleHandler->send("Feeding cat...");
+            // TODO: Add your motor control code here
+        } else if (received.indexOf("HELLO") >= 0) {
+            SharedDependencies::bleHandler->send("Hello from " + String(BOARD_NAME) + "!");
+        }
+    }
+}
+
 void loop()
 {
     unsigned long now = millis();
     static unsigned long last_led_render = 0;
+
+    // Monitor BLE connection status (detects connect/disconnect events)
+    SharedDependencies::bleHandler->monitorConnection();
+
+    // Handle incoming BLE data from connected devices (non-AT commands)
+    handle_ble_data();
 
     // LED updates every 100ms
     if (now - last_led_render >= LED_RENDER_INTERVAL) {
@@ -236,15 +289,23 @@ void loop()
         MyUtils::ActiveComponents::Panel::render();
     }
 
-    // BLE connectivity status check every 10 seconds
     if (now - last_ble_status_check >= BLE_STATUS_CHECK_INTERVAL) {
-        last_ble_status_check = now;
-        Serial << "\n--- BLE Connectivity Check ---" << endl;
-        SharedDependencies::bleHandler->printConnectionStatus();
+        if (!SharedDependencies::bleHandler->isConnected()) {
+            Serial << ".";
+        } else {
+            Serial << "A device is connected to the BLE module" << endl;
+        }
     }
 
+    // BLE connectivity status check every 10 seconds
+    // if (now - last_ble_status_check >= BLE_STATUS_CHECK_INTERVAL) {
+    //     last_ble_status_check = now;
+    //     Serial << "\n--- BLE Connectivity Check ---" << endl;
+    //     SharedDependencies::bleHandler->printConnectionStatus();
+    // }
+
     // BLE periodic scanning (handled by refresh_ble_scan with BLE_SCAN_INTERVAL)
-    refresh_ble_scan();
+    // refresh_ble_scan();
 
     // Onboard LED blinker
     onboard_blinker();

@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ble_handler.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:47:9 12-02-2026
+* LAST Modified: 17:36:56 12-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -75,6 +75,14 @@ namespace BluetoothLE
         BLERole getRole();
         bool setRole(BLERole role);
 
+        // Slave/Peripheral mode configuration
+        bool setModuleName(const char *name);                         // Set BLE device name (uses buffer)
+        bool setModuleName(const String &name);                       // Set BLE device name (String wrapper)
+        bool setupSlaveMode(const char *device_name = nullptr);       // Configure module for peripheral mode
+        bool waitForConnection(uint32_t timeout_ms = 0);              // Wait for incoming connection (0 = no timeout)
+        bool hasIncomingData();                                        // Check if data is available to read
+        void monitorConnection();                                      // Check and log connection state changes
+
         // Scanning operations
         bool startScan(uint32_t timeout_ms = 5000);  // Start BLE device discovery
         const BLEDevice *getScannedDevices() const;  // Get pointer to device array
@@ -106,6 +114,7 @@ namespace BluetoothLE
         uint8_t _device_count = 0;      // Number of devices currently stored
         uint8_t _overflow_count = 0;    // Number of devices lost due to array overflow
         BLERole _current_role = BLERole::Unknown;
+        bool _was_connected = false;    // Track previous connection state for change detection
 
         // Helper methods
         size_t _readResponseToBuffer(char *buffer, size_t buffer_size, uint32_t timeout_ms);
