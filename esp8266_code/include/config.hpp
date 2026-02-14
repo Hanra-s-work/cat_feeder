@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: config.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 9:5:7 14-02-2026
+* LAST Modified: 11:6:24 14-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -99,7 +99,7 @@ inline constexpr unsigned long BLE_STATUS_CHECK_INTERVAL = 10000; // Check BLE c
 inline constexpr unsigned long LED_RENDER_INTERVAL = 100; // Render LEDs every 100ms
 
 // Server update settings
-inline constexpr unsigned long SIGNS_OF_LIFE = 1800000; // update ip to server every 30 minutes
+inline constexpr unsigned long SIGNS_OF_LIFE_INTERVAL = 1800000; // update ip to server every 30 minutes
 
 // Default feeding amount
 inline constexpr unsigned int FEEDING_AMOUNT = 50; // grams

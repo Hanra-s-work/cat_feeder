@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: main.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 10:16:36 14-02-2026
+* LAST Modified: 11:6:16 14-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -33,12 +33,14 @@
 #include "ble_handler.hpp"
 #include "wifi_handler.hpp"
 #include "shared_dependencies.hpp"
+#include "server_control_endpoints.hpp"
 
 bool led_state = false;
 bool led_cleared = false;
 unsigned long last_toggle = 0;
 static unsigned long long iteration = 0;
 static unsigned long last_ble_scan = 0;
+static unsigned long last_sign_of_life = 0;
 static unsigned long last_ble_status_check = 0;
 
 static LED::ColourPos loop_progress[] = {
@@ -156,6 +158,15 @@ void setup()
     }
 
     Serial << "Serial BT started" << endl;
+
+    // Give a sign of life to the control server
+    Serial << "Giving a sign of life to the server" << endl;
+    bool broadcast_status = HttpServer::ServerEndpoints::Handler::Put::ip();
+    if (broadcast_status) {
+        Serial << "Sign of life provided successfully" << endl;
+    } else {
+        Serial << "Failed to provide a sign of life to the server, is it down?" << endl;
+    }
 
     // Final render to clear all setup artifacts
     Serial << "Clearing setup artifacts..." << endl;
@@ -304,8 +315,19 @@ void loop()
     //     SharedDependencies::bleHandler->printConnectionStatus();
     // }
 
-    // BLE periodic scanning (handled by refresh_ble_scan with BLE_SCAN_INTERVAL)
-    // refresh_ble_scan();
+        // BLE periodic scanning (handled by refresh_ble_scan with BLE_SCAN_INTERVAL)
+        // refresh_ble_scan();
+
+    // Inform server
+    if (now - last_sign_of_life >= SIGNS_OF_LIFE_INTERVAL) {
+        last_sign_of_life = now;
+        bool broadcast_status = HttpServer::ServerEndpoints::Handler::Put::ip();
+        if (broadcast_status) {
+            Serial << "Sign of life provided successfully" << endl;
+        } else {
+            Serial << "Failed to provide a sign of life to the server, is it down?" << endl;
+        }
+    }
 
     // Onboard LED blinker
     onboard_blinker();
