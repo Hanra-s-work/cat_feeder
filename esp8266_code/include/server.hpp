@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: server.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:47:51 07-02-2026
+* LAST Modified: 10:11:15 14-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -28,7 +28,7 @@
 
 namespace HttpServer
 {
-    extern ESP8266WebServer server; // declared in server.cpp
+    extern ESP8266WebServer *server; // now a pointer to shared instance
     extern MyUtils::ActiveComponents::Component blinkIntervalComponent;
 
     void initialize_server();

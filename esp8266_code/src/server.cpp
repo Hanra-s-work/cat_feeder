@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: server.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 23:32:12 11-02-2026
+* LAST Modified: 10:57:6 14-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -27,10 +27,11 @@
 #include "config.hpp"
 #include "ble_handler.hpp"
 #include "my_overloads.hpp"
+#include "server_control_endpoints.hpp"
 
 namespace HttpServer
 {
-    ESP8266WebServer server(SERVER_PORT);
+    ESP8266WebServer *server = SharedDependencies::webServer; // now points to shared instance
     MyUtils::ActiveComponents::Component blinkIntervalComponent = MyUtils::ActiveComponents::Component::Server;
 
     // ---------- Handlers ----------
@@ -55,32 +56,32 @@ namespace HttpServer
         Serial << "Info requested: '" << response << "'" << endl;
         MyUtils::ActiveComponents::Panel::data_transmission(blinkIntervalComponent, 5);
         MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
-        server.send(200, "application/json", response);
+        server->send(200, "application/json", response);
     }
 
     void handleBlink()
     {
         MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, true);
-        if (!server.hasArg("plain")) {
+        if (!server->hasArg("plain")) {
             MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
-            server.send(400, "text/plain", "Missing body");
+            server->send(400, "text/plain", "Missing body");
             return;
         }
 
         StaticJsonDocument<128> doc;
-        DeserializationError err = deserializeJson(doc, server.arg("plain"));
+        DeserializationError err = deserializeJson(doc, server->arg("plain"));
 
         if (err || !doc["interval"].is<unsigned long>()) {
             Serial << "Failed to parse JSON or missing 'interval'" << endl;
             MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
-            server.send(400, "text/plain", "Invalid JSON");
+            server->send(400, "text/plain", "Invalid JSON");
             return;
         }
 
         blinkInterval = doc["interval"];
         Serial << "Blink interval updated to " << blinkInterval << endl;
         MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
-        server.send(200, "text/plain", "Blink interval updated");
+        server->send(200, "text/plain", "Blink interval updated");
     }
 
     void getBluetoothStatus()
@@ -93,15 +94,25 @@ namespace HttpServer
         Serial << "Bluetooth status requested: '" << response << "'" << endl;
         MyUtils::ActiveComponents::Panel::data_transmission(blinkIntervalComponent, 3);
         MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
-        server.send(200, "application/json", response);
+        server->send(200, "application/json", response);
+    }
+
+    void getStatus()
+    {
+        MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, true);
+        MyUtils::ActiveComponents::Panel::data_transmission(blinkIntervalComponent, 3);
+        Serial << "Status fetched" << endl;
+        MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
+        server->send(200, "text/plain", "OK");
     }
 
     void setupServer()
     {
-        server.on("/info", HTTP_GET, handleInfo);
-        server.on("/blink", HTTP_POST, handleBlink);
-        server.on("/bluetooth_status", HTTP_GET, getBluetoothStatus);
-        server.begin();
+        server->on("/info", HTTP_GET, handleInfo);
+        server->on("/blink", HTTP_POST, handleBlink);
+        server->on("/bluetooth_status", HTTP_GET, getBluetoothStatus);
+        server->on("/", HTTP_GET, getStatus);
+        server->begin();
     }
 
     void initialize_server()

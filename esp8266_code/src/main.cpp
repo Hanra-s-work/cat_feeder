@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: main.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 20:52:20 12-02-2026
+* LAST Modified: 10:16:36 14-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -313,7 +313,7 @@ void loop()
     // LED::led_set_led_position(10, LED::led_get_colour_from_pointer(&LED::Colours::Aqua), LED_DURATION, true);
     // LED::led_set_colour(LED::blue_colour, LED_DURATION, 15, LED::black_colour);
     // LED::led_set_colour(LED::led_get_colour_from_pointer(&LED::Colours::Magenta), LED_DURATION, 20, LED::led_get_colour_from_pointer(&LED::Colours::Black));
-    HttpServer::server.handleClient();
+    SharedDependencies::webServer->handleClient();
     // quick repro in loop()
     increment_iteration();
 }

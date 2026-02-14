@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: wifi_handler.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 23:35:38 11-02-2026
+* LAST Modified: 9:53:52 14-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -52,7 +52,7 @@ namespace Wifi
          *
          * Example: "18:FE:34:12:AB:CD"
          */
-        static inline String getMacAddress()
+        inline String getMacAddress() const
         {
             return WiFi.macAddress();
         }
