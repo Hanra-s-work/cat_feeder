@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: config.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 17:55:6 12-02-2026
+* LAST Modified: 8:35:18 14-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -40,6 +40,9 @@ inline constexpr char BOARD_NAME[] = "[BOARD_NAME]";
 // Ntfy server Address
 inline constexpr char NTFY_SERVER[] = "[NTFY_SERVER]";
 inline constexpr char NTFY_TOPIC[] = "[NTFY_TOPIC]";
+
+// Control server
+inline constexpr char CONTROL_SERVER[] = "[CONTROL_SERVER]";
 
 // Internal server configuration
 inline constexpr int SERVER_PORT = 80;
@@ -94,3 +97,6 @@ inline constexpr unsigned long BLE_STATUS_CHECK_INTERVAL = 10000; // Check BLE c
 
 // Led render timing
 inline constexpr unsigned long LED_RENDER_INTERVAL = 100; // Render LEDs every 100ms
+
+// Server update settings
+inline constexpr unsigned long SIGNS_OF_LIFE = 1800000; // update ip to server every 30 minutes
