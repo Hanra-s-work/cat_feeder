@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: main.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 12:44:18 14-02-2026
+* LAST Modified: 13:17:50 14-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -104,9 +104,11 @@ void setup()
     Serial << "Left motor pointer shared" << endl;
     Serial << "Initialising left motor..." << endl;
     kibble_tray.init();
-    Serial << "Running test turn on left motor..." << endl;
-    kibble_tray.calibrate();
-    Serial << "Left motor initialized" << endl;
+    Serial << "Right motor initialized" << endl;
+    // Disabled the calibration test because it would offset it
+    // Serial << "Running test turn on left motor..." << endl;
+    // kibble_tray.calibrate();
+    // Serial << "Left motor callibrated" << endl;
 
     Serial << "Initializing right motor..." << endl;
     static Motors::Motor food_trap(Pins::MOTOR2_PIN, loop_progress, MOTOR_SPEED_DEFAULT, LED::dark_blue, LED::red_colour, MyUtils::ActiveComponents::Component::MotorRight);
@@ -117,9 +119,10 @@ void setup()
     Serial << "Initialising right motor..." << endl;
     food_trap.init();
     Serial << "Right motor initialized" << endl;
-    Serial << "Running test turn on right motor..." << endl;
-    food_trap.calibrate();
-    Serial << "Right motor initialized" << endl;
+    // Disabled the calibration test because it would offset it
+    // Serial << "Running test turn on right motor..." << endl;
+    // food_trap.calibrate();
+    // Serial << "Right motor callibrated" << endl;
 
     // ─────────────── HTTP Server ───────────────
     Serial << "Starting HTTP server..." << endl;
