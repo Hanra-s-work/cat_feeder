@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: main.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 11:6:16 14-02-2026
+* LAST Modified: 12:44:18 14-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -111,9 +111,9 @@ void setup()
     Serial << "Initializing right motor..." << endl;
     static Motors::Motor food_trap(Pins::MOTOR2_PIN, loop_progress, MOTOR_SPEED_DEFAULT, LED::dark_blue, LED::red_colour, MyUtils::ActiveComponents::Component::MotorRight);
     Serial << "Rigth motor declared" << endl;
-    Serial << "Sharing left motor pointer..." << endl;
+    Serial << "Sharing right motor pointer..." << endl;
     SharedDependencies::rightMotor = &food_trap;
-    Serial << "Left motor pointer shared" << endl;
+    Serial << "Right motor pointer shared" << endl;
     Serial << "Initialising right motor..." << endl;
     food_trap.init();
     Serial << "Right motor initialized" << endl;
@@ -282,6 +282,84 @@ void handle_ble_data()
     }
 }
 
+void handle_beacons()
+{
+    Serial << endl << "Scanning to obtain incoming data for " << BLE_PERIODIC_SCAN_DURATION << " ms" << endl;
+    bool scan_status = SharedDependencies::bleHandler->startScan(BLE_PERIODIC_SCAN_DURATION);
+    if (!scan_status) {
+        Serial << "Scan failed or no devices present" << endl;
+        return;
+    }
+    uint8_t device_id = 0;
+    uint8_t valid_devices = 0;
+    const BluetoothLE::BLEDevice *devices = SharedDependencies::bleHandler->getScannedDevices();
+    uint8_t count = SharedDependencies::bleHandler->getDeviceCount();
+    for (uint8_t i = 0; i < count; i++) {
+        Serial << "Device " << i << ": " << devices[i].address << endl;
+        if (devices[i].rssi < BLE_MIN_VALID_RSSI_VALUE) {
+            Serial << "The device is to far from the feeder, ignoring" << endl;
+            continue;
+        }
+        Serial << "Sending the server the presence of the beacon" << endl;
+        bool status = HttpServer::ServerEndpoints::Handler::Post::visits(devices[i].address);
+        if (status) {
+            if (valid_devices == 0) {
+                device_id = i;
+            }
+            valid_devices++;
+            Serial << "Server presence of beacon updated" << endl;
+        } else {
+            Serial << "Server presence of beacon failed to update" << endl;
+        }
+    }
+    if (valid_devices == 0) {
+        Serial << "No known device is near the feeder, skipping feed check." << endl;
+        return;
+    }
+    if (valid_devices > 1) {
+        Serial << "More than once device is available, using the first seen device to know if feeding is possible." << endl;
+    }
+    long long int distributable_amount = -1;
+    bool can_feed = HttpServer::ServerEndpoints::Handler::Get::fed(devices[device_id].address, &distributable_amount);
+    if (!can_feed) {
+        Serial << "The device is not allowed to feed, ending check." << endl;
+        return;
+    }
+    if (distributable_amount <= 0) {
+        Serial << "The device is not allowed food, can distribute is below or equal to 0, distributable_amount value " << distributable_amount << endl;
+        return;
+    }
+    if (distributable_amount > MAX_FEEDING_SINGLE_PORTION) {
+        Serial << "Can distribute more than the single portion, clamping to single portion so other portions can still be given during the day." << endl;
+        distributable_amount = MAX_FEEDING_SINGLE_PORTION;
+    }
+    bool feed_update = HttpServer::ServerEndpoints::Handler::Post::fed(devices[device_id].address, distributable_amount);
+    if (feed_update) {
+        Serial << "Server feeding update successfully sent, distributing." << endl;
+    } else {
+        Serial << "Failed to send the server update about feeding, skipping distribution." << endl;
+        return;
+    }
+    Serial << "Dispensing food" << endl;
+    Serial << "Closing tray" << endl;
+    SharedDependencies::leftMotor->turn_right_degrees(90);
+    Serial << "Opening food trap" << endl;
+    SharedDependencies::rightMotor->turn_left_degrees(90);
+    unsigned long now_start = millis();
+    unsigned long current = (millis() - now_start);
+    while (current <= distributable_amount) {
+        current = (millis() - now_start);
+        if (current % 10 == 0) {
+            Serial << "Dispensing food to tray" << endl;
+        }
+    }
+    Serial << "Food dispensed to tray, closing trap" << endl;
+    SharedDependencies::rightMotor->turn_right_degrees(90);
+    Serial << "Trap closed, opening tray" << endl;
+    SharedDependencies::leftMotor->turn_left_degrees(90);
+    Serial << "Tray opened, Bon appetit" << endl;
+}
+
 void loop()
 {
     unsigned long now = millis();
@@ -291,7 +369,7 @@ void loop()
     SharedDependencies::bleHandler->monitorConnection();
 
     // Handle incoming BLE data from connected devices (non-AT commands)
-    handle_ble_data();
+    // handle_ble_data();
 
     // LED updates every 100ms
     if (now - last_led_render >= LED_RENDER_INTERVAL) {
@@ -303,6 +381,9 @@ void loop()
     if (now - last_ble_status_check >= BLE_STATUS_CHECK_INTERVAL) {
         if (!SharedDependencies::bleHandler->isConnected()) {
             Serial << ".";
+            if (SharedDependencies::bleHandler->hasIncomingData()) {
+                handle_beacons();
+            }
         } else {
             Serial << "A device is connected to the BLE module" << endl;
         }

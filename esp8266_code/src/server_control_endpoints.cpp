@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: server_control_endpoints.cpp
 * CREATION DATE: 14-02-2026
-* LAST Modified: 10:11:50 14-02-2026
+* LAST Modified: 12:30:12 14-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -23,6 +23,7 @@
 */
 #include <ESP8266WiFi.h>
 #include <cstring>
+#include <ArduinoJson.h>
 #include "config.hpp"
 #include "my_overloads.hpp"
 #include "shared_dependencies.hpp"
@@ -55,8 +56,9 @@ const char *getCachedIp()
 }
 
 
-bool HttpServer::ServerEndpoints::Handler::Get::fed(const char *beacon_mac)
+bool HttpServer::ServerEndpoints::Handler::Get::fed(const char *beacon_mac, long long int *can_distribute)
 {
+    MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, true);
     char body[256];
     snprintf(body, sizeof(body), "{\"beacon_mac\":\"%s\"}", beacon_mac);
     WiFiClient client;
@@ -65,21 +67,43 @@ bool HttpServer::ServerEndpoints::Handler::Get::fed(const char *beacon_mac)
     SharedDependencies::webClient->begin(client, url);
     SharedDependencies::webClient->addHeader("Content-Type", "application/json");
     int httpCode = SharedDependencies::webClient->sendRequest("GET", body);
-    SharedDependencies::webClient->end();
     if (httpCode == 200) {
-        Serial << "GET fed successful for beacon: " << beacon_mac << endl;
-        return true; // Assuming 200 means fed/allowed
+        String response = SharedDependencies::webClient->getString();
+        StaticJsonDocument<256> doc;
+        DeserializationError err = deserializeJson(doc, response);
+        SharedDependencies::webClient->end();
+        if (err) {
+            Serial << "JSON parse error for beacon: " << beacon_mac << endl;
+            return false;
+        }
+        long long int food_eaten = doc["food_eaten"];
+        long long int food_max = doc["food_max"];
+        bool can_distribute_check = doc["can_distribute"];
+        *can_distribute = food_max - food_eaten;
+        MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
+        if (food_eaten < food_max && can_distribute_check) {
+            Serial << "Can feed beacon: " << beacon_mac << " (eaten " << food_eaten << " < max " << food_max << "), can_distribute " << can_distribute_check << endl;
+            return true;
+        } else {
+            Serial << "Cannot feed beacon: " << beacon_mac << " (eaten " << food_eaten << " >= max " << food_max << "), can_distribute " << can_distribute_check << endl;
+            *can_distribute = -1;
+            return false;
+        }
     } else {
+        SharedDependencies::webClient->end();
+        MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
         Serial << "GET fed failed for beacon: " << beacon_mac << " code: " << httpCode << endl;
+        *can_distribute = -1;
         return false;
     }
 }
 
-bool HttpServer::ServerEndpoints::Handler::Post::fed(const char *beacon_mac)
+bool HttpServer::ServerEndpoints::Handler::Post::fed(const char *beacon_mac, const unsigned long food_amount)
 {
+    MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, true);
     getCachedMac();
     char body[256];
-    snprintf(body, sizeof(body), "{\"beacon_mac\":\"%s\",\"feeder_mac\":\"%s\"}", beacon_mac, mac_buffer);
+    snprintf(body, sizeof(body), "{\"beacon_mac\":\"%s\",\"feeder_mac\":\"%s\",\"amount\":%lu}", beacon_mac, mac_buffer, food_amount);
     WiFiClient client;
     char url[256];
     snprintf(url, sizeof(url), "%s%s", CONTROL_SERVER, HttpServer::ServerEndpoints::Url::Post::FED.data());
@@ -87,6 +111,7 @@ bool HttpServer::ServerEndpoints::Handler::Post::fed(const char *beacon_mac)
     SharedDependencies::webClient->addHeader("Content-Type", "application/json");
     int httpCode = SharedDependencies::webClient->POST(body);
     SharedDependencies::webClient->end();
+    MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
     if (httpCode == 200) {
         Serial << "POST fed successful for beacon: " << beacon_mac << endl;
         return true;
@@ -98,6 +123,7 @@ bool HttpServer::ServerEndpoints::Handler::Post::fed(const char *beacon_mac)
 
 bool HttpServer::ServerEndpoints::Handler::Post::location(const char *beacon_mac)
 {
+    MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, true);
     getCachedMac();
     char body[256];
     snprintf(body, sizeof(body), "{\"beacon_mac\":\"%s\",\"feeder_mac\":\"%s\"}", beacon_mac, mac_buffer);
@@ -108,6 +134,7 @@ bool HttpServer::ServerEndpoints::Handler::Post::location(const char *beacon_mac
     SharedDependencies::webClient->addHeader("Content-Type", "application/json");
     int httpCode = SharedDependencies::webClient->POST(body);
     SharedDependencies::webClient->end();
+    MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
     if (httpCode == 200) {
         Serial << "POST location successful for beacon: " << beacon_mac << endl;
         return true;
@@ -117,8 +144,10 @@ bool HttpServer::ServerEndpoints::Handler::Post::location(const char *beacon_mac
     }
 }
 
-bool HttpServer::ServerEndpoints::Handler::Post::visits(const char *beacon_mac)
+bool HttpServer::ServerEndpoints::Handler::Post::
+visits(const char *beacon_mac)
 {
+    MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, true);
     getCachedMac();
     char body[256];
     snprintf(body, sizeof(body), "{\"beacon_mac\":\"%s\",\"feeder_mac\":\"%s\"}", beacon_mac, mac_buffer);
@@ -129,6 +158,7 @@ bool HttpServer::ServerEndpoints::Handler::Post::visits(const char *beacon_mac)
     SharedDependencies::webClient->addHeader("Content-Type", "application/json");
     int httpCode = SharedDependencies::webClient->POST(body);
     SharedDependencies::webClient->end();
+    MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
     if (httpCode == 200) {
         Serial << "POST visits successful for beacon: " << beacon_mac << endl;
         return true;
@@ -139,6 +169,7 @@ bool HttpServer::ServerEndpoints::Handler::Post::visits(const char *beacon_mac)
 }
 bool HttpServer::ServerEndpoints::Handler::Put::ip()
 {
+    MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, true);
     getCachedMac();
     getCachedIp();
     char body[256];
@@ -150,6 +181,7 @@ bool HttpServer::ServerEndpoints::Handler::Put::ip()
     SharedDependencies::webClient->addHeader("Content-Type", "application/json");
     int httpCode = SharedDependencies::webClient->PUT(body);
     SharedDependencies::webClient->end();
+    MyUtils::ActiveComponents::Panel::activity(blinkIntervalComponent, false);
     if (httpCode == 200) {
         Serial << "PUT ip successful" << endl;
         return true;

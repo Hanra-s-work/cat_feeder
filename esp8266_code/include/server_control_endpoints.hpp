@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: server_control_endpoints.hpp
 * CREATION DATE: 14-02-2026
-* LAST Modified: 9:43:52 14-02-2026
+* LAST Modified: 12:22:21 14-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -23,6 +23,7 @@
 */
 #pragma once
 #include <string_view>
+#include "server.hpp"
 
 namespace HttpServer
 {
@@ -69,7 +70,7 @@ namespace HttpServer
                 *       "beacon_mac": {{sample_beacon}},
                 *   }
                 */
-                bool fed(const char *beacon_mac);
+                bool fed(const char *beacon_mac, long long int *can_distribute);
             } // namespace Get
 
             namespace Post
@@ -82,7 +83,7 @@ namespace HttpServer
                 *       "amount": {{feeder_amount}}
                 *   }
                 */
-                bool fed(const char *beacon_mac);
+                bool fed(const char *beacon_mac, const unsigned long food_amount);
 
                 /*inform the control server that the pet (beacon) has passed near us
                 * Body:
