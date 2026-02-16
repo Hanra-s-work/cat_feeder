@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ble_handler.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 18:17:45 12-02-2026
+* LAST Modified: 17:37:47 16-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -429,20 +429,28 @@ bool BluetoothLE::BLEHandler::startScan(uint32_t timeout_ms)
     Serial << "[BLE] Starting device discovery..." << endl;
     Serial << "[BLE] Current role: " << (_current_role == BLERole::Master ? "Master" : (_current_role == BLERole::Slave ? "Slave" : "Unknown")) << endl;
 
-    String response = sendATCommand(AT::Action::DISCOVER, timeout_ms + 1000);
+    // Use INQ command as this module responds to that
+    String response = sendATCommand(AT::Query::INQ, timeout_ms + 1000);
 
-    // If first command fails or returns ERROR, try alternative command format
+    // If INQ fails, try DISC commands as fallback
     if (response.length() == 0 || response.indexOf(AT::Responses::Error::ERROR.data()) >= 0) {
-        Serial << "[BLE] AT+DISC? failed. Trying AT+DISC..." << endl;
+        Serial << "[BLE] AT+INQ? failed. Trying AT+DISC?..." << endl;
         delay(200);  // Small delay before retry
-        response = sendATCommand(AT::Action::DISCOVER_ALT, timeout_ms + 1000);
+        response = sendATCommand(AT::Action::DISCOVER, timeout_ms + 1000);
 
-        // If still failing, log and return
+        // If DISC fails, try DISC without ?
         if (response.indexOf(AT::Responses::Error::ERROR.data()) >= 0) {
-            Serial << "[BLE] Discovery command not supported or module not ready." << endl;
-            Serial << "[BLE] This AT-09 firmware may not support device discovery." << endl;
-            Serial << "[BLE] Try resetting the module with: bleHandler.reset()" << endl;
-            return false;
+            Serial << "[BLE] AT+DISC? failed. Trying AT+DISC..." << endl;
+            delay(200);
+            response = sendATCommand(AT::Action::DISCOVER_ALT, timeout_ms + 1000);
+
+            // If still failing, log and return
+            if (response.indexOf(AT::Responses::Error::ERROR.data()) >= 0) {
+                Serial << "[BLE] Discovery command not supported or module not ready." << endl;
+                Serial << "[BLE] This AT-09 firmware may not support device discovery." << endl;
+                Serial << "[BLE] Try resetting the module with: bleHandler.reset()" << endl;
+                return false;
+            }
         }
     }
 

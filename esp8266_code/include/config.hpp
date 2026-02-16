@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: config.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 17:4:18 16-02-2026
+* LAST Modified: 17:22:34 16-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -51,7 +51,8 @@ inline constexpr int SERVER_PORT = 80;
 inline unsigned long blinkInterval = 1000;
 
 // Serial communication baud rate
-inline constexpr unsigned long SERIAL_BAUDRATE = 9600;
+// NOTE: Use 115200 for hardware Serial to avoid SoftwareSerial interference with BLE at 9600
+inline constexpr unsigned long SERIAL_UART_BAUDRATE = 115200;
 
 // connection attempts delay (ms)
 inline constexpr unsigned long WIFI_RETRY_DELAY = 500;

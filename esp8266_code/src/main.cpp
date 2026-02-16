@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: main.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 17:14:39 16-02-2026
+* LAST Modified: 17:37:37 16-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -43,6 +43,7 @@ static unsigned long last_ble_scan = 0;
 static unsigned long last_sign_of_life = 0;
 static unsigned long last_ble_status_check = 0;
 long long int distributable_amount = -1;
+bool allowed_to_dispense = false;
 unsigned long int sleep_time = 1000;
 bool right_motor_open = false;
 bool dispensing_food = false;
@@ -61,7 +62,7 @@ void setup()
     // ─────────────── Pins & Serial ───────────────
     Pins::init();
 
-    Serial.begin(SERIAL_BAUDRATE);
+    Serial.begin(SERIAL_UART_BAUDRATE);
     Serial << "Starting up..." << endl;
     delay(100);
 
@@ -349,6 +350,7 @@ void handle_beacons()
     bool feed_update = HttpServer::ServerEndpoints::Handler::Post::fed(devices[device_id].address, distributable_amount);
     if (feed_update) {
         Serial << "Server feeding update successfully sent, distributing." << endl;
+        allowed_to_dispense = true;
     } else {
         Serial << "Failed to send the server update about feeding, skipping distribution." << endl;
         return;
@@ -357,6 +359,10 @@ void handle_beacons()
 
 void dispense_food()
 {
+    if (!allowed_to_dispense) {
+        Serial << "We are not allowed to dispense food" << endl;
+        return;
+    }
     if (!dispensing_food && distributable_amount > 0) {
         Serial << "Dispensing food" << endl;
         Serial << "Closing tray" << endl;
@@ -372,13 +378,14 @@ void dispense_food()
             Serial << "Dispensing food to tray" << endl;
         }
         return;
-    } else {
+    } else if (allowed_to_dispense) {
         dispensing_food = false;
         Serial << "Food dispensed to tray, closing trap" << endl;
         SharedDependencies::rightMotor->turn_right_degrees(140);
         Serial << "Trap closed, opening tray" << endl;
         SharedDependencies::leftMotor->turn_left_degrees(90);
         Serial << "Tray opened, Bon appetit" << endl;
+        allowed_to_dispense = false;
     }
 }
 
@@ -402,25 +409,6 @@ void loop()
     }
     dispense_food();
 
-    // if (now % 1000 == 0) {
-    //     if (!right_motor_open && !left_motor_open) {
-    //         SharedDependencies::rightMotor->turn_right_degrees(140);
-    //         Serial << "Opening motor" << endl;
-    //         right_motor_open = true;
-    //     } else if (right_motor_open) {
-    //         SharedDependencies::rightMotor->turn_left_degrees(140);
-    //         Serial << "Closing motor" << endl;
-    //         right_motor_open = false;
-    //         SharedDependencies::leftMotor->turn_right_degrees(90);
-    //         Serial << "Opening second motor" << endl;
-    //         left_motor_open = true;
-    //     } else if (left_motor_open) {
-    //         SharedDependencies::leftMotor->turn_left_degrees(90);
-    //         Serial << "Closing second motor" << endl;
-    //         left_motor_open = false;
-    //     }
-    // }
-
     if (now - last_ble_status_check >= BLE_STATUS_CHECK_INTERVAL) {
         if (!SharedDependencies::bleHandler->isConnected()) {
             Serial << ".";
@@ -439,8 +427,8 @@ void loop()
     //     SharedDependencies::bleHandler->printConnectionStatus();
     // }
 
-        // BLE periodic scanning (handled by refresh_ble_scan with BLE_SCAN_INTERVAL)
-        // refresh_ble_scan();
+    // BLE periodic scanning (handled by refresh_ble_scan with BLE_SCAN_INTERVAL)
+    refresh_ble_scan();
 
     // Inform server
     if (now - last_sign_of_life >= SIGNS_OF_LIFE_INTERVAL) {
