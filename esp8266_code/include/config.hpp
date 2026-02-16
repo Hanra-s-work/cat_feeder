@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: config.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 12:31:36 14-02-2026
+* LAST Modified: 17:4:18 16-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -51,7 +51,7 @@ inline constexpr int SERVER_PORT = 80;
 inline unsigned long blinkInterval = 1000;
 
 // Serial communication baud rate
-inline constexpr unsigned long SERIAL_BAUDRATE = 115200;
+inline constexpr unsigned long SERIAL_BAUDRATE = 9600;
 
 // connection attempts delay (ms)
 inline constexpr unsigned long WIFI_RETRY_DELAY = 500;
@@ -59,7 +59,7 @@ inline constexpr unsigned long WIFI_RETRY_DELAY = 500;
 // Led configs
 inline constexpr uint8_t LED_BRIGHTNESS = 100; // 0-255
 inline constexpr uint8_t LED_WHITE_LEVEL = 0;  // 0-255
-inline constexpr uint16_t LED_NUMBER = 30;    // Number of LEDs in the strip
+inline constexpr uint16_t LED_NUMBER = 25;//30;    // Number of LEDs in the strip
 inline constexpr uint8_t LED_DURATION = 0;   // Duration for color display in setColor functions (0 = infinite)
 #ifndef LED_TYPE
 #define LED_TYPE NEO_KHZ800 // LED strip type
@@ -79,7 +79,7 @@ inline constexpr uint32_t LED_COMPONENT_INTERVAL_MS = 500;
 
 
 // Motor configs
-inline constexpr uint8_t MOTOR_SPEED_DEFAULT = 50; // Default motor speed (0-100)
+inline constexpr uint8_t MOTOR_SPEED_DEFAULT = 10; // Default motor speed (0-100)
 inline constexpr unsigned long MOTOR_TURN_DURATION_DEFAULT = 1000; // Default duration for turning (ms)
 inline constexpr float MOTOR_TURN_DEGREES_DEFAULT = 90.0f; // Default degrees to turn
 

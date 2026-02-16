@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: main.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 13:17:50 14-02-2026
+* LAST Modified: 17:14:39 16-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -42,6 +42,13 @@ static unsigned long long iteration = 0;
 static unsigned long last_ble_scan = 0;
 static unsigned long last_sign_of_life = 0;
 static unsigned long last_ble_status_check = 0;
+long long int distributable_amount = -1;
+unsigned long int sleep_time = 1000;
+bool right_motor_open = false;
+bool dispensing_food = false;
+bool left_motor_open = false;
+unsigned long now_start = millis();
+unsigned long current = (millis() - now_start);
 
 static LED::ColourPos loop_progress[] = {
     { 0, LED::led_get_colour_from_pointer(&LED::Colours::Yellow) },                 // moving dot
@@ -104,6 +111,7 @@ void setup()
     Serial << "Left motor pointer shared" << endl;
     Serial << "Initialising left motor..." << endl;
     kibble_tray.init();
+    kibble_tray.turn_right_degrees(120);
     Serial << "Right motor initialized" << endl;
     // Disabled the calibration test because it would offset it
     // Serial << "Running test turn on left motor..." << endl;
@@ -118,6 +126,7 @@ void setup()
     Serial << "Right motor pointer shared" << endl;
     Serial << "Initialising right motor..." << endl;
     food_trap.init();
+    food_trap.turn_right_degrees(120);
     Serial << "Right motor initialized" << endl;
     // Disabled the calibration test because it would offset it
     // Serial << "Running test turn on right motor..." << endl;
@@ -245,6 +254,7 @@ void refresh_ble_scan()
     }
 }
 
+
 // Handle incoming BLE data from connected devices
 void handle_ble_data()
 {
@@ -322,7 +332,7 @@ void handle_beacons()
     if (valid_devices > 1) {
         Serial << "More than once device is available, using the first seen device to know if feeding is possible." << endl;
     }
-    long long int distributable_amount = -1;
+    distributable_amount = -1;
     bool can_feed = HttpServer::ServerEndpoints::Handler::Get::fed(devices[device_id].address, &distributable_amount);
     if (!can_feed) {
         Serial << "The device is not allowed to feed, ending check." << endl;
@@ -343,25 +353,35 @@ void handle_beacons()
         Serial << "Failed to send the server update about feeding, skipping distribution." << endl;
         return;
     }
-    Serial << "Dispensing food" << endl;
-    Serial << "Closing tray" << endl;
-    SharedDependencies::leftMotor->turn_right_degrees(90);
-    Serial << "Opening food trap" << endl;
-    SharedDependencies::rightMotor->turn_left_degrees(90);
-    unsigned long now_start = millis();
-    unsigned long current = (millis() - now_start);
-    while (current <= distributable_amount) {
-        current = (millis() - now_start);
+}
+
+void dispense_food()
+{
+    if (!dispensing_food && distributable_amount > 0) {
+        Serial << "Dispensing food" << endl;
+        Serial << "Closing tray" << endl;
+        SharedDependencies::leftMotor->turn_right_degrees(90);
+        Serial << "Opening food trap" << endl;
+        SharedDependencies::rightMotor->turn_left_degrees(140);
+        now_start = millis();
+        dispensing_food = true;
+    }
+    current = (millis() - now_start);
+    if (current <= distributable_amount) {
         if (current % 10 == 0) {
             Serial << "Dispensing food to tray" << endl;
         }
+        return;
+    } else {
+        dispensing_food = false;
+        Serial << "Food dispensed to tray, closing trap" << endl;
+        SharedDependencies::rightMotor->turn_right_degrees(140);
+        Serial << "Trap closed, opening tray" << endl;
+        SharedDependencies::leftMotor->turn_left_degrees(90);
+        Serial << "Tray opened, Bon appetit" << endl;
     }
-    Serial << "Food dispensed to tray, closing trap" << endl;
-    SharedDependencies::rightMotor->turn_right_degrees(90);
-    Serial << "Trap closed, opening tray" << endl;
-    SharedDependencies::leftMotor->turn_left_degrees(90);
-    Serial << "Tray opened, Bon appetit" << endl;
 }
+
 
 void loop()
 {
@@ -380,6 +400,26 @@ void loop()
         MyUtils::ActiveComponents::Panel::tick();
         MyUtils::ActiveComponents::Panel::render();
     }
+    dispense_food();
+
+    // if (now % 1000 == 0) {
+    //     if (!right_motor_open && !left_motor_open) {
+    //         SharedDependencies::rightMotor->turn_right_degrees(140);
+    //         Serial << "Opening motor" << endl;
+    //         right_motor_open = true;
+    //     } else if (right_motor_open) {
+    //         SharedDependencies::rightMotor->turn_left_degrees(140);
+    //         Serial << "Closing motor" << endl;
+    //         right_motor_open = false;
+    //         SharedDependencies::leftMotor->turn_right_degrees(90);
+    //         Serial << "Opening second motor" << endl;
+    //         left_motor_open = true;
+    //     } else if (left_motor_open) {
+    //         SharedDependencies::leftMotor->turn_left_degrees(90);
+    //         Serial << "Closing second motor" << endl;
+    //         left_motor_open = false;
+    //     }
+    // }
 
     if (now - last_ble_status_check >= BLE_STATUS_CHECK_INTERVAL) {
         if (!SharedDependencies::bleHandler->isConnected()) {
