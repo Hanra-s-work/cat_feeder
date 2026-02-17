@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: main.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 17:37:37 16-02-2026
+* LAST Modified: 14:52:58 17-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -43,6 +43,7 @@ static unsigned long last_ble_scan = 0;
 static unsigned long last_sign_of_life = 0;
 static unsigned long last_ble_status_check = 0;
 long long int distributable_amount = -1;
+bool dispense_override = false;
 bool allowed_to_dispense = false;
 unsigned long int sleep_time = 1000;
 bool right_motor_open = false;
@@ -55,137 +56,6 @@ static LED::ColourPos loop_progress[] = {
     { 0, LED::led_get_colour_from_pointer(&LED::Colours::Yellow) },                 // moving dot
     { UINT16_MAX_VALUE, {} }    // sentinel
 };
-
-void setup()
-{
-    // Set up the pins to prevent accidental floating/flashing states
-    // ─────────────── Pins & Serial ───────────────
-    Pins::init();
-
-    Serial.begin(SERIAL_UART_BAUDRATE);
-    Serial << "Starting up..." << endl;
-    delay(100);
-
-    // ─────────────── LED Initialization ───────────────
-    Serial << "Initializing LEDs..." << endl;
-    LED::led_init();
-    LED::Nodes::set_pos_step(loop_progress[0], 0);
-    // Set up the cycle led animation
-    Serial << "Setting up LED cycle animation..." << endl;
-    MyUtils::ActiveComponents::initialise_active_components();
-    Serial << "LED cycle animation set up complete" << endl;
-    Serial << "LEDs initialized" << endl;
-
-    // ─────────────── WiFi ───────────────
-    Serial << "Initializing WiFi..." << endl;
-    LED::ColourPos wifi_anim[] = {
-        {0, LED::green_colour},
-        {UINT16_MAX_VALUE, {}}
-    };
-    LED::Nodes::set_pos_step(wifi_anim[0], 0);
-
-    static Wifi::WifiHandler wifiHandler(SSID, SSID_PASSWORD, LED::dark_blue, wifi_anim);
-    Serial << "Sharing WiFi handler pointer..." << endl;
-    SharedDependencies::wifiHandler = &wifiHandler;
-    Serial << "WiFi handler pointer shared" << endl;
-    Serial << "Setting up WiFi handler..." << endl;
-    wifiHandler.init();
-    Serial << "Connecting to WiFi..." << endl;
-    wifiHandler.connect();
-    Serial << "WiFi initialized" << endl;
-
-
-    Serial << "Unveiling IP..." << endl;
-    LED::led_set_colour(LED::red_colour, LED_DURATION, -1);
-    send_ip_to_ntfy();
-    LED::led_set_colour(LED::yellow_colour, LED_DURATION, -1);
-    Serial << "\nConnected!" << endl;
-    wifiHandler.showIp();
-
-    // ─────────────── Motors ───────────────
-    Serial << "Initializing motors..." << endl;
-    Serial << "Declaring left motor..." << endl;
-    static Motors::Motor kibble_tray(Pins::MOTOR1_PIN, loop_progress, MOTOR_SPEED_DEFAULT, LED::dark_blue, LED::red_colour, MyUtils::ActiveComponents::Component::MotorLeft);
-    Serial << "Left motor declared" << endl;
-    Serial << "Sharing left motor pointer..." << endl;
-    SharedDependencies::leftMotor = &kibble_tray;
-    Serial << "Left motor pointer shared" << endl;
-    Serial << "Initialising left motor..." << endl;
-    kibble_tray.init();
-    kibble_tray.turn_right_degrees(120);
-    Serial << "Right motor initialized" << endl;
-    // Disabled the calibration test because it would offset it
-    // Serial << "Running test turn on left motor..." << endl;
-    // kibble_tray.calibrate();
-    // Serial << "Left motor callibrated" << endl;
-
-    Serial << "Initializing right motor..." << endl;
-    static Motors::Motor food_trap(Pins::MOTOR2_PIN, loop_progress, MOTOR_SPEED_DEFAULT, LED::dark_blue, LED::red_colour, MyUtils::ActiveComponents::Component::MotorRight);
-    Serial << "Rigth motor declared" << endl;
-    Serial << "Sharing right motor pointer..." << endl;
-    SharedDependencies::rightMotor = &food_trap;
-    Serial << "Right motor pointer shared" << endl;
-    Serial << "Initialising right motor..." << endl;
-    food_trap.init();
-    food_trap.turn_right_degrees(120);
-    Serial << "Right motor initialized" << endl;
-    // Disabled the calibration test because it would offset it
-    // Serial << "Running test turn on right motor..." << endl;
-    // food_trap.calibrate();
-    // Serial << "Right motor callibrated" << endl;
-
-    // ─────────────── HTTP Server ───────────────
-    Serial << "Starting HTTP server..." << endl;
-    HttpServer::initialize_server();
-    Serial << "HTTP server started" << endl;
-    LED::led_set_colour(LED::blue_colour, LED_DURATION, -1);
-
-    // ─────────────── Bluetooth ───────────────
-    Serial << "Setting up bluetooth..." << endl;
-    static BluetoothLE::BLEHandler bleHandler(BLUETOOTH_BAUDRATE);
-    Serial << "Sharing bluetooth handler pointer..." << endl;
-    SharedDependencies::bleHandler = &bleHandler;
-    Serial << "Bluetooth handler pointer shared" << endl;
-    Serial << "Initializing bluetooth..." << endl;
-    bleHandler.init();
-    Serial << "Enabling bluetooth..." << endl;
-    bleHandler.enable();
-    Serial << "Granting additional wait time for first boot..." << endl;
-    delay(200);  // AT-09 needs ~200-300ms after power-on (enable() already has 100ms)
-    // Hardware diagnostics
-    Serial << "Testing Hardware..." << endl;
-    bleHandler.testHardware();
-
-    // Debug: Uncomment to test different baud rates
-    // bleHandler.testBaudRates();
-
-    Serial << "Ble module information..." << endl;
-    bleHandler.printStatus();
-
-    // Setup as discoverable peripheral (slave mode)
-    Serial << "Configuring as discoverable BLE peripheral..." << endl;
-    if (bleHandler.setupSlaveMode(BOARD_NAME)) {
-        Serial << "Device is now discoverable as: " << BOARD_NAME << endl;
-    } else {
-        Serial << "Warning: Slave mode setup failed, device may not be discoverable" << endl;
-    }
-
-    Serial << "Serial BT started" << endl;
-
-    // Give a sign of life to the control server
-    Serial << "Giving a sign of life to the server" << endl;
-    bool broadcast_status = HttpServer::ServerEndpoints::Handler::Put::ip();
-    if (broadcast_status) {
-        Serial << "Sign of life provided successfully" << endl;
-    } else {
-        Serial << "Failed to provide a sign of life to the server, is it down?" << endl;
-    }
-
-    // Final render to clear all setup artifacts
-    Serial << "Clearing setup artifacts..." << endl;
-    MyUtils::ActiveComponents::Panel::render();
-    Serial << "Setup complete - entering main loop" << endl;
-}
 
 void onboard_blinker()
 {
@@ -333,6 +203,10 @@ void handle_beacons()
     if (valid_devices > 1) {
         Serial << "More than once device is available, using the first seen device to know if feeding is possible." << endl;
     }
+    if (dispense_override) {
+        Serial << "O distributable amount checked" << endl;
+        return;
+    }
     distributable_amount = -1;
     bool can_feed = HttpServer::ServerEndpoints::Handler::Get::fed(devices[device_id].address, &distributable_amount);
     if (!can_feed) {
@@ -386,9 +260,150 @@ void dispense_food()
         SharedDependencies::leftMotor->turn_left_degrees(90);
         Serial << "Tray opened, Bon appetit" << endl;
         allowed_to_dispense = false;
+        dispense_override = false;
     }
 }
 
+void endpoint_dispense()
+{
+    dispensing_food = true;
+    distributable_amount = 50;
+    dispense_override = true;
+    SharedDependencies::webServer->send(200, "text/plain", "OK");
+}
+
+void setup()
+{
+    // Set up the pins to prevent accidental floating/flashing states
+    // ─────────────── Pins & Serial ───────────────
+    Pins::init();
+
+    Serial.begin(SERIAL_UART_BAUDRATE);
+    Serial << "Starting up..." << endl;
+    delay(100);
+
+    // ─────────────── LED Initialization ───────────────
+    Serial << "Initializing LEDs..." << endl;
+    LED::led_init();
+    LED::Nodes::set_pos_step(loop_progress[0], 0);
+    // Set up the cycle led animation
+    Serial << "Setting up LED cycle animation..." << endl;
+    MyUtils::ActiveComponents::initialise_active_components();
+    Serial << "LED cycle animation set up complete" << endl;
+    Serial << "LEDs initialized" << endl;
+
+    // ─────────────── WiFi ───────────────
+    Serial << "Initializing WiFi..." << endl;
+    LED::ColourPos wifi_anim[] = {
+        {0, LED::green_colour},
+        {UINT16_MAX_VALUE, {}}
+    };
+    LED::Nodes::set_pos_step(wifi_anim[0], 0);
+
+    static Wifi::WifiHandler wifiHandler(SSID, SSID_PASSWORD, LED::dark_blue, wifi_anim);
+    Serial << "Sharing WiFi handler pointer..." << endl;
+    SharedDependencies::wifiHandler = &wifiHandler;
+    Serial << "WiFi handler pointer shared" << endl;
+    Serial << "Setting up WiFi handler..." << endl;
+    wifiHandler.init();
+    Serial << "Connecting to WiFi..." << endl;
+    wifiHandler.connect();
+    Serial << "WiFi initialized" << endl;
+
+
+    Serial << "Unveiling IP..." << endl;
+    LED::led_set_colour(LED::red_colour, LED_DURATION, -1);
+    send_ip_to_ntfy();
+    LED::led_set_colour(LED::yellow_colour, LED_DURATION, -1);
+    Serial << "\nConnected!" << endl;
+    wifiHandler.showIp();
+
+    // ─────────────── Motors ───────────────
+    Serial << "Initializing motors..." << endl;
+    Serial << "Declaring left motor..." << endl;
+    static Motors::Motor kibble_tray(Pins::MOTOR1_PIN, loop_progress, MOTOR_SPEED_DEFAULT, LED::dark_blue, LED::red_colour, MyUtils::ActiveComponents::Component::MotorLeft);
+    Serial << "Left motor declared" << endl;
+    Serial << "Sharing left motor pointer..." << endl;
+    SharedDependencies::leftMotor = &kibble_tray;
+    Serial << "Left motor pointer shared" << endl;
+    Serial << "Initialising left motor..." << endl;
+    kibble_tray.init();
+    kibble_tray.turn_right_degrees(120);
+    Serial << "Right motor initialized" << endl;
+    // Disabled the calibration test because it would offset it
+    // Serial << "Running test turn on left motor..." << endl;
+    // kibble_tray.calibrate();
+    // Serial << "Left motor callibrated" << endl;
+
+    Serial << "Initializing right motor..." << endl;
+    static Motors::Motor food_trap(Pins::MOTOR2_PIN, loop_progress, MOTOR_SPEED_DEFAULT, LED::dark_blue, LED::red_colour, MyUtils::ActiveComponents::Component::MotorRight);
+    Serial << "Rigth motor declared" << endl;
+    Serial << "Sharing right motor pointer..." << endl;
+    SharedDependencies::rightMotor = &food_trap;
+    Serial << "Right motor pointer shared" << endl;
+    Serial << "Initialising right motor..." << endl;
+    food_trap.init();
+    food_trap.turn_right_degrees(120);
+    Serial << "Right motor initialized" << endl;
+    // Disabled the calibration test because it would offset it
+    // Serial << "Running test turn on right motor..." << endl;
+    // food_trap.calibrate();
+    // Serial << "Right motor callibrated" << endl;
+
+    // ─────────────── HTTP Server ───────────────
+    SharedDependencies::webServer->on("/dispense", HTTP_GET, endpoint_dispense);
+    Serial << "Starting HTTP server..." << endl;
+    HttpServer::initialize_server();
+    Serial << "HTTP server started" << endl;
+    LED::led_set_colour(LED::blue_colour, LED_DURATION, -1);
+
+    // ─────────────── Bluetooth ───────────────
+    Serial << "Setting up bluetooth..." << endl;
+    static BluetoothLE::BLEHandler bleHandler(BLUETOOTH_BAUDRATE);
+    Serial << "Sharing bluetooth handler pointer..." << endl;
+    SharedDependencies::bleHandler = &bleHandler;
+    Serial << "Bluetooth handler pointer shared" << endl;
+    Serial << "Initializing bluetooth..." << endl;
+    bleHandler.init();
+    Serial << "Enabling bluetooth..." << endl;
+    bleHandler.enable();
+    Serial << "Granting additional wait time for first boot..." << endl;
+    delay(200);  // AT-09 needs ~200-300ms after power-on (enable() already has 100ms)
+    // Hardware diagnostics
+    Serial << "Testing Hardware..." << endl;
+    bleHandler.testHardware();
+
+    // Debug: Uncomment to test different baud rates
+    // bleHandler.testBaudRates();
+
+    Serial << "Ble module information..." << endl;
+    bleHandler.printStatus();
+
+    // Setup as discoverable peripheral (slave mode)
+    Serial << "Configuring as discoverable BLE peripheral..." << endl;
+    if (bleHandler.setupSlaveMode(BOARD_NAME)) {
+        Serial << "Device is now discoverable as: " << BOARD_NAME << endl;
+    } else {
+        Serial << "Warning: Slave mode setup failed, device may not be discoverable" << endl;
+    }
+
+    Serial << "Serial BT started" << endl;
+
+    // Give a sign of life to the control server
+    Serial << "Giving a sign of life to the server" << endl;
+    bool broadcast_status = HttpServer::ServerEndpoints::Handler::Put::ip();
+    if (broadcast_status) {
+        Serial << "Sign of life provided successfully" << endl;
+    } else {
+        Serial << "Failed to provide a sign of life to the server, is it down?" << endl;
+    }
+
+
+    // Final render to clear all setup artifacts
+    Serial << "Clearing setup artifacts..." << endl;
+    MyUtils::ActiveComponents::Panel::render();
+    Serial << "Setup complete - entering main loop" << endl;
+}
 
 void loop()
 {
