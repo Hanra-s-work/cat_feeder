@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: main.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 14:52:58 17-02-2026
+* LAST Modified: 13:29:36 18-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -231,33 +231,61 @@ void handle_beacons()
     }
 }
 
+
+void motor_close_kibble_tray()
+{
+    Serial << "Closing kibble tray" << endl;
+    SharedDependencies::leftMotor->turn_left_degrees(90);
+}
+
+void motor_open_kibble_tray()
+{
+    Serial << "Opening kibble tray" << endl;
+    SharedDependencies::leftMotor->turn_right_degrees(90);
+}
+
+void motor_close_food_trap()
+{
+    Serial << "Closing food trap" << endl;
+    SharedDependencies::rightMotor->turn_left_degrees(140);
+}
+
+void motor_open_food_trap()
+{
+    Serial << "Opening food trap" << endl;
+    SharedDependencies::rightMotor->turn_right_degrees(140);
+}
+
 void dispense_food()
 {
-    if (!allowed_to_dispense) {
-        Serial << "We are not allowed to dispense food" << endl;
+    if (!allowed_to_dispense && !dispense_override) {
+        if (millis() % 10000 == 0) {
+            Serial << "We are not allowed to dispense food" << endl;
+        }
         return;
     }
-    if (!dispensing_food && distributable_amount > 0) {
+    if ((!dispensing_food && dispense_override) && distributable_amount > 0) {
         Serial << "Dispensing food" << endl;
-        Serial << "Closing tray" << endl;
-        SharedDependencies::leftMotor->turn_right_degrees(90);
-        Serial << "Opening food trap" << endl;
-        SharedDependencies::rightMotor->turn_left_degrees(140);
+        motor_close_kibble_tray();
+        motor_open_food_trap();
         now_start = millis();
         dispensing_food = true;
+        distributable_amount *= 10;
+        Serial << "Waiting " << distributable_amount << "seconds" << endl;
     }
     current = (millis() - now_start);
+    Serial << "current = " << current << ", now_start = " << now_start << ", distributable_amount = " << distributable_amount << endl;
     if (current <= distributable_amount) {
         if (current % 10 == 0) {
             Serial << "Dispensing food to tray" << endl;
         }
         return;
-    } else if (allowed_to_dispense) {
+    } else if (allowed_to_dispense || dispense_override) {
         dispensing_food = false;
-        Serial << "Food dispensed to tray, closing trap" << endl;
-        SharedDependencies::rightMotor->turn_right_degrees(140);
+        Serial << "Food dispensed to tray" << endl;
+        motor_close_food_trap();
         Serial << "Trap closed, opening tray" << endl;
-        SharedDependencies::leftMotor->turn_left_degrees(90);
+        motor_open_kibble_tray();
         Serial << "Tray opened, Bon appetit" << endl;
         allowed_to_dispense = false;
         dispense_override = false;
@@ -266,9 +294,36 @@ void dispense_food()
 
 void endpoint_dispense()
 {
-    dispensing_food = true;
-    distributable_amount = 50;
+    Serial << "Dispense signal received" << endl;
+    dispensing_food = false;
+    distributable_amount = MAX_FEEDING_SINGLE_PORTION;
     dispense_override = true;
+    Serial << "Calling dispense" << endl;
+    dispense_food();
+    SharedDependencies::webServer->send(200, "text/plain", "OK");
+}
+
+void close_kibble_tray()
+{
+    motor_close_kibble_tray();
+    SharedDependencies::webServer->send(200, "text/plain", "OK");
+}
+
+void open_kibble_tray()
+{
+    motor_open_kibble_tray();
+    SharedDependencies::webServer->send(200, "text/plain", "OK");
+}
+
+void close_food_trap()
+{
+    motor_close_food_trap();
+    SharedDependencies::webServer->send(200, "text/plain", "OK");
+}
+
+void open_food_trap()
+{
+    motor_open_food_trap();
     SharedDependencies::webServer->send(200, "text/plain", "OK");
 }
 
@@ -328,7 +383,7 @@ void setup()
     Serial << "Left motor pointer shared" << endl;
     Serial << "Initialising left motor..." << endl;
     kibble_tray.init();
-    kibble_tray.turn_right_degrees(120);
+    motor_close_kibble_tray();
     Serial << "Right motor initialized" << endl;
     // Disabled the calibration test because it would offset it
     // Serial << "Running test turn on left motor..." << endl;
@@ -343,7 +398,7 @@ void setup()
     Serial << "Right motor pointer shared" << endl;
     Serial << "Initialising right motor..." << endl;
     food_trap.init();
-    food_trap.turn_right_degrees(120);
+    motor_close_food_trap();
     Serial << "Right motor initialized" << endl;
     // Disabled the calibration test because it would offset it
     // Serial << "Running test turn on right motor..." << endl;
@@ -352,6 +407,10 @@ void setup()
 
     // ─────────────── HTTP Server ───────────────
     SharedDependencies::webServer->on("/dispense", HTTP_GET, endpoint_dispense);
+    SharedDependencies::webServer->on("/otrap", HTTP_GET, open_food_trap);
+    SharedDependencies::webServer->on("/ctrap", HTTP_GET, close_food_trap);
+    SharedDependencies::webServer->on("/otray", HTTP_GET, open_kibble_tray);
+    SharedDependencies::webServer->on("/ctray", HTTP_GET, close_kibble_tray);
     Serial << "Starting HTTP server..." << endl;
     HttpServer::initialize_server();
     Serial << "HTTP server started" << endl;
@@ -424,7 +483,7 @@ void loop()
     }
     dispense_food();
 
-    if (now - last_ble_status_check >= BLE_STATUS_CHECK_INTERVAL) {
+    if (now - last_ble_status_check >= BLE_STATUS_CHECK_INTERVAL && !allowed_to_dispense) {
         if (!SharedDependencies::bleHandler->isConnected()) {
             Serial << ".";
             if (SharedDependencies::bleHandler->hasIncomingData()) {
@@ -433,6 +492,7 @@ void loop()
         } else {
             Serial << "A device is connected to the BLE module" << endl;
         }
+        last_ble_status_check = millis();
     }
 
     // BLE connectivity status check every 10 seconds

@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: leds.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 1:50:38 07-02-2026
+* LAST Modified: 11:14:8 18-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -49,7 +49,7 @@ const LED::Colour LED::red_colour = LED::led_get_colour_from_pointer(&LED::Colou
 const LED::Colour LED::yellow_colour = LED::led_get_colour_from_pointer(&LED::Colours::Yellow);
 const LED::Colour LED::green_colour = LED::led_get_colour_from_pointer(&LED::Colours::Green);
 const LED::Colour LED::blue_colour = LED::led_get_colour_from_pointer(&LED::Colours::Blue);
-const LED::Colour LED::dark_blue = LED::led_get_colour_from_pointer(&LED::Colours::DarkBlue);
+const LED::Colour LED::dark_blue = LED::led_get_colour_from_pointer(&LED::Colours::DarkCyan);
 
 void LED::led_init()
 {

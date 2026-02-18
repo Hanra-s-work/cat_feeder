@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: server_management.py
 # CREATION DATE: 11-10-2025
-# LAST Modified: 3:34:56 13-01-2026
+# LAST Modified: 11:29:40 18-02-2026
 # DESCRIPTION:
 # This is the backend server in charge of making the actual website work.
 # /STOP
@@ -209,10 +209,10 @@ class ServerManagement(metaclass=FinalClass):
             allow_headers=CORE_CONST.CORS_ALLOW_HEADERS,
         )
         # ......... Trusted Host Middelware ..........
-        self.runtime_control.app.add_middleware(
-            TrustedHostMiddleware,
-            allowed_hosts=CORE_CONST.TRUSTED_HOSTS_LIST
-        )
+        # self.runtime_control.app.add_middleware(
+        #     TrustedHostMiddleware,
+        #     allowed_hosts=CORE_CONST.TRUSTED_HOSTS_LIST
+        # )
         # ......... Async Exit Stack Middelware .........
         self.runtime_control.app.add_middleware(AsyncExitStackMiddleware)
         # ========= Uvicorn server configuration ==========

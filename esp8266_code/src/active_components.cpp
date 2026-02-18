@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: active_components.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 22:50:31 11-02-2026
+* LAST Modified: 13:14:10 18-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -57,7 +57,7 @@ LED::ColourPos MyUtils::ActiveComponents::Panel::_nodes[] = {
     { component_id(Component::Clock),  LED::yellow_colour },
     { component_id(Component::WifiStatus),  LED::green_colour  },
     { component_id(Component::MotorLeft),  LED::led_get_colour_from_pointer(&LED::Colours::Aqua)   },
-    { component_id(Component::MotorRight),  LED::led_get_colour_from_pointer(&LED::Colours::DarkMagenta)   },
+    { component_id(Component::MotorRight),  LED::led_get_colour_from_pointer(&LED::Colours::AntiqueWhite)   },
     { component_id(Component::Bluetooth),  LED::dark_blue  },
     { component_id(Component::Server),  LED::led_get_colour_from_pointer(&LED::Colours::LimeGreen)   },
     { component_id(Component::Error), LED::red_colour    }

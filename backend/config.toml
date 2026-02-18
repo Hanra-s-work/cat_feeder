@@ -12,7 +12,7 @@
 # PROJECT: CatFeeder
 # FILE: config.toml
 # CREATION DATE: 10-10-2025
-# LAST Modified: 2:31:45 25-01-2026
+# LAST Modified: 11:28:10 18-02-2026
 # DESCRIPTION:
 # The configuration file used to set the required settings for the server.
 # /STOP
@@ -261,7 +261,7 @@ host = [
 # List of trusted development hosts for the application (only added onto the trusted_host_list if force_https is false)
 # type: list[str], str
 # default: ["localhost", "127.0.0.1", "[::1]"]
-dev_hosts = ["localhost", "127.0.0.1", "[::1]"]
+dev_hosts = ["localhost", "127.0.0.1", "[::1]", "192.168.1.9"]
 
 # The settings for the automation of the cache of the program.
 [Crons]

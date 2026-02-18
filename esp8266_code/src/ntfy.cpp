@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: ntfy.cpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 10:12:51 14-02-2026
+* LAST Modified: 10:50:17 18-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -51,7 +51,7 @@ void send_ip_to_ntfy()
   // ---- Build message ----
   char message[128];  // adjust if needed
 
-  snprintf(message, sizeof(message), "ESP8266 IP: %s\nName: %s", ipStr, BOARD_NAME);
+  snprintf(message, sizeof(message), "ESP8266 IP: %s\nName: %s\nTip:%s/dispense", ipStr, BOARD_NAME, ipStr);
 
   // ---- Send HTTP ----
   SharedDependencies::webClient->begin(client, url);

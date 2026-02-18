@@ -12,7 +12,7 @@ r"""
 # PROJECT: CatFeeder
 # FILE: front_end.py
 # CREATION DATE: 24-01-2026
-# LAST Modified: 5:34:27 25-01-2026
+# LAST Modified: 15:47:54 18-02-2026
 # DESCRIPTION:
 # This is the project in charge of making the connected cat feeder project work.
 # /STOP
@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from pathlib import Path
-from fastapi import Response
+from fastapi import Response, Request
 from display_tty import Disp, initialise_logger
 
 from ...utils import CONST
@@ -224,6 +224,20 @@ class FrontEndManager:
         self.disp.log_debug("Initialised")
 
     # ---------------------------- Cache management ----------------------------
+
+    def _get_client_host(self, request: Request) -> str:
+        """Get the client's host from the request.
+
+        Args:
+            request: FastAPI Request object.
+        Returns:
+            str: Client's host as a string.
+        """
+        # if request.client:
+        #     self.disp.log_debug(f"Client host: {request.client.host}")
+        #     return request.client.host
+        return "127.0.0.1"
+
     def _get_file_content(self, file_path: str) -> str:
         """Read the content of a file.
 
@@ -407,7 +421,7 @@ class FrontEndManager:
 """
         return heading
 
-    def _get_footers(self, page_type: Pages = Pages.DEFAULT) -> str:
+    def _get_footers(self, page_type: Pages = Pages.DEFAULT, client_host: str = "") -> str:
         """Generate HTML footers for front-end pages.
 
         Args:
@@ -415,7 +429,10 @@ class FrontEndManager:
         Returns:
             str: HTML footers as a string.
         """
-        host: str = self.server_headers_initialised.host
+        if not client_host:
+            host: str = self.server_headers_initialised.host
+        else:
+            host: str = client_host
         if host == "0.0.0.0":
             host = "http://127.0.0.1"
         if not host.startswith("http"):
@@ -450,17 +467,18 @@ class FrontEndManager:
     # --------------------------- End HTML Snippets ----------------------------
     # ------------------------------- HTML Pages -------------------------------
 
-    def serve_login(self) -> Response:
+    def serve_login(self, request: Request) -> Response:
         """Serve the login page.
 
         Returns:
             Response: FastAPI Response with login HTML content.
         """
+        client_host = self._get_client_host(request)
         page_title = "Login"
         page_header = self._get_headers(page_title)
         page_heading = self._get_heading(page_title)
         page_body = self._get_cache(self.front_end_assets_html_login)
-        page_footer = self._get_footers(Pages.LOGIN)
+        page_footer = self._get_footers(Pages.LOGIN, client_host)
         page_content = f"""{page_header}
 <body>
     {page_heading}
@@ -471,17 +489,18 @@ class FrontEndManager:
 """
         return HCI.success(page_content, content_type=HttpDataTypes.HTML, headers=self.server_headers_initialised.for_html())
 
-    def serve_dashboard(self) -> Response:
+    def serve_dashboard(self, request: Request) -> Response:
         """Serve the dashboard page.
 
         Returns:
             Response: FastAPI Response with dashboard HTML content.
         """
+        client_host: str = self._get_client_host(request)
         page_title = "Dashboard"
         page_header = self._get_headers(page_title)
         page_heading = self._get_heading(page_title, show_logout=True)
         page_body = self._get_cache(self.front_end_assets_html_dashboard)
-        page_footer = self._get_footers(Pages.DASHBOARD)
+        page_footer = self._get_footers(Pages.DASHBOARD, client_host)
         page_content = f"""{page_header}
 <body>
     {page_heading}
@@ -492,17 +511,18 @@ class FrontEndManager:
 """
         return HCI.success(page_content, content_type=HttpDataTypes.HTML, headers=self.server_headers_initialised.for_html())
 
-    def serve_logout(self) -> Response:
+    def serve_logout(self, request: Request) -> Response:
         """Serve the logout page.
 
         Returns:
             Response: FastAPI Response with logout HTML content.
         """
+        client_host: str = self._get_client_host(request)
         page_title = "Logout"
         page_header = self._get_headers(page_title)
         page_heading = self._get_heading(page_title)
         page_body = self._get_cache(self.front_end_assets_html_logout)
-        page_footer = self._get_footers(Pages.LOGOUT)
+        page_footer = self._get_footers(Pages.LOGOUT, client_host)
         page_content = f"""{page_header}
 <body>\n
     {page_heading}

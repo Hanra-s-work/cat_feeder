@@ -12,7 +12,7 @@
 * PROJECT: CatFeeder
 * FILE: config.hpp
 * CREATION DATE: 07-02-2026
-* LAST Modified: 17:22:34 16-02-2026
+* LAST Modified: 11:13:0 18-02-2026
 * DESCRIPTION:
 * This is the project in charge of making the connected cat feeder project work.
 * /STOP
@@ -58,8 +58,8 @@ inline constexpr unsigned long SERIAL_UART_BAUDRATE = 115200;
 inline constexpr unsigned long WIFI_RETRY_DELAY = 500;
 
 // Led configs
-inline constexpr uint8_t LED_BRIGHTNESS = 100; // 0-255
-inline constexpr uint8_t LED_WHITE_LEVEL = 0;  // 0-255
+inline constexpr uint8_t LED_BRIGHTNESS = 200; // 0-255
+inline constexpr uint8_t LED_WHITE_LEVEL = 5;  // 0-255
 inline constexpr uint16_t LED_NUMBER = 25;//30;    // Number of LEDs in the strip
 inline constexpr uint8_t LED_DURATION = 0;   // Duration for color display in setColor functions (0 = infinite)
 #ifndef LED_TYPE
