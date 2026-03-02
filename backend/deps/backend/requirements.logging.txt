@@ -22,5 +22,5 @@
 # +==== END CatFeeder =================+
 #
 # Text designing
-display-tty == 1.1.16
+display-tty ==1.1.17
 rotary-logger==1.0.0
