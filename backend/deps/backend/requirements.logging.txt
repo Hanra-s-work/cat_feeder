@@ -23,4 +23,4 @@
 #
 # Text designing
 display-tty == 1.1.16
-rotary-logger==1.0.0
+rotary-logger==1.0.5
