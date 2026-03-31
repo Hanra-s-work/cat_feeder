@@ -32,7 +32,7 @@ Markdown==3.10
 beautifulsoup4==4.14.3
 
 # XML processing
-xmltodict==1.0.2
+xmltodict==1.0.4
 
 # doc processing
 python-doc==2020.10.1
