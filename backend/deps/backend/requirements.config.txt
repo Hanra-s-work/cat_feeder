@@ -22,5 +22,5 @@
 #
 # For getting toml config files
 # Priority: tomli (PyPI, Python < 3.11) > tomllib (stdlib 3.11+)
-tomli ==2.0.1; python_version < '3.8'  # For very old Python versions
-tomli ==2.4.0; python_version >= '3.8' and python_version < '3.11'  # Modern TOML v1.0.0 parser
+tomli ==2.4.1; python_version < '3.8'  # For very old Python versions
+tomli ==2.4.1; python_version >= '3.8' and python_version < '3.11'  # Modern TOML v1.0.0 parser
