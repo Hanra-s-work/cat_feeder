@@ -22,7 +22,7 @@
 # +==== END CatFeeder =================+
 #
 # spritesheet management
-Pillow ==12.1.0
+Pillow ==12.3.0
 
 # svg processing/optimisation
 scour == 0.38.2
