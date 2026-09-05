@@ -26,7 +26,7 @@
 py7zr==1.1.0
 
 # Multiple archive formats
-patool==4.0.3
+patool==4.1.0
 
 # Iso handling
 pycdlib==1.14.0
